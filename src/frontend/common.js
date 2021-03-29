@@ -689,8 +689,10 @@ class StoriesCollection {
 
   checkIfStoryExists(storyData) {
     for(let val in this.stories) {
-      if(this.insensitiveCompare(this.stories[val].title, storyData.title) && this.insensitiveCompare(this.stories[val].author, storyData.author)) {
-        return true;
+      if(val != storyData.id) {//this is not the same one been updated
+        if(this.insensitiveCompare(this.stories[val].title, storyData.title) && this.insensitiveCompare(this.stories[val].author, storyData.author)) {
+          return true;
+        }
       }
     }
     return false;
@@ -839,19 +841,23 @@ class Story {
     this.checkBoxSpanClass = opts.checkBoxSpanClass || "radio-button-checkmark";
     this.checkBoxLabelClass = opts.checkBoxSpanClass || "radio-button-container";
     this.saveButtonClass = opts.saveButtonClass || 'black-white-button';
+    this.editButtonClass = opts.editButtonClass || 'black-white-button';
     this.titleClass = opts.titleClass || "story-single-title";
     this.closeButtonHolderClass = opts.closeButtonHolderClass || "close-single-story";
+    this.editButtonHolderClass = opts.editButtonHolderClass || "edit-single-story";
     this.errorClass = opts.errorClass || 'story-single-error-div';
     this.linePermanentClass = opts.linePermanentClass || 'story-single-line-permanent-p';
+    this.permanentLines = [];
     this.build();
     this.activate();
+    this.askCollectionForUniqueID();//generate unique ID
   }
 
   build() {
     this.body = document.createElement('DIV');
     this.body.className = this.storyClass;
     this.parent.appendChild(this.body);
-    this.makeCloseButton();
+    this.makeHeader();
     this.makeTitle();
     this.titleInput = this.makeNormalInput('Title:');
     this.pagesInput = this.makeNormalInput('Pages:', {type:'number'});
@@ -860,12 +866,34 @@ class Story {
     this.makeErrorDiv();
   }
 
+  listenToEditButton() {
+    this.editButton.onclick = () => {
+      this.hideEditButton();
+      this.cancelPermanentStory();
+    };
+  }
+
   save() {
-    this.askCollectionForUniqueID();//generate unique ID
     this.saveDataVariables();
     this.sendDataToCollection();
     this.saved = true;
+    this.showEditButton();
     this.makePermanentStory();
+  }
+
+  cancelPermanentStory() {
+    this.showInputHolder(this.titleInput);
+    this.showInputHolder(this.pagesInput);
+    this.showAuthorHolder();
+    this.showSaveButton();
+    this.returnErrorDiv();
+    this.mainTitle.innerHTML = "Edit " + this.title;
+    this.clearPermanentLines();
+  }
+
+  clearPermanentLines() {
+    this.permanentLines.forEach(a => a.remove());
+    this.permanentLines.length = 0;
   }
 
   makePermanentStory() {
@@ -891,6 +919,7 @@ class Story {
     this.forceCSS(p, 'width', '100%');
     p.className = this.linePermanentClass;
     this.body.appendChild(p);
+    this.permanentLines.push(p);
   }
 
   sendDataToCollection() {
@@ -917,10 +946,15 @@ class Story {
   activate() {
     this.listenToCloseButton();
     this.listenToSaveButton();
+    this.listenToEditButton();
   }
 
   removeInputHolder(a) {
-    a.parentNode.remove();
+    a.parentNode.style.display = 'none';
+  }
+
+  showInputHolder(a) {
+    a.parentNode.style.display = 'block';
   }
 
   makeErrorDiv() {
@@ -929,8 +963,12 @@ class Story {
     this.body.appendChild(this.errorDiv)
   }
 
+  returnErrorDiv() {
+    this.errorDiv.style.opacity = 1;
+  }
+
   killErrorDiv() {
-    this.errorDiv.remove();
+    this.errorDiv.style.opacity = 0;
   }
 
   setError(err) {
@@ -966,6 +1004,7 @@ class Story {
         return;
       }
       if( this.askCollectionIfStoryIsRepeated({
+        id: this.id,
         title: this.titleInput.value,
         pages: this.pagesInput.value,
         author: this.authorCheckBox.checked ? false : this.authorInput.value
@@ -991,13 +1030,39 @@ class Story {
     };
   }
 
+  makeHeader() {
+    this.headerDiv = document.createElement('DIV');
+    this.body.appendChild(this.headerDiv);
+    this.makeEditButton();
+    this.makeCloseButton();
+  }
+
+  makeEditButton() {
+    let holder = document.createElement('DIV');
+    this.editButton = document.createElement('BUTTON');
+    this.editButton.type = 'button';
+    this.editButton.innerHTML = 'Edit';
+    holder.className = this.editButtonHolderClass;
+    this.editButton.className = this.editButtonClass;
+    this.headerDiv.appendChild(holder);
+    holder.appendChild(this.editButton);
+  }
+
+  showEditButton() {
+    this.editButton.parentNode.style.display = 'inline-block';
+  }
+
+  hideEditButton() {
+    this.editButton.parentNode.style.display = 'none';
+  }
+
   makeCloseButton() {
     let holder = document.createElement('DIV');
     this.closeButton = document.createElement('BUTTON');
     this.closeButton.type = 'button';
     this.closeButton.innerHTML = 'X';
     holder.className = this.closeButtonHolderClass;
-    this.body.appendChild(holder);
+    this.headerDiv.appendChild(holder);
     holder.appendChild(this.closeButton);
   }
 
@@ -1009,8 +1074,13 @@ class Story {
     this.body.appendChild(this.mainTitle);
   }
 
+
+  showSaveButton() {
+    this.saveButton.style.display = 'inherit';
+  }
+
   removeSaveButton() {
-    this.saveButton.remove();
+    this.saveButton.style.display = 'none';
   }
 
   makeSaveButton() {
@@ -1038,10 +1108,16 @@ class Story {
     el.setAttribute('style', `${attribute}:${value} !important`);
   }
 
+  showAuthorHolder() {
+    this.authorMainHolder.style.display = 'block';
+    this.showInputHolder(this.authorInput);
+    this.checkBoxAuthorHolder.style.display = 'block';
+  }
+
   removeAuthorHolder() {
-    this.authorMainHolder.remove();
+    this.authorMainHolder.style.display = 'none';
     this.removeInputHolder(this.authorInput);
-    this.checkBoxAuthorHolder.remove();
+    this.checkBoxAuthorHolder.style.display = 'none';
   }
 
   makeAuthorInput() {

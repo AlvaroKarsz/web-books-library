@@ -713,6 +713,8 @@ img:hover {
 }
 
 .close-single-story {
+  display: inline-block;
+  float: right;
   text-align: right;
   z-index: 1;
 }
@@ -751,4 +753,13 @@ img:hover {
   font-size: 24px !important;
   padding: 0 !important;
   margin: 11px ​5px !important;
+}
+
+.edit-single-story {
+  display: none;
+  float: left;
+}
+
+.edit-single-story button {
+  font-size: 13px !important;
 }
