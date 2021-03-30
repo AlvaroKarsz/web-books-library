@@ -482,6 +482,41 @@ img:hover {
   display: none;
 }
 
+.folder-pictures-holder {
+  display: block;
+  max-height: 400px;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  white-space: nowrap;
+  width: 90%;
+  margin: 0 auto;
+}
+
+.folder-pictures-holder-single-pic-holder {
+  padding: 5px;
+  width: 110px;
+  display: inline-block;
+  margin: 2px 5px;
+}
+
+.folder-pictures-holder-single-pic-holder p {
+  text-align: center;
+  width: inherit;
+  padding: 0;
+  margin: 5px 0;
+  font-size: 18px;
+  white-space: break-spaces;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  position: relative;
+  display: block;
+}
+
+.folder-pictures-holder-single-pic-holder img{
+  width: 104px !important;
+  height: 140px !important;
+}
+
 .collection-stry-holder {
   display: block;
   padding: 5px 35px;
@@ -762,4 +797,29 @@ img:hover {
 
 .edit-single-story button {
   font-size: 13px !important;
+}
+
+.folder-pictures-holder-close-button-holder {
+  display: inline-block;
+}
+
+.folder-pictures-holder-close-button-holder button{
+  border: none;
+  font-size: 15px;
+  border-bottom: 1px solid white;
+  border-radius: 0;
+  padding: 0;
+}
+
+.folder-pictures-holder-main {
+  display: none;
+  width: 90%;
+  margin: 0 auto;
+}
+
+.folder-pictures-holder-main > p {
+  font-size: 29px;
+  text-align: center;
+  width: max-content;
+  margin-bottom: 1px;
 }

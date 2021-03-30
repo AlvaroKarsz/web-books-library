@@ -270,7 +270,7 @@ app.get('/insert/book', async (req, res) => {
 });
 
 app.post('/save/book', async (req, res) => {
-  let requestBody = this.trimAllFormData(req.body); /*request body*/
+  let requestBody = basic.trimAllFormData(req.body); /*request body*/
   let dataObject = {};//save here all data
   const currentYear = new Date().getFullYear(); /*current year*/
   requestBody.year = basic.toInt(requestBody.year);
@@ -414,29 +414,31 @@ app.post('/save/book', async (req, res) => {
 });
 
 
-app.get('/search/cover/:isbn/:author/:title', async (req, res) => {
+app.post('/search/cover/', async (req, res) => {
   /*search book cover based on received ISBN*/
-  const isbn = req.params.isbn,
-  author = req.params.author,
-  title = req.params.title;
+  const requestBody = basic.trimAllFormData(req.body); /*request body*/
+
+  const isbn = requestBody.isbn || null,
+  author = requestBody.author || null,
+  title = requestBody.title || null;
   /*if one of params is empty, frontend will send "0" instead - filter these cases*/
-  if(isbn === "0" && author === "0" && title === "0") {
+  if(!isbn  && !author && !title) {
     res.send(JSON.stringify([]));//empty
     return;
   }
   /*fetch from APIs - depends on received data*/
   let covers = [];
-  if(isbn && isbn !== "0") {
+  if(isbn) {
     covers.push(
       openLibraryApi.getCoverByIsbn(isbn),
       openLibraryApi.getCoverByIsbnBasedOnID(isbn)
     );
   }
 
-  if(title && title !== "0") {
+  if(title) {
     covers.push(
       wikiApi.getCoverByTitle(title),
-      googleApi.fetchCoversByTitleAndAuthor(title, (author && author !== '0' ? author : null))
+      googleApi.fetchCoversByTitleAndAuthor(title, (author || null))
     );
   }
 
@@ -462,13 +464,16 @@ app.get('/display/settings', async (req, res) => {
 });
 
 
-app.get('/search/book/:isbn/:author/:title', async (req, res) => {
+app.post('/search/book/', async (req, res) => {
   /*search for book info based on isbn or author and title*/
-  let isbn = req.params.isbn,
-  author = req.params.author,
-  title = req.params.title;
+  const requestBody = basic.trimAllFormData(req.body); /*request body*/
+
+  const isbn = requestBody.isbn || null,
+  author = requestBody.author || null,
+  title = requestBody.title || null;
+
   /*if one of params is empty, frontend will send "0" instead - filter these cases*/
-  if(isbn === "0" && author === "0" && title === "0") {
+  if(!isbn && !author && !title) {
     res.send(JSON.stringify({}));//empty
     return;
   }
@@ -477,8 +482,8 @@ app.get('/search/book/:isbn/:author/:title', async (req, res) => {
   the fetch is based on isbn
   so if isbn is not present, use title and author to retrieve isbn
   */
-  if(!isbn || isbn === "0") {
-    if(!title || title === "0") {
+  if(!isbn) {
+    if(!title) {
       /*
       cant be done with author only
       */
@@ -486,7 +491,7 @@ app.get('/search/book/:isbn/:author/:title', async (req, res) => {
       return;
     }
     /*get isbn using goodreads API*/
-    isbn = await goodReadsAPI.fetchIsbnFromTitleAndAuthor(title, author && author !== "0" ? author : '');
+    isbn = await goodReadsAPI.fetchIsbnFromTitleAndAuthor(title, author || '');
     if(!isbn) {
       /*
       isbn not found

@@ -261,7 +261,6 @@ class CoverAutoSearch {
 
   show() {
     this.parent.style.display = 'block';
-    this.setSelectedCoverInInput();//if this one has a cover selected and just was hidden
   }
 
   hide() {
@@ -342,12 +341,12 @@ class CoverAutoSearch {
   }
 
   async fetchCovers() {
-    //default values - server will ignore "0"
     let httpReq = '',
+    requestBody = {},
     searchParams = this.getSearchCoverParamsCallback(),
-    title = searchParams.title || "0",
-    isbn = searchParams.isbn || "0",
-    author = searchParams.author || "0";
+    title = searchParams.title || null,
+    isbn = searchParams.isbn || null,
+    author = searchParams.author || null;
     if(this.emptyCoverSearchParam(title) && this.emptyCoverSearchParam(isbn) && this.emptyCoverSearchParam(author)) {
       this.alert('Please fill ISBN/Author/Title values');
       return;
@@ -356,7 +355,21 @@ class CoverAutoSearch {
       this.alert('Please fill ISBN/Title values');
       return;
     }
-    httpReq = await doHttpRequest(`/search/cover/${isbn}/${author}/${title}`);
+    if(title) {
+      requestBody.title = title;
+    }
+    if(isbn) {
+      requestBody.isbn = isbn;
+    }
+    if(author) {
+      requestBody.author = author;
+    }
+
+    httpReq = await doHttpRequest('/search/cover/', {
+      method: 'POST',
+      body: JSON.stringify(requestBody),
+      headers: { 'Content-Type': 'application/json' }
+    });
     if(!httpReq) {
       this.alert('Error fetching server');
       return;
@@ -377,7 +390,7 @@ class CoverAutoSearch {
   }
 
   emptyCoverSearchParam(a) {
-    return !a || a === '0';
+    return !a;
   }
 
   alert(m) {
@@ -668,6 +681,10 @@ class StoriesCollection {
     this.storiesHolderClass = opts.storiesHolderClass || "collection-stry-holder";
     this.optionsPanelClass = opts.optionsPanelClass || "collection-stories-options";
     this.checkBoxTextClass = opts.checkBoxTextCkass || "main-title-cbox";
+    this.folderPicsHolderClass = opts.folderPicsHolderClass || 'folder-pictures-holder';
+    this.folderPicturesCloseButtonHolder = opts.folderPicturesCloseButtonHolder || 'folder-pictures-holder-close-button-holder';
+    this.folderPictureImageHolderClass = opts.folderPictureImageHolderClass || 'folder-pictures-holder-single-pic-holder';
+    this.folderPicsHolderMainClass = opts.folderPicsHolderMainClass || 'folder-pictures-holder-main';
     this.build();
   }
 
@@ -714,13 +731,75 @@ class StoriesCollection {
     this.toggleFeatureOnCheckboxChanges();
     this.triggerFileUploaderOnButtonClick();
     this.clearStoriesOnclick();
+    this.triggerFolderUploaderOnButtonClick();
+    this.handleFolderSelection();
+    this.clearFolderPicturesOnclick();
     this.addStoryOnclick();
+  }
+
+  handleFolderSelection() {
+    this.folderUploader.onchange = (e) => {
+      if(this.folderUploader.files) {
+        this.doClearFolderPicturesHolder();//clear old pictures
+        this.makeFolderPicturesView();
+      }
+    };
+  }
+
+  makeFolderPicturesView() {
+    this.showFolderHolder();
+    let readers = [];
+
+    for(let i = 0 , l = this.folderUploader.files.length ; i < l ; i ++ ) {
+      readers.push(new FileReader());
+      readers[readers.length - 1].onload = (evt) => {
+        this.addPictureToFolderHolder(evt.target.result, this.folderUploader.files[i].name);
+      };
+      readers[readers.length - 1].readAsDataURL(this.folderUploader.files[i]);
+    }
+  }
+
+  removeExtensionFromFileName(a) {
+    a = a.split('.');
+    a.pop();
+    return a.join('.');
+  }
+
+  addPictureToFolderHolder(src,fileName) {
+    fileName = this.removeExtensionFromFileName(fileName);
+    let imgHolder = document.createElement('DIV'),
+    img = document.createElement('IMG'),
+    title = document.createElement('P');
+    imgHolder.className = this.folderPictureImageHolderClass;
+    img.src = src;
+    title.innerHTML = fileName;
+    imgHolder.appendChild(title);
+    imgHolder.appendChild(img);
+    this.folderPicsHolder.appendChild(imgHolder);
+  }
+
+
+
+  triggerFolderUploaderOnButtonClick() {
+    this.selectPictureFolderButton.onclick = () => {
+      this.folderUploader.click();
+    };
+  }
+
+  makePictureFolderSelector() {
+    this.folderUploader = document.createElement('INPUT');
+    this.folderUploader.type = 'file';
+    this.folderUploader.className = this.hiddenFileUploaderClass;
+    this.folderUploader.webkitdirectory = true;
+    this.folderUploader.multiple = true;
+    this.optionPanel.appendChild(this.folderUploader);
   }
 
   makeSkeleton() {
     this.buildCheckbox("Collection of Stories:");
     this.makeMainHolder();
     this.makeOptionsPanel();
+    this.makePicturesFolderHolder();
     this.makeStoriesHolder();
   }
 
@@ -728,6 +807,46 @@ class StoriesCollection {
     this.storiesHolder = document.createElement('DIV');
     this.storiesHolder.className = this.storiesHolderClass;
     this.mainHolder.appendChild(this.storiesHolder);
+  }
+
+  makePicturesFolderHolder() {
+    let headerTitle = document.createElement('P'),
+    btnHolder = document.createElement('DIV');
+    headerTitle.innerHTML = 'Pictures From Selected Folder';
+    this.folderHeaderMain = document.createElement('DIV');
+    this.folderHeaderMain.className = this.folderPicsHolderMainClass;
+    this.folderPicsHolder = document.createElement('DIV');
+    this.folderPicsHolder.className = this.folderPicsHolderClass;
+    this.folderPicsHolderCloseButton = document.createElement('BUTTON');
+    this.folderPicsHolderCloseButton.type = 'button';
+    this.folderPicsHolderCloseButton.innerHTML = 'Clear';
+    this.folderPicsHolderCloseButton.className = this.optionPanelButtonsClass;
+    btnHolder.className = this.folderPicturesCloseButtonHolder;
+    this.folderHeaderMain.appendChild(headerTitle);
+    this.folderHeaderMain.appendChild(btnHolder);
+    btnHolder.appendChild(this.folderPicsHolderCloseButton);
+    this.folderHeaderMain.appendChild(this.folderPicsHolder);
+    this.mainHolder.appendChild(this.folderHeaderMain);
+  }
+
+  clearFolderPicturesOnclick() {
+    this.folderPicsHolderCloseButton.onclick = () => {
+      this.doClearFolderPicturesHolder();
+      this.folderUploader.value = '';
+    };
+  }
+
+  doClearFolderPicturesHolder() {
+    this.folderPicsHolder.innerHTML = '';
+    this.hideFolderHolder();
+  }
+
+  hideFolderHolder() {
+    this.folderHeaderMain.style.display = 'none';
+  }
+
+  showFolderHolder() {
+    this.folderHeaderMain.style.display = 'block';
   }
 
   clearStories() {
@@ -744,6 +863,7 @@ class StoriesCollection {
     this.importTableButton = this.makeButton('Import Table');
     this.makeHiddenFileUploader();
     this.selectPictureFolderButton = this.makeButton('Select Pictures Folder');
+    this.makePictureFolderSelector();
     this.addStoryButton = this.makeButton('Add Story');
   }
 
@@ -887,7 +1007,7 @@ class Story {
     this.showAuthorHolder();
     this.showSaveButton();
     this.returnErrorDiv();
-    this.mainTitle.innerHTML = "Edit " + this.title;
+    this.mainTitle.innerHTML = "Edit - " + this.title;
     this.clearPermanentLines();
   }
 
