@@ -14,7 +14,6 @@
     serieDiv: document.getElementById('serie-div'),
     serieC: document.getElementById('serie-check'),
     typeDiv: document.getElementById('type-group'),
-    form: document.getElementById('form'),
     messageBox: document.getElementById('message'),
     titleInp: document.getElementById('book-title'),
     authorInp: document.getElementById('book-author'),
@@ -43,7 +42,7 @@
   });
 
 
-  handleSumbits(els.form, els.messageBox);
+//  handleSumbits(els.form, els.messageBox);
 })()
 
 

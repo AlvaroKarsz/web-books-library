@@ -540,7 +540,7 @@ class CoverUploader {
 class CoverSelector {
   constructor(parent, opts = {}) {
     this.parent = parent;
-    this.title = opts.title || 'Book Cover Picture';
+    this.title = opts.title || '';
     this.titleClass = opts.titleClass || 'main-title-insert';
     this.featuresHolderClass = opts.featuresHolderClass || 'insert-pic-body';
     this.coverUploaderClass = opts.coverUploaderClass || 'insert-pic-uploader';
@@ -730,6 +730,7 @@ class StoriesCollection {
   activate() {
     this.toggleFeatureOnCheckboxChanges();
     this.triggerFileUploaderOnButtonClick();
+    this.handleTableImport();
     this.clearStoriesOnclick();
     this.triggerFolderUploaderOnButtonClick();
     this.handleFolderSelection();
@@ -745,6 +746,27 @@ class StoriesCollection {
       }
     };
   }
+
+  handleTableImport() {
+    this.fileUploader.onchange = (e) => {
+      let fileReader = new FileReader();
+      fileReader.onload = (loadEvt) => {
+        this.decodeStoriesTable(loadEvt.target.result);
+      };
+      fileReader.readAsBinaryString(this.fileUploader.files[0]);
+    };
+  }
+
+  decodeStoriesTable(rawData) {
+    let xlData = XLSX.read(rawData, {type : 'binary'}),
+    firstSheetName = xlData.SheetNames[0];
+    xlData = XLSX.utils.sheet_to_row_object_array(xlData.Sheets[firstSheetName]);
+    //array of 0 => story name, 1 => pages, 2 => author (if not exists will be set to collection author)
+    xlData = xlData.map(a => Object.values(a).slice(0,3));
+    xlData = xlData.filter(a => a.length >= 2);//at least 2
+    this.bulkInsertStories(xlData);
+  }
+
 
   makeFolderPicturesView() {
     this.showFolderHolder();
@@ -932,8 +954,27 @@ class StoriesCollection {
 
   addStoryOnclick() {
     this.addStoryButton.onclick = () => {
-      new Story(this.storiesHolder, this);
+      new Story(this.storiesHolder, {
+        collectionPointer:this
+      });
     };
+  }
+
+  bulkInsertStories(stories) {
+    //array of 0 => story name, 1 => pages, 2 => author (if not exists will be set to collection author)
+    stories.forEach(a => this.addStoryWithValues(a));
+  }
+
+  addStoryWithValues(storyData) {
+    //array of 0 => story name, 1 => pages, 2 => author (if not exists will be set to collection author)
+    new Story(this.storiesHolder, {
+      values: {
+        name: storyData[0],
+        pages: storyData[1],
+        author: storyData[2] || false
+      },
+      collectionPointer: this
+    });
   }
 
   show() {
@@ -946,9 +987,9 @@ class StoriesCollection {
 }
 
 class Story {
-  constructor(parent, collectionPointer, opts = {}) {
+  constructor(parent, opts = {}) {
     this.parent = parent;
-    this.collectionPointer = collectionPointer;
+    this.collectionPointer = opts.collectionPointer;
     this.title = '';
     this.author = '';
     this.pages = '';
@@ -971,6 +1012,9 @@ class Story {
     this.build();
     this.activate();
     this.askCollectionForUniqueID();//generate unique ID
+    if(opts.values) {
+      this.autoLoadStory(opts.values);
+    }
   }
 
   build() {
@@ -1116,23 +1160,37 @@ class Story {
     return this.errorIsShown;
   }
 
+  autoLoadStory(values) {
+    this.titleInput.value = values.name;
+    this.pagesInput.value = values.pages;
+    if(values.author) {
+      this.authorCheckBox.checked = false;
+      this.authorInput.value = values.author
+    }
+    this.prepareToSaveStory();
+  }
+
+  prepareToSaveStory() {
+    this.hideError();
+    if(! this.validate() ) {
+      this.setError('Please fill all inputs');
+      return;
+    }
+    if( this.askCollectionIfStoryIsRepeated({
+      id: this.id,
+      title: this.titleInput.value,
+      pages: this.pagesInput.value,
+      author: this.authorCheckBox.checked ? false : this.authorInput.value
+    }) ) {
+      this.setError('Repeated Story');
+      return;
+    }
+    this.save();
+  }
+
   listenToSaveButton() {
     this.saveButton.onclick = () => {
-      this.hideError();
-      if(! this.validate() ) {
-        this.setError('Please fill all inputs');
-        return;
-      }
-      if( this.askCollectionIfStoryIsRepeated({
-        id: this.id,
-        title: this.titleInput.value,
-        pages: this.pagesInput.value,
-        author: this.authorCheckBox.checked ? false : this.authorInput.value
-      }) ) {
-        this.setError('Repeated Story');
-        return;
-      }
-      this.save();
+      this.prepareToSaveStory();
     };
   }
 
@@ -1225,7 +1283,7 @@ class Story {
   }
 
   forceCSS(el, attribute, value) {
-    el.setAttribute('style', `${attribute}:${value} !important`);
+    el.setAttribute('style', `${el.getAttribute('style') || ''};${attribute}:${value} !important`);
   }
 
   showAuthorHolder() {
@@ -1278,6 +1336,7 @@ class Story {
     this.authorCheckBox.type = 'checkbox';
     this.authorCheckBox.checked = true;
     this.forceCSS(p, 'width', 'max-content');
+    this.forceCSS(p, 'font-size', '17px');
     p.innerHTML = txt;
     span.className = this.checkBoxSpanClass;
     label.className = this.checkBoxLabelClass;

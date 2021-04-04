@@ -8,71 +8,91 @@
 <body>
   {{TOP_NAV}}
   <div class = 'title-new-book'>Insert New Book</div>
-  <form class = "insert-book" action="/save/book" method="POST" id = 'form'>
-    <div class = "insert-line">
-      <p>Book Name:</p>
-      <input type="text"  name='title' required id='book-title' value=""/>
-    </div>
-    <div class = "insert-line">
-      <p>Author:</p>
-      <input type="text" name='author' id='book-author' value="" required/>
-    </div>
-    <div class = "insert-line">
-      <p>Publication Year:</p>
-      <input type="number" name='year' value="" required/>
-    </div>
-    <div class = "insert-line">
-      <p>Pages:</p>
-      <input type="number" name='pages' value="" required/>
-    </div>
-    <div class = "insert-line">
-      <p>Language: </p>
-      <input type="text" name='language' value="" required/>
-    </div>
-    <div class = "insert-line">
-      <p>Original Language: </p>
-      <input type="text" name='original_language' value="" required/>
-    </div>
-    <div class = "insert-line">
-      <p>ISBN:</p>
-      <input type="text" name='isbn' id='book-isbn' value="" required/>
-    </div>
-    <div class = "insert-line">
-      <p>Store/Site Name:</p>
-      <input type="text" name='store' value="" required/>
-    </div>
-    <div class = "insert-line">
-      <p class = 'main-title-insert'>Type: </p>
-      <div class = "checkbox-group" id='type-group'>
-        <div><label class = "radio-button-container"><input type="checkbox" name='hardcover'  checked><span class = "radio-button-checkmark"></span></label><p>Hard Cover</p></div>
-        <div><label class = "radio-button-container"><input type="checkbox" name='paperback' ><span class = "radio-button-checkmark"></span></label><p>Paper Back</p></div>
-        <div><label class = "radio-button-container"><input type="checkbox" name='hardcover_no_dustjacket' ><span class = "radio-button-checkmark"></span></label><p>Hard Cover no Dust Jacket</p></div>
+  <div class = "insert-book">
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Book Details</div>
+      <div class = "insert-line">
+        <p>Book Name:</p>
+        <input type="text"  name='title' required id='book-title' value=""/>
+      </div>
+      <div class = "insert-line">
+        <p>Author:</p>
+        <input type="text" name='author' id='book-author' value="" required/>
+      </div>
+      <div class = "insert-line">
+        <p>Publication Year:</p>
+        <input type="number" name='year' value="" required/>
+      </div>
+      <div class = "insert-line">
+        <p>Pages:</p>
+        <input type="number" name='pages' value="" required/>
+      </div>
+      <div class = "insert-line">
+        <p>Language: </p>
+        <input type="text" name='language' value="" required/>
+      </div>
+      <div class = "insert-line">
+        <p>Original Language: </p>
+        <input type="text" name='original_language' value="" required/>
+      </div>
+      <div class = "insert-line">
+        <p>ISBN:</p>
+        <input type="text" name='isbn' id='book-isbn' value="" required/>
+      </div>
+      <div class = "insert-line">
+        <p>Store/Site Name:</p>
+        <input type="text" name='store' value="" required/>
       </div>
     </div>
-    <div class = "insert-line-serie">
-      <div><label class = "radio-button-container"><input type="checkbox" id = 'serie-check' name='serie_flag' ><span class = "radio-button-checkmark"></span></label><p class = 'main-title-cbox'>Part of Serie: </p></div>
-      <div class="hide-div" id ='serie-div'>
-        <p>Filter: </p><input id = "serie-filter" >
-        <p>Serie: </p><select id = "serie-select" name='serie_id' >{{SERIES}}</select>
-        <p>Number: </p>  <input type="number" id = "serie-select-num" name='serie_num' value="" />
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Book Format</div>
+      <div class = "insert-line">
+        <div class = "checkbox-group" id='type-group'>
+          <div><label class = "radio-button-container"><input type="checkbox" name='hardcover'  checked><span class = "radio-button-checkmark"></span></label><p>Hard Cover</p></div>
+          <div><label class = "radio-button-container"><input type="checkbox" name='paperback' ><span class = "radio-button-checkmark"></span></label><p>Paper Back</p></div>
+          <div><label class = "radio-button-container"><input type="checkbox" name='hardcover_no_dustjacket' ><span class = "radio-button-checkmark"></span></label><p>Hard Cover no Dust Jacket</p></div>
+        </div>
       </div>
     </div>
-    <div class = "insert-line-book-select">
-      <div><label class = "radio-button-container"><input type="checkbox" id = 'next-book-check' name='followed_book_flag' ><span class = "radio-button-checkmark"></span></label><p class = 'main-title-cbox'>Is Followed By: </p></div>
-      <div class="hide-div" id ='next-book-div'>
-        <p>Filter: </p><input type='text' id ='next-filter'>
-        <p>Book: </p><select id ='next-select' name='followed_book' >{{BOOKS}}</select>
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Book Serie</div>
+      <div class = "insert-line-serie">
+        <div><label class = "radio-button-container"><input type="checkbox" id = 'serie-check' name='serie_flag' ><span class = "radio-button-checkmark"></span></label><p class = 'main-title-cbox'>Part of Serie: </p></div>
+        <div class="hide-div" id ='serie-div'>
+          <p>Filter: </p><input id = "serie-filter" >
+          <p>Serie: </p><select id = "serie-select" name='serie_id' >{{SERIES}}</select>
+          <p>Number: </p>  <input type="number" id = "serie-select-num" name='serie_num' value="" />
+        </div>
       </div>
     </div>
-    <div class = "insert-line-book-select">
-      <div><label class = "radio-button-container"><input type="checkbox" id = 'prev-book-check' name='prev_book_flag' ><span class = "radio-button-checkmark"></span></label><p class = 'main-title-cbox'>Is Preceded By: </p></div>
-      <div class="hide-div" id ='prev-book-div'>
-        <p>Filter: </p><input type='text' id ='prev-filter'>
-        <p>Book: </p><select id='prev-select' name='prev_book' >{{BOOKS}}</select>
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Next Book</div>
+      <div class = "insert-line-book-select">
+        <div><label class = "radio-button-container"><input type="checkbox" id = 'next-book-check' name='followed_book_flag' ><span class = "radio-button-checkmark"></span></label><p class = 'main-title-cbox'>Is Followed By: </p></div>
+        <div class="hide-div" id ='next-book-div'>
+          <p>Filter: </p><input type='text' id ='next-filter'>
+          <p>Book: </p><select id ='next-select' name='followed_book' >{{BOOKS}}</select>
+        </div>
       </div>
     </div>
-    <div class = "insert-line" id = 'collection-holder'></div>
-    <div class = "insert-pic-holder" id = 'cover-element-holder'></div>
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Previous Book</div>
+      <div class = "insert-line-book-select">
+        <div><label class = "radio-button-container"><input type="checkbox" id = 'prev-book-check' name='prev_book_flag' ><span class = "radio-button-checkmark"></span></label><p class = 'main-title-cbox'>Is Preceded By: </p></div>
+        <div class="hide-div" id ='prev-book-div'>
+          <p>Filter: </p><input type='text' id ='prev-filter'>
+          <p>Book: </p><select id='prev-select' name='prev_book' >{{BOOKS}}</select>
+        </div>
+      </div>
+    </div>
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Collection (Book Stories)</div>
+      <div class = "insert-line" id = 'collection-holder'></div>
+    </div>
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Book Cover</div>
+      <div class = "insert-pic-holder" id = 'cover-element-holder'></div>
+    </div>
     <div class = "insert-line">
       <div class = "book-insert-submit-holder">
         <button type="submit" class = "black-white-button">Save</button>
@@ -87,4 +107,6 @@
 </body>
 <script src="/frontend/common"></script>
 <script src="/frontend/insertBook"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/jszip.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.js"></script>
 </html>

@@ -362,6 +362,17 @@ img:hover {
 
 .insert-line {
   display: block;
+  padding: 6px;
+}
+
+.insert-line p{
+  font-size: 24px;
+  width: 200px;
+}
+
+.insert-line input{
+  width: 360px;
+  height: 34px;
 }
 
 .checkbox-group div{
@@ -581,20 +592,8 @@ img:hover {
   margin-top: 20px;
 }
 
-.insert-pic-body {
-  height: 450px;
-  width: 800px;
-  border: 2px solid white;
-  border-radius: 10px;
-  text-align: center;
-  margin: 0 auto;
-  padding: 10px;
-}
-
 .auto-search-selected-img , .insert-pic-uploader img {
   width: 280px !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
   height: 315px !important;
 }
 
@@ -611,10 +610,7 @@ img:hover {
 
 .insert-pic-uploader button, .auto-search-pic-uploader button {
   display: block;
-  text-align: center;
-  margin: 0 auto;
-  margin-bottom: 20px;
-  margin-top: 10px;
+  margin: 10px 0 20px 30px;
 }
 
 .loader-p-text {
@@ -705,9 +701,9 @@ img:hover {
   width: 100% !important;
   padding: 0 !important;
   margin: 0 !important;
-  text-align: center !important;
   font-size: 24px !important;
   margin-bottom: 12px !important;
+  margin-left: 15px ​!important;
 }
 
 .collection-single-story-holder {
@@ -721,6 +717,7 @@ img:hover {
   height: 315px;
   overflow-y: auto;
   overflow-x: hidden;
+  text-align: center;
 }
 
 .collection-story-line {
@@ -730,12 +727,13 @@ img:hover {
 }
 
 .collection-story-line p{
-  font: 16px;
+  font-size: 16px !important;
 }
 
 .collection-story-line input{
-  width: 180px;
-  margin-left: 12px;
+  width: 180px !important;
+  margin-left: 12px !important;
+  height: 25px !important;
 }
 
 .story-single-title {
@@ -822,4 +820,18 @@ img:hover {
   text-align: center;
   width: max-content;
   margin-bottom: 1px;
+}
+
+.insert-new-book-text-inputs {
+  text-align: left;
+  border-bottom: 3px solid white;
+  width: 80%;
+  padding: 20px 0 20px 20px;
+}
+
+.insert-new-book-text-inputs-title {
+  color: white;
+  font-size: 32px;
+  text-align: left;
+  margin-bottom: 20px;
 }
