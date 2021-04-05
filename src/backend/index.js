@@ -8,10 +8,13 @@ const googleApi = require('./modules/googleApi.js');
 const openLibraryApi = require('./modules/openLibrary.js');
 const goodReadsAPI = require('./modules/goodReads.js');
 const wikiApi = require('./modules/wikiApi.js');
+const picDecoder = require('./modules/pictureDecoder.js');
 const basic = require('./modules/basic.js');
 const bodyParser = require('body-parser');
+const fileupload = require("express-fileupload");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(fileupload());
 
 app.get('/', async (req, res) =>  {
   res.redirect('books');
@@ -514,5 +517,39 @@ app.post('/search/book/', async (req, res) => {
   /*send data*/
   res.send(JSON.stringify(output));
 });
+
+
+app.post('/decodePicture', async (req, res) => {
+  let output = [];
+  //no files  -  empty response
+  if(!req.files || !req.files.file || !req.files.file.data) {
+    res.send(JSON.stringify(output));
+  }
+  try {
+    /*get file from request body*/
+    /*try to decode picture using picDecoder class*/
+    output = await picDecoder.decode(req.files.file.data);
+    output = output.split("\n");//split to lines
+    output = output.filter(a => a && a.trim());//remove empty lines
+    output = output.map(a => a.replace(/\s+/g, ' ').trim());//replace multiple space with one space and trim
+    output = output.map(a => a.replace(/^["'_.;]/,'').replace(/["'_.;]$/,'').trim());//remove weird chars from str in location 0, remote weird chars from last char and trim again
+    output = output.map(a => a.split(" "));//split by white spaces
+    output = output.filter(a => a.length > 1);//remove elements with 1 elements and lower - should include at least 2 - title and page
+    output = output.filter(a => basic.isDigits(a[a.length - 1]));//last element should be a number - number of pages - remove these without page
+    output = output.map((a) => {//convert elements to object
+      return {
+        name:a.slice(0, -1).join(" "),
+        page: a[a.length - 1]
+      };
+    });
+  } catch (e) {
+    /*make sure this var is empty*/
+    output = [];
+  }
+  /*clear files made during process*/
+  picDecoder.clear();
+  res.send(JSON.stringify(output));
+});
+
 
 app.listen(config.PORT);

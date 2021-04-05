@@ -19,7 +19,8 @@
     authorInp: document.getElementById('book-author'),
     isbnInp: document.getElementById('book-isbn'),
     coverHolder: document.getElementById('cover-element-holder'),
-    collectionHolder: document.getElementById('collection-holder')
+    collectionHolder: document.getElementById('collection-holder'),
+    bookPagesInput: document.getElementById('book-pages')
   };
 
   doFilter(els.serieFilter, els.serieObj);
@@ -30,7 +31,9 @@
   toggleElement(els.nextBookC, els.nextBook, {require:[els.nextObj]});
   handleCheckboxGroup({div:els.typeDiv});
 
-  new StoriesCollection(els.collectionHolder);
+  new StoriesCollection(els.collectionHolder, {
+    pagesInput: els.bookPagesInput
+  });
   new CoverSelector(els.coverHolder, {
     getSearchCoverParamsCallback: () => {
       return {
@@ -42,7 +45,7 @@
   });
 
 
-//  handleSumbits(els.form, els.messageBox);
+  //  handleSumbits(els.form, els.messageBox);
 })()
 
 

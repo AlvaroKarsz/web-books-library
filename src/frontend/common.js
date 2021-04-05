@@ -673,6 +673,7 @@ class StoriesCollection {
     this.parent = parent;
     this.stories = {};//each story has a unique ID key (internal use) and story json as value
     this.nextUniqueId = 0;//stories will ask for unique ID, save here
+    this.decodePicUrl = "/decodePicture";
     this.checkBoxSpanClass = opts.checkBoxSpanClass || "radio-button-checkmark";
     this.checkBoxLabelClass = opts.checkBoxSpanClass || "radio-button-container";
     this.mainDivClass = opts.mainDivClass || "hide-div";
@@ -685,6 +686,9 @@ class StoriesCollection {
     this.folderPicturesCloseButtonHolder = opts.folderPicturesCloseButtonHolder || 'folder-pictures-holder-close-button-holder';
     this.folderPictureImageHolderClass = opts.folderPictureImageHolderClass || 'folder-pictures-holder-single-pic-holder';
     this.folderPicsHolderMainClass = opts.folderPicsHolderMainClass || 'folder-pictures-holder-main';
+    this.loaderMessageClass = opts.loaderMessageClass || 'loader-p-text';
+    this.mainPagesInput = opts.pagesInput || null;
+    this.lastPageInCaseOfCollectionDecoder = null;//in cases when 2 content pages are used, save last one page here, so first in next page will calculate pages value using this value
     this.build();
   }
 
@@ -736,6 +740,96 @@ class StoriesCollection {
     this.handleFolderSelection();
     this.clearFolderPicturesOnclick();
     this.addStoryOnclick();
+    this.triggerDecoderploaderOnButtonClick();
+    this.handlePicDecoding();
+  }
+
+
+  triggerDecoderploaderOnButtonClick() {
+    this.decodeButton.onclick = () => {
+      this.fileUploaderDecoder.click();
+    };
+  }
+
+  handlePicDecoding() {
+    this.fileUploaderDecoder.onchange = (e) => {
+      if(this.fileUploaderDecoder.files) {
+        this.askServerToDecodePicture();
+      }
+    };
+  }
+
+  clearPictureDecoderFileInput() {
+    this.fileUploaderDecoder.value = '';
+  }
+
+  async askServerToDecodePicture() {
+    const formData = new FormData();
+    formData.append('file', this.fileUploaderDecoder.files[0]);
+    const settings = {
+      method: 'POST',
+      body: formData
+      //headers: { 'Content-Type': 'application/json' }
+    };
+    this.clearPictureDecoderFileInput();
+    this.showMainLoader();
+    let request = await doHttpRequest(this.decodePicUrl, settings);
+    this.hideMainLoader();
+    if(!request) {//error from server
+      return;
+    }
+    request.forEach((bookElement, index) => {//iterate books and make story elements
+
+      new Story(this.storiesHolder, {
+        values: {
+          name: bookElement.name,
+          /*calculate pages by checking when next story starts if this is not the last element
+          if this is the last element:
+          if number of pages is set for this book - use it - if not set default value 0
+          */
+          pages: this.calculatePagesNumInStory(bookElement.page,  index + 1 !== request.length ? request[index + 1].page : null),
+          author: false
+        },
+        collectionPointer: this
+      });
+
+    });
+    //save last one page here, so first in next page decoded (if any) will calculate pages value using this value
+    this.lastPageInCaseOfCollectionDecoder = request[request.length - 1].page;
+  }
+
+  getLastBookPageValue(currVal) {
+    //check if a page was decoded (and current value is bigger - if not check in the pages inp) - if so use last line page as the prev. value
+    if(this.lastPageInCaseOfCollectionDecoder && this.toInt(currVal) >= this.toInt(this.lastPageInCaseOfCollectionDecoder)) {
+      return this.lastPageInCaseOfCollectionDecoder;
+    }
+    //if pages value is set take it as last page in book
+    if (this.mainPagesInput && this.mainPagesInput.value) {
+      return this.mainPagesInput.value;
+    }
+    return null;
+  }
+
+  calculatePagesNumInStory(storyPages, nextStoryPages) {
+    const defaultVal = 0;
+    if(nextStoryPages === null) {//if no nextstorypages - this is the last one in collection - get last page if exists
+      nextStoryPages = this.getLastBookPageValue(storyPages);
+    }
+
+    if(nextStoryPages && this.isNumber(storyPages) && this.isNumber(nextStoryPages)) {
+      if(this.toInt(nextStoryPages) >= this.toInt(storyPages)) {
+        return nextStoryPages - storyPages || "1";//if starts and ends in same page it will be 0 - convert to 1
+      }
+    }
+    return defaultVal;
+  }
+
+  toInt(z) {
+    return parseInt(z, 10);
+  }
+
+  isNumber(z) {
+    return /^[0-9]+$/.test(z);
   }
 
   handleFolderSelection() {
@@ -821,8 +915,26 @@ class StoriesCollection {
     this.buildCheckbox("Collection of Stories:");
     this.makeMainHolder();
     this.makeOptionsPanel();
+    this.makeMainLoader();
     this.makePicturesFolderHolder();
     this.makeStoriesHolder();
+  }
+
+  makeMainLoader() {
+    this.mainLoader = new Loader(this.mainHolder, {
+      message: 'Decoding Picture',
+      messageClass: this.loaderMessageClass
+    });
+    this.mainLoader.build();
+    this.hideMainLoader();
+  }
+
+  hideMainLoader() {
+    this.mainLoader.hide();
+  }
+
+  showMainLoader() {
+    this.mainLoader.show();
   }
 
   makeStoriesHolder() {
@@ -874,6 +986,7 @@ class StoriesCollection {
   clearStories() {
     this.stories = {};
     this.storiesHolder.innerHTML = '';
+    this.lastPageInCaseOfCollectionDecoder = null;
   }
 
   makeOptionsPanel() {
@@ -886,7 +999,17 @@ class StoriesCollection {
     this.makeHiddenFileUploader();
     this.selectPictureFolderButton = this.makeButton('Select Pictures Folder');
     this.makePictureFolderSelector();
+    this.decodeButton = this.makeButton('Decode Contents Picture');
+    this.makeHiddenFileUploaderDecoder();
     this.addStoryButton = this.makeButton('Add Story');
+  }
+
+  makeHiddenFileUploaderDecoder() {
+    this.fileUploaderDecoder = document.createElement('INPUT');
+    this.fileUploaderDecoder.type = 'file';
+    this.fileUploaderDecoder.className = this.hiddenFileUploaderClass;
+    this.fileUploaderDecoder.setAttribute('accept', 'image/*');
+    this.optionPanel.appendChild(this.fileUploaderDecoder);
   }
 
   makeHiddenFileUploader() {

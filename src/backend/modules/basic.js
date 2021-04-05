@@ -324,6 +324,10 @@ class Basic {
     return Number(a) === a;
   }
 
+  isDigits(a) {
+    return /^[0-9]+$/.test(a);
+  }
+
   doTrim(a) {
     return !this.isBool(a) && !this.isNumber(a) && !this.isNull(a) && this.exists(a) ? a.trim() : a;
   }
