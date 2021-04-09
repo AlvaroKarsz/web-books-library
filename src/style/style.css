@@ -869,6 +869,14 @@ img:hover {
   height: 50px;
 }
 
+.tabs-buttons-holder-mini {
+  display: block;
+  position: relative;
+  height: 50px;
+  left: 50%;
+  transform: translateX(-40%);
+}
+
 .tab {
   box-shadow: 2px 2px 0 0 rgba(0,0,0,0.3);
   position: relative;
@@ -916,4 +924,19 @@ img:hover {
   min-width: 250px;
   text-align: center;
   display: none;
+}
+
+.super-mini-pic {
+  width: 160px !important;
+  height: 170px !important;
+  margin: 0 auto;
+  margin-top: 10px;
+}
+
+.cover-selector-select-message-p {
+  width: 100% !important;
+  margin: 0 auto;
+  font-size: 20px !important;
+  text-align: center;
+  margin-top: 10px !important;
 }

@@ -32,7 +32,8 @@
   handleCheckboxGroup({div:els.typeDiv});
 
   new StoriesCollection(els.collectionHolder, {
-    pagesInput: els.bookPagesInput
+    pagesInput: els.bookPagesInput,
+    mainAuthorInput: els.authorInp
   });
   new CoverSelector(els.coverHolder, {
     getSearchCoverParamsCallback: () => {

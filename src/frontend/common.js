@@ -39,6 +39,15 @@ class Loader {
     if(this.ops.messageClass) {
       this.messageP.className = this.ops.messageClass;
     }
+    if(this.ops.messageForceStyle) {
+      for(let i in this.ops.messageForceStyle) {
+        this.forceCSS(this.messageP, i, this.ops.messageForceStyle[i]);
+      }
+    }
+  }
+
+  forceCSS(el, attribute, value) {
+    el.setAttribute('style', `${el.getAttribute('style') || ''};${attribute}:${value} !important`);
   }
 
   makeEmptyDiv() {
@@ -109,24 +118,10 @@ class Image {
   }
 
   listen() {
-    this.image.onclick = () => {this.trigger()};
-  }
-
-  trigger(event) {
-    new ConfirmWithPic({
-      src: this.src,
-      message: 'Are you sure you want to use this picture?',
-      ok: 'Yes',
-      cancel: 'No'
-    }).make().then((res) => {
+    this.image.onclick = () => {
       this.selectResolver(this.src);
-    }).catch((err) => {
-      this.doNothing();
-    });
+    };
   }
-
-  doNothing() {}
-
 }
 
 class ConfirmWithPic {
@@ -245,9 +240,10 @@ class CoverAutoSearch {
     this.loaderMessage = opts.loaderMessage || 'Searching for you in the internet...';
     this.loaderClass = opts.loaderClass || 'loader-p-text';
     this.searchButtonClass = opts.searchButtonClass || 'black-white-button';
-    this.selectMessageClass = opts.selectMessageClass || 'auto-search-select-message';
+    this.selectMessageClass = opts.coverSelectorSelectMessageClass || 'auto-search-select-message';
     this.selectedPictureClass = opts.selectedPictureClass || 'auto-search-selected-img';
     this.coverSelectorPointer = opts.coverSelector;
+    this.coverSelectorSelectMessageClassForce = opts.coverSelectorSelectMessageClassForce || '';
     this.getSearchCoverParamsCallback = opts.getSearchCoverParamsCallback;
     this.selectedPicture = '';
     this.clickToSelectMessage = 'Click at the wanted cover';
@@ -297,6 +293,10 @@ class CoverAutoSearch {
     this.selectedPicture = selected;
   }
 
+  getSelected() {
+    return this.selectedPicture;
+  }
+
   buildSelectedPictureView() {
     this.setSelectedMessage();
     this.showSelectMessage();
@@ -311,6 +311,11 @@ class CoverAutoSearch {
     this.selectMessage.innerHTML = this.clickToSelectMessage;
     this.selectMessage.className = this.selectMessageClass;
     this.forceCSS(this.selectMessage, 'margin', '23px');
+    if(this.coverSelectorSelectMessageClassForce) {
+      for(let i in this.coverSelectorSelectMessageClassForce) {
+        this.forceCSS(this.selectMessage, i, this.coverSelectorSelectMessageClassForce[i]);
+      }
+    }
     this.hideSelectMessage();//hidden by default
     this.parent.appendChild(this.selectMessage);
   }
@@ -350,6 +355,10 @@ class CoverAutoSearch {
     };
   }
 
+  search() {
+    this.searchButton.click();
+  }
+
   async fetchCovers() {
     let httpReq = '',
     requestBody = {},
@@ -358,11 +367,11 @@ class CoverAutoSearch {
     isbn = searchParams.isbn || null,
     author = searchParams.author || null;
     if(this.emptyCoverSearchParam(title) && this.emptyCoverSearchParam(isbn) && this.emptyCoverSearchParam(author)) {
-      this.alert('Please fill ISBN/Author/Title values');
+      this.alert('Please fill required values');
       return;
     }
     if(this.emptyCoverSearchParam(title) && this.emptyCoverSearchParam(isbn)) {//can't search based on author only
-      this.alert('Please fill ISBN/Title values');
+      this.alert('Please fill required values');
       return;
     }
     if(title) {
@@ -427,7 +436,8 @@ class CoverAutoSearch {
   makeLoader() {
     this.loader = new Loader(this.parent, {
       message: this.loaderMessage,
-      messageClass: this.loaderClass
+      messageClass: this.loaderClass,
+      messageForceStyle: this.coverSelectorSelectMessageClassForce
     });
     this.loader.build();
     this.hideLoader();
@@ -479,6 +489,7 @@ class CoverUploader {
     this.selectMessage = document.createElement('P');
     this.selectMessage.innerHTML = 'Cover Selected';
     this.forceCSS(this.selectMessage, 'margin', '23px');
+    this.forceCSS(this.selectMessage, 'width', 'max-content');
     this.selectMessage.className = this.selectMessageClass;
     this.hideSelectMessage();//hidden by default
     this.parent.appendChild(this.selectMessage);
@@ -500,6 +511,7 @@ class CoverUploader {
     };
     reader.readAsDataURL(file);
   }
+
 
   handleFileInput() {
     this.inputFile.onchange = (e) => {
@@ -527,9 +539,18 @@ class CoverUploader {
     this.image.src = '';
   }
 
+  getSelected() {
+    return this.image.src;
+  }
+
   addImage(img) {
     this.image.src = img;
     this.showImage();
+  }
+
+  setSrc(src) {
+    this.showSelectMessage();
+    this.addImage(src);
   }
 
   redirectClickToInput() {
@@ -570,12 +591,26 @@ class CoverSelector {
     this.checkBoxLabelClass = opts.checkBoxLabelClass || 'radio-button-container';
     this.checkBoxSpanClass = opts.checkBoxSpanClass || 'radio-button-checkmark';
     this.errorClass = opts.errorClass || 'cover-uploader-error-main';
+    this.coverSelectorSelectMessageClassForce = opts.coverSelectorSelectMessageClassForce || '';
+    this.buttonHolderTableCoverSelectorClass = opts.buttonHolderTableCoverSelectorClass || null;
+    this.selectedImageClassForUploder = opts.selectedImageClassForUploder || null;
     this.getSearchCoverParamsCallback = opts.getSearchCoverParamsCallback;
-    this.selectedFeature = '';
     this.uploadTitle = 'Upload';
     this.searchTitle = 'Search';
     this.errorIsShown = false;
     this.build();
+  }
+
+  hide() {
+    this.tabsPointer.hide();
+    this.titleElement.style.display = 'none';
+    this.killDropZone();
+  }
+
+  show() {
+    this.tabsPointer.show();
+    this.titleElement.display = 'block';
+    this.activateDropZone();
   }
 
   build() {
@@ -585,6 +620,10 @@ class CoverSelector {
     this.makeFeatures();
     this.makeErrorDiv();
     this.activateDropZone();
+  }
+
+  killDropZone() {
+    this.parent.ondragenter = this.parent.ondragleave = this.parent.ondragover = this.parent.ondrop = null;
   }
 
   activateDropZone() {
@@ -703,25 +742,58 @@ class CoverSelector {
   }
 
   buildOptionChanger() {
-    this.tabsPointer = new Tabs(this.parent, [this.uploadTitle, this.searchTitle]);
+    this.tabsPointer = new Tabs(this.parent, [this.uploadTitle, this.searchTitle], {
+      buttonHolderClass: this.buttonHolderTableCoverSelectorClass
+    });
     this.tabsPointer.set();
   }
 
+  getSelected() {
+    let activeFeature = this.tabsPointer.getActiveName();
+    if(activeFeature === '') {//nothing selected
+      return '';
+    }
+    if(activeFeature === this.uploadTitle) {
+      return this.coverUploader.getSelected();
+    }
+    if(activeFeature === this.searchTitle) {
+      return this.coverSearcher.getSelected();
+    }
+    return '';//nothing
+  }
 
   makeUploader() {
-    this.coverUploader = new CoverUploader(this.tabsPointer.getTab(this.uploadTitle));
+    this.coverUploader = new CoverUploader(this.tabsPointer.getTab(this.uploadTitle), {
+      selectedImageClass: this.selectedImageClassForUploder
+    });
   }
 
   saveDroppedFile(file) {
     //show relevant tab and save picture
     this.tabsPointer.focus(this.uploadTitle);
+    this.sendFileToUploader(file);
+  }
+
+  sendFileToUploader(file) {
     this.coverUploader.set(file);
+  }
+
+  sendFileSrcToUploader(src) {
+    this.tabsPointer.focus(this.uploadTitle);
+    this.coverUploader.setSrc(src);
+  }
+
+  search() {
+    this.tabsPointer.focus(this.searchTitle);
+    this.coverSearcher.search();
   }
 
   makeSearcher() {
     this.coverSearcher =  new CoverAutoSearch(this.tabsPointer.getTab(this.searchTitle), {
       getSearchCoverParamsCallback: this.getSearchCoverParamsCallback,
-      coverSelector: this
+      coverSelector: this,
+      coverSelectorSelectMessageClassForce: this.coverSelectorSelectMessageClassForce,
+      selectedPictureClass : this.selectedImageClassForUploder
     });
   }
 
@@ -776,6 +848,7 @@ class StoriesCollection {
   constructor(parent, opts = {}) {
     this.parent = parent;
     this.stories = {};//each story has a unique ID key (internal use) and story json as value
+    this.storiesInProcess = {};//same as this.stories but not saves stories
     this.nextUniqueId = 0;//stories will ask for unique ID, save here
     this.decodePicUrl = "/decodePicture";
     this.checkBoxSpanClass = opts.checkBoxSpanClass || "radio-button-checkmark";
@@ -792,7 +865,9 @@ class StoriesCollection {
     this.folderPicsHolderMainClass = opts.folderPicsHolderMainClass || 'folder-pictures-holder-main';
     this.loaderMessageClass = opts.loaderMessageClass || 'loader-p-text';
     this.mainPagesInput = opts.pagesInput || null;
+    this.mainAuthorInput = opts.mainAuthorInput || null;
     this.lastPageInCaseOfCollectionDecoder = null;//in cases when 2 content pages are used, save last one page here, so first in next page will calculate pages value using this value
+    this.dragable = null;
     this.build();
   }
 
@@ -800,11 +875,18 @@ class StoriesCollection {
     return ++ this.nextUniqueId;
   }
 
+  setStoryInProcess(id, pointer) {
+    delete this.stories[id];
+    this.storiesInProcess[id] = pointer;
+  }
+
   deleteStory(id) {
     delete this.stories[id];
+    delete this.storiesInProcess[id];
   }
 
   saveNewStory(storyData) {
+    delete this.storiesInProcess[storyData.id];//remove from in process object
     this.stories[storyData.id] = {
       title: storyData.title,
       pages: storyData.pages,
@@ -844,20 +926,24 @@ class StoriesCollection {
     this.triggerFolderUploaderOnButtonClick();
     this.handleFolderSelection();
     this.clearFolderPicturesOnclick();
+    this.assertFolderPicturesOnclick();
     this.addStoryOnclick();
     this.triggerDecoderploaderOnButtonClick();
     this.handlePicDecoding();
     this.handleStoriesCoverSearch();
+    this.handleSaveAllClick();
   }
 
   handleStoriesCoverSearch() {
     this.findCoversBtn.onclick = () => {
-      console.log(this.stories);
+      for(let o in this.stories) {//search in all saved stories
+        this.stories[o].pointer.searchForCover();
+      }
+      for(let o in this.storiesInProcess) {//search in all not saved stories
+        this.storiesInProcess[o].searchForCover();
+      }
     };
   }
-
-
-
 
   triggerDecoderploaderOnButtonClick() {
     this.decodeButton.onclick = () => {
@@ -904,7 +990,8 @@ class StoriesCollection {
           pages: this.calculatePagesNumInStory(bookElement.page,  index + 1 !== request.length ? request[index + 1].page : null),
           author: false
         },
-        collectionPointer: this
+        collectionPointer: this,
+        authorInput: this.mainAuthorInput
       });
 
     });
@@ -975,17 +1062,27 @@ class StoriesCollection {
     this.bulkInsertStories(xlData);
   }
 
+  getFolderFiles() {
+    console.log(this.folderUploader.files.length);
+    return [...this.folderUploader.files].filter(a => /^image/.test(a.type)).sort((a, b) => {
+      return parseInt(a.name).toString().localeCompare(parseInt(b.name).toString(), undefined, {
+        numeric: true,
+        sensitivity: 'base'
+      });
+    });
+  }
 
   makeFolderPicturesView() {
     this.showFolderHolder();
-    let readers = [];
+    let readers = [],
+    files =  this.getFolderFiles();
 
-    for(let i = 0 , l = this.folderUploader.files.length ; i < l ; i ++ ) {
+    for(let i = 0 , l = files.length ; i < l ; i ++ ) {
       readers.push(new FileReader());
       readers[readers.length - 1].onload = (evt) => {
-        this.addPictureToFolderHolder(evt.target.result, this.folderUploader.files[i].name);
+        this.addPictureToFolderHolder(evt.target.result, files[i].name);
       };
-      readers[readers.length - 1].readAsDataURL(this.folderUploader.files[i]);
+      readers[readers.length - 1].readAsDataURL(files[i]);
     }
   }
 
@@ -1010,6 +1107,42 @@ class StoriesCollection {
   }
 
   makeDragablePicture(img) {
+    //make a copy and drag it, the original copy will not move
+    img.onmousedown = (e) => {//make the clone
+      e.preventDefault();
+      e.stopPropagation();
+      if(e.which === 1) {//left click
+        this.createPictureClose(e,img);
+        this.startDragable();
+      }
+    };
+  }
+
+  startDragable() {
+    window.onmousemove = (e) => {//element move
+      this.dragable.style.left = `${e.clientX-this.dragable.width*0.5}px`;
+      this.dragable.style.top = `${e.clientY-this.dragable.height*0.5}px`;
+      window.storyIsCurrentlyDragged = true;
+    };
+
+    window.onmouseup = () => {//element released
+      //remove cloned element and remove window listeners
+      this.dragable.remove();
+      this.dragable = null;
+      window.onmousemove = null;
+      window.onmouseup = null;
+      setTimeout(() => {//turn off, first preceed with the mouse event on endpoint
+        window.storyIsCurrentlyDragged = false;
+      },0);
+    };
+  }
+
+  createPictureClose(event, pic) {
+    this.dragable = pic.cloneNode();
+    document.body.appendChild(this.dragable);
+    this.dragable.style.cssText = `width:${pic.width}px;height:${pic.height}px;position: fixed; opacity:0.8;`;
+    this.dragable.style.left = `${event.clientX-pic.width * 0.5}px`;
+    this.dragable.style.top = `${event.clientY-pic.height * 0.5}px`;
   }
 
   triggerFolderUploaderOnButtonClick() {
@@ -1070,13 +1203,65 @@ class StoriesCollection {
     this.folderPicsHolderCloseButton = document.createElement('BUTTON');
     this.folderPicsHolderCloseButton.type = 'button';
     this.folderPicsHolderCloseButton.innerHTML = 'Clear';
+    this.folderPicsHolderAssertButton = document.createElement('BUTTON');
+    this.folderPicsHolderAssertButton.type = 'button';
+    this.folderPicsHolderAssertButton.innerHTML = 'Order Asert';
     this.folderPicsHolderCloseButton.className = this.optionPanelButtonsClass;
+    this.folderPicsHolderAssertButton.className = this.optionPanelButtonsClass;
+    this.folderPicsHolderAssertButton.style.marginLeft = '15px';
     btnHolder.className = this.folderPicturesCloseButtonHolder;
     this.folderHeaderMain.appendChild(headerTitle);
     this.folderHeaderMain.appendChild(btnHolder);
     btnHolder.appendChild(this.folderPicsHolderCloseButton);
+    btnHolder.appendChild(this.folderPicsHolderAssertButton);
     this.folderHeaderMain.appendChild(this.folderPicsHolder);
     this.mainHolder.appendChild(this.folderHeaderMain);
+  }
+
+  assertFolderPicturesOnclick() {
+    this.folderPicsHolderAssertButton.onclick = () => {
+      let savedAsWell = confirm('Do you want to overwrite covers in saved stories as well?'),
+      storiesToWorkWith = [];
+
+      for(let o in this.storiesInProcess) {//not saved surly will receive cover
+        storiesToWorkWith.push({
+          id: o,
+          pointer: this.storiesInProcess[o]
+        });
+      }
+
+      if(savedAsWell) {//user asked for saves as well
+        for(let o in this.stories) {
+          storiesToWorkWith.push({
+            id: o,
+            pointer: this.stories[o].pointer
+          });
+        }
+      }
+
+      //sort by id
+      storiesToWorkWith = storiesToWorkWith.sort((a, b) => {
+        return a.id.localeCompare(b.id, undefined, {
+          numeric: true,
+          sensitivity: 'base'
+        });
+      });
+      let imagesFromFolder = [...this.folderPicsHolder.getElementsByTagName('IMG')],
+      arrLength = Math.min(imagesFromFolder.length, storiesToWorkWith.length),//loop until the smallest array ends
+      counter = 0;
+      while(counter < arrLength) {
+        storiesToWorkWith[counter].pointer.setCover(imagesFromFolder[counter].src);
+        counter ++;
+      }
+    };
+  }
+
+  handleSaveAllClick() {
+    this.saveAllBtn.onclick = () => {
+      for(let o in this.storiesInProcess) {
+        this.storiesInProcess[o].sendSaveCommand();
+      }
+    };
   }
 
   clearFolderPicturesOnclick() {
@@ -1119,6 +1304,7 @@ class StoriesCollection {
     this.makeHiddenFileUploaderDecoder();
     this.addStoryButton = this.makeButton('Add Story', "Add a new story");
     this.findCoversBtn = this.makeButton('Find Covers', "Find cover to all stories");
+    this.saveAllBtn = this.makeButton('Save All Stories', "Save all unsaved Stories");
   }
 
   makeHiddenFileUploaderDecoder() {
@@ -1198,7 +1384,8 @@ class StoriesCollection {
   addStoryOnclick() {
     this.addStoryButton.onclick = () => {
       new Story(this.storiesHolder, {
-        collectionPointer:this
+        collectionPointer:this,
+        authorInput: this.mainAuthorInput
       });
     };
   }
@@ -1216,7 +1403,8 @@ class StoriesCollection {
         pages: storyData[1],
         author: storyData[2] || false
       },
-      collectionPointer: this
+      collectionPointer: this,
+      authorInput: this.mainAuthorInput
     });
   }
 
@@ -1251,12 +1439,28 @@ class Story {
     this.editButtonHolderClass = opts.editButtonHolderClass || "edit-single-story";
     this.errorClass = opts.errorClass || 'story-single-error-div';
     this.linePermanentClass = opts.linePermanentClass || 'story-single-line-permanent-p';
+    this.permanentCoverClass = opts.permanentCoverClass || 'super-mini-pic';
+    this.mainAuthorInput = opts.authorInput || null;
     this.permanentLines = [];
     this.build();
     this.activate();
+    this.listenToDrops();//a image may be dropped
     this.askCollectionForUniqueID();//generate unique ID
+    this.declareStoryInProcess();
     if(opts.values) {
       this.autoLoadStory(opts.values);
+    }
+  }
+
+  declareStoryInProcess() {
+    this.collectionPointer.setStoryInProcess(this.id, this);
+  }
+
+  listenToDrops() {
+    this.body.onmouseenter = (e) => {
+      if(e.fromElement && e.which === 0 && window.storyIsCurrentlyDragged && e.fromElement.nodeName === 'IMG') {//pic was droped, mouse is not clicked - add it to cover holder
+        this.addCover(e.fromElement.src);
+      }
     }
   }
 
@@ -1274,31 +1478,77 @@ class Story {
     this.makeErrorDiv();
   }
 
+  hideCoverSelector() {
+    this.coverSelector.hide();
+  }
+
+  showCoverSelector() {
+    this.coverSelector.show();
+  }
+
+  getSelectedCover() {
+    return this.coverSelector.getSelected();
+  }
+
   makeCoverSelector() {
     this.coverSelector = new CoverSelector(this.body,{
       getSearchCoverParamsCallback: () => {
         return {
           isbn: null,
-          author: 'stephen king',
+          author: this.authorCheckBox.checked ? this.mainAuthorInput.value : this.authorInput.value,
           title: this.titleInput.value
         };
+      },
+      selectedImageClassForUploder: 'super-mini-pic',
+      title: 'Cover',
+      buttonHolderTableCoverSelectorClass: 'tabs-buttons-holder-mini',
+      coverSelectorSelectMessageClassForce: {
+        width: '100%',
+        margin: '0 auto',
+        'font-size': '20px',
+        'text-align': 'center',
+        'margin-top': '10px'
       }
     });
   }
 
+  addCover(src) {
+    this.coverSelector.sendFileSrcToUploader(src);
+  }
+
   listenToEditButton() {
     this.editButton.onclick = () => {
+      this.saved = false;
+      this.declareStoryInProcess();
       this.hideEditButton();
+      this.removePermanentCover();
+      this.showCoverSelector();
       this.cancelPermanentStory();
     };
   }
 
+  searchForCover() {
+    if(this.saved) {//if book saved - unsave it - edit buttonn click
+      this.editButton.click();
+    }
+    this.coverSelector.search();
+  }
+
+  setCover(src) {
+    if(this.saved) {//if book saved - unsave it - edit buttonn click
+      this.editButton.click();
+    }
+    this.addCover(src);
+  }
+
   save() {
     this.saveDataVariables();
+    this.hideCoverSelector();
     this.sendDataToCollection();
     this.saved = true;
     this.showEditButton();
     this.makePermanentStory();
+    this.makePermanentCover();
   }
 
   cancelPermanentStory() {
@@ -1316,6 +1566,17 @@ class Story {
     this.permanentLines.length = 0;
   }
 
+  makePermanentCover() {
+    this.permanentCover = document.createElement('IMG');
+    this.permanentCover.src = this.cover;
+    this.permanentCover.className = this.permanentCoverClass;
+    this.body.appendChild(this.permanentCover);
+  }
+
+  removePermanentCover() {
+    this.permanentCover.remove();
+  }
+
   makePermanentStory() {
     this.removeInputHolder(this.titleInput);//remove title holder - title story is div title
     this.removeInputHolder(this.pagesInput);//remove pages holder - pages will be saved as P
@@ -1331,6 +1592,7 @@ class Story {
     this.title = this.titleInput.value.trim();
     this.pages = this.pagesInput.value.trim();
     this.author = this.authorCheckBox.checked ? false : this.authorInput.value.trim();
+    this.cover = this.getSelectedCover();
   }
 
   saveAsLine(txt) {
@@ -1443,6 +1705,12 @@ class Story {
       return;
     }
     this.save();
+  }
+
+  sendSaveCommand() {
+    if(!this.saved) {
+      this.prepareToSaveStory();
+    }
   }
 
   listenToSaveButton() {
@@ -1605,18 +1873,18 @@ class Story {
   }
 
   kill() {
-    if(this.saved) {
-      this.sendCollectionStoryDeletedMessage();
-    }
+    this.sendCollectionStoryDeletedMessage();
     this.body.remove();
   }
 }
 
 class Tabs {
-  constructor(parent, values = []) {
+  constructor(parent, values = [], opts = {}) {
     this.parent = parent;
     this.values = values;
     this.tabs = {};
+    this.buttonHolderClass = opts.buttonHolderClass || 'tabs-buttons-holder';
+    this.selected = '';
     this.setIndexer();
   }
 
@@ -1636,13 +1904,21 @@ class Tabs {
     this.activate();
   }
 
+  hide() {
+    this.mainHolder.style.display = 'none';
+  }
+
+  show() {
+    this.mainHolder.style.display = 'block';
+  }
+
   buildSkeleton() {
     this.mainHolder = document.createElement('DIV');
     this.buttonHolder = document.createElement('DIV');
     this.tabsHolder = document.createElement('DIV');
     this.mainHolder.className = 'tabs';
     this.tabsHolder.className = 'tabs-holder';
-    this.buttonHolder.className = 'tabs-buttons-holder';
+    this.buttonHolder.className = this.buttonHolderClass;
     this.mainHolder.appendChild(this.buttonHolder);
     this.mainHolder.appendChild(this.tabsHolder);
     this.parent.appendChild(this.mainHolder);
@@ -1687,9 +1963,14 @@ class Tabs {
     this.tabs[name].tab = tab;
   }
 
-  setActive(tab,label) {
+  setActive(tab,label,name) {
     tab.style.display = 'block';
     label.setAttribute('marked','t');
+    this.selected = name;
+  }
+
+  getActiveName() {
+    return this.selected;
   }
 
   cancelActive(tab,label) {
@@ -1710,7 +1991,7 @@ class Tabs {
       this.tabs[tab].input.onclick = () => {
         for(let tab2 in this.tabs) {//hide all tabs but the seleced one
           if(tab === tab2) {
-            this.setActive(this.tabs[tab2].tab,this.tabs[tab2].label);
+            this.setActive(this.tabs[tab2].tab,this.tabs[tab2].label, tab2);
           } else {
             this.cancelActive(this.tabs[tab2].tab,this.tabs[tab2].label);
           }
