@@ -551,5 +551,4 @@ app.post('/decodePicture', async (req, res) => {
   res.send(JSON.stringify(output));
 });
 
-
-app.listen(config.PORT);
+app.listen(config.PORT, '192.168.1.15');

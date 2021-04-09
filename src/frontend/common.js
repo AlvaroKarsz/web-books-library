@@ -240,11 +240,14 @@ class CoverAutoSearch {
     this.covers = [];
     this.coversPromises = [];
     this.parent = parent;
+    this.imagesHolder = document.createElement('DIV');
+    this.imagesHolder.className = 'folder-pictures-holder';
     this.loaderMessage = opts.loaderMessage || 'Searching for you in the internet...';
     this.loaderClass = opts.loaderClass || 'loader-p-text';
     this.searchButtonClass = opts.searchButtonClass || 'black-white-button';
     this.selectMessageClass = opts.selectMessageClass || 'auto-search-select-message';
     this.selectedPictureClass = opts.selectedPictureClass || 'auto-search-selected-img';
+    this.coverSelectorPointer = opts.coverSelector;
     this.getSearchCoverParamsCallback = opts.getSearchCoverParamsCallback;
     this.selectedPicture = '';
     this.clickToSelectMessage = 'Click at the wanted cover';
@@ -253,6 +256,7 @@ class CoverAutoSearch {
     this.makeSelectMessage();
     this.makeLoader();
     this.listenToSearchClick();
+    this.parent.appendChild(this.imagesHolder);
   }
 
   clearSelectionParam() {
@@ -277,7 +281,7 @@ class CoverAutoSearch {
 
   showCovers() {
     this.covers.forEach((cvr) => {
-      this.coversPromises.push(new Image(cvr,this.parent).build());
+      this.coversPromises.push(new Image(cvr,this.imagesHolder).build());
     });
     this.selectCoverOnConfirm();
   }
@@ -306,8 +310,14 @@ class CoverAutoSearch {
     this.selectMessage = document.createElement('P');
     this.selectMessage.innerHTML = this.clickToSelectMessage;
     this.selectMessage.className = this.selectMessageClass;
+    this.forceCSS(this.selectMessage, 'margin', '23px');
     this.hideSelectMessage();//hidden by default
     this.parent.appendChild(this.selectMessage);
+  }
+
+
+  forceCSS(el, attribute, value) {
+    el.setAttribute('style', `${el.getAttribute('style') || ''};${attribute}:${value} !important`);
   }
 
   hideSelectMessage() {
@@ -394,7 +404,7 @@ class CoverAutoSearch {
   }
 
   alert(m) {
-    alert(m);
+    this.coverSelectorPointer.setError(m);
   }
 
   clearCoverLinks() {
@@ -440,6 +450,7 @@ class CoverUploader {
     this.inputFileAccept = opts.inputFileAccept || '.png, .jpg, .jpeg';
     this.inputButtonClass = opts.inputButtonClass || 'black-white-button';
     this.selectMessageClass = opts.selectMessageClass || 'auto-search-select-message';
+    this.selectedImageClass = opts.selectedImageClass || 'uploaded-picture-img';
     this.build();
   }
 
@@ -460,9 +471,14 @@ class CoverUploader {
     this.handleFileInput();
   }
 
+  forceCSS(el, attribute, value) {
+    el.setAttribute('style', `${el.getAttribute('style') || ''};${attribute}:${value} !important`);
+  }
+
   makeSelectionMessage() {
     this.selectMessage = document.createElement('P');
     this.selectMessage.innerHTML = 'Cover Selected';
+    this.forceCSS(this.selectMessage, 'margin', '23px');
     this.selectMessage.className = this.selectMessageClass;
     this.hideSelectMessage();//hidden by default
     this.parent.appendChild(this.selectMessage);
@@ -476,22 +492,28 @@ class CoverUploader {
     this.selectMessage.style.display = 'block';
   }
 
+  set(file) {
+    let reader = new FileReader();
+    reader.onload = (evt) => {
+      this.showSelectMessage();
+      this.addImage(evt.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
+
   handleFileInput() {
     this.inputFile.onchange = (e) => {
       if(!this.inputFile.files || !this.inputFile.files[0]) {
         return;//no files
       }
-      let reader = new FileReader();
-      reader.onload = (evt) => {
-        this.showSelectMessage();
-        this.addImage(evt.target.result);
-      };
-      reader.readAsDataURL(this.inputFile.files[0]);
+      this.set(this.inputFile.files[0]);
     };
   }
 
+
   makeImageHolder() {
     this.image = document.createElement('IMG');
+    this.image.className = this.selectedImageClass;
     this.hideImage();//by default
     this.parent.appendChild(this.image);
   }
@@ -543,13 +565,16 @@ class CoverSelector {
     this.title = opts.title || '';
     this.titleClass = opts.titleClass || 'main-title-insert';
     this.featuresHolderClass = opts.featuresHolderClass || 'insert-pic-body';
-    this.coverUploaderClass = opts.coverUploaderClass || 'insert-pic-uploader';
     this.coverSearchClass = opts.coverSearchClass || 'auto-search-pic-uploader';
     this.checkBoxGroupClass = opts.checkBoxGroupClass || 'checkbox-group';
     this.checkBoxLabelClass = opts.checkBoxLabelClass || 'radio-button-container';
     this.checkBoxSpanClass = opts.checkBoxSpanClass || 'radio-button-checkmark';
+    this.errorClass = opts.errorClass || 'cover-uploader-error-main';
     this.getSearchCoverParamsCallback = opts.getSearchCoverParamsCallback;
     this.selectedFeature = '';
+    this.uploadTitle = 'Upload';
+    this.searchTitle = 'Search';
+    this.errorIsShown = false;
     this.build();
   }
 
@@ -558,8 +583,113 @@ class CoverSelector {
     this.buildOptionChanger();
     this.buildActionHolder();
     this.makeFeatures();
-    this.toggleFeatures();
+    this.makeErrorDiv();
+    this.activateDropZone();
   }
+
+  activateDropZone() {
+    this.parent.ondragenter = (e) => {this.dragEnterEvent(e)};
+    this.parent.ondragleave = (e) => {this.dragLeaveEnent(e)};
+    this.parent.ondragover = (e) => {this.dragOverEnent(e)};
+    this.parent.ondrop = (e) => {this.dragDropEvent(e)};
+  }
+
+  dragEnterEvent(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.showDropZone();
+  }
+
+  setTitle(e) {
+    this.titleElement.innerHTML = e;
+  }
+
+  dragOverEnent(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  showDropZone() {
+    this.setTitle("Drop it like it's hot!");
+    this.parent.style.border = '4px dashed blue';
+    this.parent.style.borderRadius = '20px';
+  }
+
+  hideDropZone(e, force = false) {
+    if(force || this.cursorIsOutside(e)) {
+      this.setTitle("");
+      this.parent.style.border = '';
+      this.parent.style.borderRadius = '';
+    }
+  }
+
+  cursorIsOutside(e) {
+    if(!e) {//no event passed - ignore this test
+      return false;
+    }
+    let bounderies = this.parent.getBoundingClientRect();
+    return e.clientY < bounderies.top || e.clientY >= bounderies.bottom || e.clientX < bounderies.left || e.clientX >= bounderies.right;
+  }
+
+  dragLeaveEnent(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.hideDropZone(e);
+  }
+
+  dragDropEvent(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.hideDropZone(e, true);//force
+    this.handleDroppedFiles(e.dataTransfer.files);
+  }
+
+  handleDroppedFiles(files) {
+    if(files.length !== 1) {
+      this.setError("Please drop just 1 file");
+      return;
+    }
+
+    if(!/^image/.test(files[0].type)) {
+      this.setError("Item not allowed, Images only");
+      return;
+    }
+
+    this.saveDroppedFile(files[0]);
+  }
+
+  makeErrorDiv() {
+    this.errorDiv = document.createElement('DIV');
+    this.errorDiv.className = this.errorClass;
+    this.errorDiv.innerHTML = 'Error';
+    this.parent.appendChild(this.errorDiv)
+  }
+
+  setError(err) {
+    if(this.errorIsCurrentlyShown()) {
+      this.hideError();
+    }
+    this.errorDiv.innerHTML = err;
+    this.showError();
+    setTimeout(() => {
+      this.hideError();
+    }, 3000);
+  }
+
+  showError() {
+    this.errorIsShown = true;
+    this.errorDiv.style.display = 'block';
+  }
+
+  hideError() {
+    this.errorIsShown = false;
+    this.errorDiv.style.display = 'none';
+  }
+
+  errorIsCurrentlyShown() {
+    return this.errorIsShown;
+  }
+
 
   buildActionHolder() {
     this.featuresHolder = document.createElement('DIV');
@@ -572,11 +702,27 @@ class CoverSelector {
     this.makeSearcher();
   }
 
+  buildOptionChanger() {
+    this.tabsPointer = new Tabs(this.parent, [this.uploadTitle, this.searchTitle]);
+    this.tabsPointer.set();
+  }
+
+
   makeUploader() {
-    let holder = document.createElement('DIV');
-    holder.className = this.coverUploaderClass;
-    this.featuresHolder.appendChild(holder);
-    this.coverUploader = new CoverUploader(holder);
+    this.coverUploader = new CoverUploader(this.tabsPointer.getTab(this.uploadTitle));
+  }
+
+  saveDroppedFile(file) {
+    //show relevant tab and save picture
+    this.tabsPointer.focus(this.uploadTitle);
+    this.coverUploader.set(file);
+  }
+
+  makeSearcher() {
+    this.coverSearcher =  new CoverAutoSearch(this.tabsPointer.getTab(this.searchTitle), {
+      getSearchCoverParamsCallback: this.getSearchCoverParamsCallback,
+      coverSelector: this
+    });
   }
 
   showUploader() {
@@ -587,15 +733,6 @@ class CoverSelector {
     this.coverUploader.hide();
   }
 
-  makeSearcher() {
-    let holder = document.createElement('DIV');
-    holder.className = this.coverSearchClass;
-    this.featuresHolder.appendChild(holder);
-    this.coverSearcher =  new CoverAutoSearch(holder, {
-      getSearchCoverParamsCallback: this.getSearchCoverParamsCallback
-    });
-    this.hideSearcher();//default hidden
-  }
 
   showSearcher() {
     this.coverSearcher.show();
@@ -605,39 +742,6 @@ class CoverSelector {
     this.coverSearcher.hide();
   }
 
-  buildOptionChanger() {
-    this.checkBoxHolder = document.createElement('DIV');
-    this.checkBoxHolder.className = this.checkBoxGroupClass;
-    this.parent.appendChild(this.checkBoxHolder);
-    this.uploadCheckbox = this.buildCheckbox('Upload', true);
-    this.searchCheckbox = this.buildCheckbox('Auto Search');
-    this.selectedFeature = 'upload';//default one
-  }
-
-  toggleFeatures() {
-    this.uploadCheckbox.onchange = () => {
-      if(this.selectedFeature === 'upload') {//was turned off - ignore and turn on again - one feature can be changed by setecting the other
-        this.uploadCheckbox.checked = true;
-        return;
-      }
-      //change from auto search to upload
-      this.searchCheckbox.checked = false;
-      this.selectedFeature = 'upload';
-      this.hideSearcher();
-      this.showUploader();
-    };
-    this.searchCheckbox.onchange = () => {
-      if(this.selectedFeature === 'search') {//was turned off - ignore and turn on again - one feature can be changed by setecting the other
-        this.searchCheckbox.checked = true;
-        return;
-      }
-      //change from auto search to upload
-      this.uploadCheckbox.checked = false;
-      this.selectedFeature = 'search';
-      this.hideUploader();
-      this.showSearcher();
-    };
-  }
 
   buildCheckbox(txt, autoSelect = false) {
     let div = document.createElement('DIV'),
@@ -661,10 +765,10 @@ class CoverSelector {
   }
 
   buildTitle() {
-    let title = document.createElement('P');
-    title.innerHTML = this.title;
-    title.className = this.titleClass;
-    this.parent.appendChild(title);
+    this.titleElement = document.createElement('P');
+    this.titleElement.innerHTML = this.title;
+    this.titleElement.className = this.titleClass;
+    this.parent.appendChild(this.titleElement);
   }
 }
 
@@ -704,7 +808,8 @@ class StoriesCollection {
     this.stories[storyData.id] = {
       title: storyData.title,
       pages: storyData.pages,
-      author: storyData.author
+      author: storyData.author,
+      pointer: storyData.pointer
     };
   }
 
@@ -742,7 +847,16 @@ class StoriesCollection {
     this.addStoryOnclick();
     this.triggerDecoderploaderOnButtonClick();
     this.handlePicDecoding();
+    this.handleStoriesCoverSearch();
   }
+
+  handleStoriesCoverSearch() {
+    this.findCoversBtn.onclick = () => {
+      console.log(this.stories);
+    };
+  }
+
+
 
 
   triggerDecoderploaderOnButtonClick() {
@@ -892,9 +1006,11 @@ class StoriesCollection {
     imgHolder.appendChild(title);
     imgHolder.appendChild(img);
     this.folderPicsHolder.appendChild(imgHolder);
+    this.makeDragablePicture(img);
   }
 
-
+  makeDragablePicture(img) {
+  }
 
   triggerFolderUploaderOnButtonClick() {
     this.selectPictureFolderButton.onclick = () => {
@@ -994,14 +1110,15 @@ class StoriesCollection {
     this.optionPanel.className = this.optionsPanelClass;
     this.mainHolder.appendChild(this.optionPanel);
 
-    this.clearButton = this.makeButton('Clear All');
-    this.importTableButton = this.makeButton('Import Table');
+    this.clearButton = this.makeButton('Clear All', "Clear all Stories");
+    this.importTableButton = this.makeButton('Import Table', "Import a table of stories");
     this.makeHiddenFileUploader();
-    this.selectPictureFolderButton = this.makeButton('Select Pictures Folder');
+    this.selectPictureFolderButton = this.makeButton('Select Pictures Folder', "Import a Covers folder");
     this.makePictureFolderSelector();
-    this.decodeButton = this.makeButton('Decode Contents Picture');
+    this.decodeButton = this.makeButton('Decode Contents Picture', "Decode Stories from content page");
     this.makeHiddenFileUploaderDecoder();
-    this.addStoryButton = this.makeButton('Add Story');
+    this.addStoryButton = this.makeButton('Add Story', "Add a new story");
+    this.findCoversBtn = this.makeButton('Find Covers', "Find cover to all stories");
   }
 
   makeHiddenFileUploaderDecoder() {
@@ -1020,9 +1137,12 @@ class StoriesCollection {
     this.optionPanel.appendChild(this.fileUploader);
   }
 
-  makeButton(txt) {
+  makeButton(txt, title = null) {
     let b = document.createElement('BUTTON');
     b.type = 'button';
+    if(title) {
+      b.title = title;
+    }
     b.className = this.optionPanelButtonsClass;
     b.innerHTML = txt;
     this.optionPanel.appendChild(b);
@@ -1149,8 +1269,21 @@ class Story {
     this.titleInput = this.makeNormalInput('Title:');
     this.pagesInput = this.makeNormalInput('Pages:', {type:'number'});
     this.makeAuthorInput();
+    this.makeCoverSelector();
     this.makeSaveButton();
     this.makeErrorDiv();
+  }
+
+  makeCoverSelector() {
+    this.coverSelector = new CoverSelector(this.body,{
+      getSearchCoverParamsCallback: () => {
+        return {
+          isbn: null,
+          author: 'stephen king',
+          title: this.titleInput.value
+        };
+      }
+    });
   }
 
   listenToEditButton() {
@@ -1214,7 +1347,8 @@ class Story {
       id: this.id,
       title: this.title,
       pages: this.pages,
-      author: this.author
+      author: this.author,
+      pointer: this
     });
   }
 
@@ -1476,5 +1610,112 @@ class Story {
     }
     this.body.remove();
   }
+}
 
+class Tabs {
+  constructor(parent, values = []) {
+    this.parent = parent;
+    this.values = values;
+    this.tabs = {};
+    this.setIndexer();
+  }
+
+  setIndexer() {//make global with other Tabs class
+    if(typeof window.tabIndexHolderCustom === 'undefined') {
+      window.tabIndexHolderCustom = 0;
+    }
+  }
+
+  getIndex() {
+    return ++window.tabIndexHolderCustom;
+  }
+
+  set() {
+    this.buildSkeleton();
+    this.buildTabs();
+    this.activate();
+  }
+
+  buildSkeleton() {
+    this.mainHolder = document.createElement('DIV');
+    this.buttonHolder = document.createElement('DIV');
+    this.tabsHolder = document.createElement('DIV');
+    this.mainHolder.className = 'tabs';
+    this.tabsHolder.className = 'tabs-holder';
+    this.buttonHolder.className = 'tabs-buttons-holder';
+    this.mainHolder.appendChild(this.buttonHolder);
+    this.mainHolder.appendChild(this.tabsHolder);
+    this.parent.appendChild(this.mainHolder);
+  }
+
+  buildTabs() {
+    this.values.forEach((tab, index) => {
+      this.buildSingleTab(tab, index === 0);
+    });
+  }
+
+  buildSingleTab(tabName, autoChecked) {
+    this.tabs[tabName] = {};
+    this.buildTabButton(tabName, autoChecked);
+    this.buildTabBody(tabName);
+    if(autoChecked) {//marked by default
+      this.setActive(this.tabs[tabName].tab,this.tabs[tabName].label);
+    }
+  }
+
+  buildTabButton(name, checked = false) {
+    let inp = document.createElement('INPUT'),
+    label = document.createElement('LABEL'),
+    buttonName = `tab-btn-enumeration-${ this.getIndex() }`;
+    label.innerHTML = name;
+    label.className = 'tab-btn';
+    label.setAttribute('for',buttonName);
+    inp.type = 'radio';
+    inp.className = 'btn-inp-tab';
+    inp.id = buttonName;
+    inp.checked = checked;
+    this.buttonHolder.appendChild(inp);
+    this.buttonHolder.appendChild(label);
+    this.tabs[name].input = inp;
+    this.tabs[name].label = label;
+  }
+
+  buildTabBody(name) {
+    let tab = document.createElement('DIV');
+    tab.className = `tab`;
+    this.tabsHolder.appendChild(tab);
+    this.tabs[name].tab = tab;
+  }
+
+  setActive(tab,label) {
+    tab.style.display = 'block';
+    label.setAttribute('marked','t');
+  }
+
+  cancelActive(tab,label) {
+    tab.style.display = 'none';
+    label.removeAttribute('marked');
+  }
+
+  getTab(name) {
+    return this.tabs[name].tab;
+  }
+
+  focus(name) {
+    this.tabs[name].input.click();
+  }
+
+  activate() {
+    for(let tab in this.tabs) {
+      this.tabs[tab].input.onclick = () => {
+        for(let tab2 in this.tabs) {//hide all tabs but the seleced one
+          if(tab === tab2) {
+            this.setActive(this.tabs[tab2].tab,this.tabs[tab2].label);
+          } else {
+            this.cancelActive(this.tabs[tab2].tab,this.tabs[tab2].label);
+          }
+        }
+      };
+    }
+  }
 }
