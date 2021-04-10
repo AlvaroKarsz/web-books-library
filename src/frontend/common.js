@@ -2346,3 +2346,70 @@ class AutoFill {
     }
   }
 }
+
+class CheckboxGroup {
+  constructor(parent, opts = {}) {
+    this.parent = parent;
+    this.holderClass = opts.holderClass || 'checkbox-group';
+    this.checkBoxSpanClass = opts.checkBoxSpanClass || 'radio-button-checkmark';
+    this.checkBoxLabelClass = opts.checkBoxLabelClass || 'radio-button-container';
+    this.titleClassName = opts.titleClassName || 'main-title-cbox';
+    this.checkboxesFromInput = opts.checkboxes || [];
+    this.checkboxes = {};
+    this.build();
+    this.activate();
+  }
+
+  build() {
+    this.makeHolder();
+    this.checkboxesFromInput.forEach(a => this.makeCheckbox(a.title, a.code));
+  }
+
+  activate() {
+    this.setDefaultOne();
+    this.allowOneCheckedAtAnyTime();
+  }
+
+  makeHolder() {
+    this.mainHolder = document.createElement('DIV');
+    this.mainHolder.classname = this.holderClass;
+    this.parent.appendChild(this.mainHolder);
+  }
+
+  makeCheckbox(title, code) {
+    let div = document.createElement('DIV'),
+    label = document.createElement('LABEL'),
+    span = document.createElement('SPAN'),
+    p = document.createElement('P'),
+    checkbox = document.createElement('INPUT');
+    checkbox.type = 'checkbox';
+    p.innerHTML = title;
+    span.className = this.checkBoxSpanClass;
+    label.className = this.checkBoxLabelClass;
+    p.className = this.titleClassName;
+    div.appendChild(label);
+    label.appendChild(checkbox);
+    label.appendChild(span);
+    div.appendChild(p);
+    this.mainHolder.appendChild(div);
+    this.checkboxes[code] = checkbox;
+  }
+
+  setDefaultOne() {//check the first one
+    this.getFirstCheckBox().checked = true;
+  }
+
+  getFirstCheckBox() {
+    return this.checkboxes[Object.keys(this.checkboxes)[0]];
+  }
+
+  allowOneCheckedAtAnyTime() {
+    for(let i in this.checkboxes) {
+      this.checkboxes[i].onchange = (e) => {
+        for(let j in this.checkboxes) {
+          this.checkboxes[j].checked = this.checkboxes[j] === e.target ? true : false;
+        }
+      };
+    }
+  }
+}

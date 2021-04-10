@@ -15,9 +15,24 @@
     autoFillHolder: document.getElementById('auto-fill')
   };
 
-  handleCheckboxGroup({div:els.typeDiv});
+  let bookTypeE = new CheckboxGroup(els.typeDiv, {
+    checkboxes: [
+      {
+        title: 'Hard Cover',
+        code: 'H'
+      },
+      {
+        title: 'Paper Back',
+        code: 'P'
+      },
+      {
+        title: 'Hard Cover no Dust Jacket',
+        code: 'HN'
+      }
+    ]
+  }),
 
-  let serieE = new Selector(els.seriesHolder, {
+  serieE = new Selector(els.seriesHolder, {
     additionalInputs: [{
       name: 'Number',
       type: 'number',
@@ -58,7 +73,7 @@
     }
   }),
 
-autoFill = new AutoFill(els.autoFillHolder, {
+  autoFill = new AutoFill(els.autoFillHolder, {
     checkParamsCallback: () => {
       return els.isbnInp.value || (els.authorInp.value && els.titleInp.value)
     },
@@ -81,31 +96,8 @@ autoFill = new AutoFill(els.autoFillHolder, {
     }
   });
 
-
-
   //  handleSumbits(els.form, els.messageBox);
 })()
-
-
-
-function handleCheckboxGroup(params) {
-  let checkBox = params.div ? [...params.div.getElementsByTagName('INPUT')].filter(x => x.type === 'checkbox') : (Array.isArray(params.elements) ? params.elements : [params.elements]);
-  checkBox.forEach((a) => {
-    a.onchange = (e) => {
-      checkBox.forEach((c) => {
-        c.checked = c === e.target ? true : false;
-      });
-    };
-  });
-}
-
-function setRequired(e) {
-  e.required = true;
-}
-
-function removeRequired(e) {
-  e.required = false;
-}
 
 function handleSumbits(form, messageBox) {
   form.onsubmit = async (e) => {
