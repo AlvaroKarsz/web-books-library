@@ -129,6 +129,7 @@ class OpenLibrary {
       author: '',
       pages: '',
       year: '',
+      isbn: isbn,
       collection: []
     };
 

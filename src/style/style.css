@@ -45,10 +45,9 @@ img:hover {
   text-align: center;
   color: white;
   font-weight: bold;
-  margin-top: 10px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  margin: 15px 0;
+  position: relative;
+  text-align: center;
 }
 
 .line {
@@ -339,7 +338,7 @@ img:hover {
 
 .insert-book {
   text-align: center;
-  margin-top: 80px;
+  margin-top: 10px;
   margin-bottom: 20px;
 }
 
@@ -939,4 +938,28 @@ img:hover {
   font-size: 20px !important;
   text-align: center;
   margin-top: 10px !important;
+}
+
+.auto-fill-holder {
+  display: block;
+  position: relative;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.main-error-box {
+  background-color: rgba(250,20,10,0.6);
+  color: white;
+  padding: 20px 40px;
+  width: max-content;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%);
+  margin-top: 12px;
+  border-radius: 15px;
+  font-weight: 100;
+  border: 2px solid white;
+  box-shadow: 1px 1px 10px rgb(255 255 255 / 40%);
+  font-size: 18px;
+  display: none;
 }

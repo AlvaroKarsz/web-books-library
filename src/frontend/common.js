@@ -12,7 +12,7 @@ async function doHttpRequest(url, settings = null) {
 class Loader {
   constructor(parent, ops = {}) {
     this.parent = parent;
-    this.classCSS = 'bottom-loader';
+    this.classCSS = ops.classLoader || 'bottom-loader';
     this.numberOfInnerDivs = 8;
     this.ops = ops;
   }
@@ -22,7 +22,7 @@ class Loader {
     for(let i = 0 ; i < this.numberOfInnerDivs ; i ++ ) {
       this.makeEmptyDiv();
     }
-    if(this.ops.message) {//make message p
+    if(this.ops.message && !this.ops.noMessage) {//make message p
       this.makeMessage();
     }
     this.post();
@@ -31,6 +31,11 @@ class Loader {
   makeHolder() {
     this.holder = document.createElement('DIV');
     this.holder.className = this.classCSS;
+    if(this.ops.cssForceLoader) {
+      for(let i in this.ops.cssForceLoader) {
+        this.forceCSS(this.holder, i, this.ops.cssForceLoader[i]);
+      }
+    }
   }
 
   makeMessage() {
@@ -871,6 +876,13 @@ class StoriesCollection {
     this.build();
   }
 
+  clearStories() {
+    this.stories = {};
+    this.storiesInProcess = {};
+    this.storiesHolder.innerHTML = '';
+    this.lastPageInCaseOfCollectionDecoder = null;
+  }
+
   getUniqueID() {
     return ++ this.nextUniqueId;
   }
@@ -1284,11 +1296,6 @@ class StoriesCollection {
     this.folderHeaderMain.style.display = 'block';
   }
 
-  clearStories() {
-    this.stories = {};
-    this.storiesHolder.innerHTML = '';
-    this.lastPageInCaseOfCollectionDecoder = null;
-  }
 
   makeOptionsPanel() {
     this.optionPanel = document.createElement('DIV');
@@ -1369,6 +1376,11 @@ class StoriesCollection {
     };
   }
 
+  showCollection() {
+    this.checkBox.checked = true;
+    this.show();
+  }
+
   triggerFileUploaderOnButtonClick() {
     this.importTableButton.onclick = () => {
       this.fileUploader.click();
@@ -1402,6 +1414,19 @@ class StoriesCollection {
         name: storyData[0],
         pages: storyData[1],
         author: storyData[2] || false
+      },
+      collectionPointer: this,
+      authorInput: this.mainAuthorInput
+    });
+  }
+
+  newStoryTitle(title) {
+    this.showCollection();
+    new Story(this.storiesHolder, {
+      values: {
+        name: title,
+        pages: '',
+        author: false
       },
       collectionPointer: this,
       authorInput: this.mainAuthorInput
@@ -2182,5 +2207,142 @@ class Selector {
       return [];
     }
     return httpReq;
+  }
+}
+
+
+class AutoFill {
+  constructor(parent, opts = {}) {
+    this.parent = parent;
+    this.buttonClass = opts.buttonClass || 'black-white-button';
+    this.errorClass = opts.errorClass || 'main-error-box';
+    this.buttonText = opts.buttonText || 'Auto Search';
+    this.loaderMessageClass = opts.loaderMessageClass || 'auto-search-loader-text';
+    this.checkParamsCallback = opts.checkParamsCallback;
+    this.getParamsCallback = opts.getParamsCallback;
+    this.actionScript = opts.actionScript;
+    this.checkParamsErrorMessage = opts.checkParamsErrorMessage || 'Error';
+    this.inputsToFill = opts.inputsToFill || {};
+    this.collectionPointer = opts.collectionPointer || null;
+    this.errorIsShown = false;
+    this.build();
+    this.activate();
+  }
+
+  build() {
+    this.makeButton();
+    this.makeErrorBox();
+    this.makeLoader();
+  }
+
+  makeLoader() {
+    this.loader = new Loader(this.parent, {
+      noMessage: true,
+      cssForceLoader: {
+        position:'absolute',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex:'50'
+      }
+    });
+    this.loader.build();
+    this.hideLoader();
+  }
+
+  disableButton() {
+    this.btn.disabled = true;
+  }
+
+  enableButton() {
+    this.btn.disabled = false;
+  }
+
+  showLoader() {
+    this.loader.show();
+  }
+
+  hideLoader() {
+    this.loader.hide();
+  }
+
+  makeButton() {
+    this.btn = document.createElement('BUTTON');
+    this.btn.className = this.buttonClass;
+    this.btn.innerHTML = this.buttonText;
+    this.parent.appendChild(this.btn);
+  }
+
+  makeErrorBox() {
+    this.errorDiv = document.createElement('DIV');
+    this.errorDiv.className = this.errorClass;
+    this.errorDiv.innerHTML = 'Error';
+    this.parent.appendChild(this.errorDiv);
+  }
+
+  setError(err) {
+    if(this.errorIsCurrentlyShown()) {
+      this.hideError();
+    }
+    this.errorDiv.innerHTML = err;
+    this.showError();
+    setTimeout(() => {
+      this.hideError();
+    }, 4000);
+  }
+
+  showError() {
+    this.errorIsShown = true;
+    this.errorDiv.style.display = 'block';
+  }
+
+  hideError() {
+    this.errorIsShown = false;
+    this.errorDiv.style.display = 'none';
+  }
+
+  errorIsCurrentlyShown() {
+    return this.errorIsShown;
+  }
+
+
+  activate() {
+    this.btn.onclick = () => {
+      if(!this.checkParamsCallback()) {
+        this.setError(this.checkParamsErrorMessage);
+        return;
+      }
+      this.action(this.getParamsCallback());
+    };
+  }
+
+  action(params) {
+    this.showLoader();
+    this.disableButton();
+    doHttpRequest(this.actionScript, {
+      method: 'POST',
+      body: JSON.stringify(params),
+      headers: { 'Content-Type': 'application/json' }
+    }).then((res) => {
+      this.hideLoader();
+      this.enableButton();
+      if(res === null) {
+        this.setError("Error fetching server");
+      } else {
+        this.fillInputs(res);
+      }
+    });
+  }
+
+  fillInputs(values) {
+    for(let val in this.inputsToFill) {
+      if(val in values) {
+        this.inputsToFill[val].value = values[val];
+      }
+    }
+
+    if(values.collection && values.collection.length && this.collectionPointer) {
+      this.collectionPointer.clearStories();//clear prev. stories
+      values.collection.forEach(a => this.collectionPointer.newStoryTitle(a));
+    }
   }
 }

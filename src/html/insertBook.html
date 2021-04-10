@@ -8,6 +8,7 @@
 <body>
   {{TOP_NAV}}
   <div class = 'title-new-book'>Insert New Book</div>
+  <div class = "auto-fill-holder" id = 'auto-fill'></div>
   <div class = "insert-book">
     <div class = "insert-new-book-text-inputs">
       <div class="insert-new-book-text-inputs-title">Book Details</div>
@@ -21,7 +22,7 @@
       </div>
       <div class = "insert-line">
         <p>Publication Year:</p>
-        <input type="number" name='year' value="" required/>
+        <input type="number" name='year' value="" id='book-year' required/>
       </div>
       <div class = "insert-line">
         <p>Pages:</p>

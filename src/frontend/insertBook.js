@@ -5,17 +5,17 @@
     titleInp: document.getElementById('book-title'),
     authorInp: document.getElementById('book-author'),
     isbnInp: document.getElementById('book-isbn'),
+    yearInp: document.getElementById('book-year'),
     coverHolder: document.getElementById('cover-element-holder'),
     collectionHolder: document.getElementById('collection-holder'),
     bookPagesInput: document.getElementById('book-pages'),
     nextBookHolder: document.getElementById('next-book-holder'),
     prevBookHolder: document.getElementById('prev-book-holder'),
-    seriesHolder: document.getElementById('series-holder')
+    seriesHolder: document.getElementById('series-holder'),
+    autoFillHolder: document.getElementById('auto-fill')
   };
 
   handleCheckboxGroup({div:els.typeDiv});
-
-
 
   let serieE = new Selector(els.seriesHolder, {
     additionalInputs: [{
@@ -56,7 +56,31 @@
         title: els.titleInp.value
       };
     }
+  }),
+
+autoFill = new AutoFill(els.autoFillHolder, {
+    checkParamsCallback: () => {
+      return els.isbnInp.value || (els.authorInp.value && els.titleInp.value)
+    },
+    getParamsCallback: () => {
+      return {
+        isbn: els.isbnInp.value,
+        title: els.titleInp.value,
+        author: els.authorInp.value
+      };
+    },
+    actionScript: '/search/book/',
+    collectionPointer: collectionEl,
+    checkParamsErrorMessage: 'Please fiil ISBN or Author and Title',
+    inputsToFill: {
+      isbn: els.isbnInp,
+      title: els.titleInp,
+      author: els.authorInp,
+      pages: els.bookPagesInput,
+      year: els.yearInp
+    }
   });
+
 
 
   //  handleSumbits(els.form, els.messageBox);
