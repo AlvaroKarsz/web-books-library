@@ -551,4 +551,25 @@ app.post('/decodePicture', async (req, res) => {
   res.send(JSON.stringify(output));
 });
 
+app.get('/bookList', async (req, res) => {
+  /*fetch all books from DB and send it to user*/
+  res.send(
+    JSON.stringify(
+      await db.fetchBooksForHtml()
+    )
+  );
+});
+
+app.get('/serieList', async (req, res) => {
+  /*fetch all series from DB and send it to user*/
+  res.send(
+    JSON.stringify(
+      await db.fetchSeriesForHtml()
+    )
+  );
+});
+
+
+
+
 app.listen(config.PORT, '192.168.1.15');

@@ -96,8 +96,6 @@ class Basic {
       FILTER_VAL_AUTHOR: "this.getFilterValue(params.urlParams, 'author')",
       SORT_OPTIONS: "this.getSortOptions(params.urlParams, params.route)",
       IMAGES: "this.postPictures(params.folder, params.objects)",
-      SERIES: "this.setSeriesInSelectBox()",
-      BOOKS: "this.setBooksInSelectBox()",
       LOADER_IF_BOOKS: "this.createMainLoaderIfBooksFound(params.totalCount)",
       TOP_NAV: "this.echoTopNav()"
     };
@@ -122,25 +120,6 @@ class Basic {
       return '<div class="bottom-loader" id = "main-ldr"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>';
     }
   }
-
-  async setBooksInSelectBox() {
-    let str = '<option value="">-- SELECT --</option>';
-    let books = await db.fetchBooksForHtml();
-    books.forEach((book) => {
-      str += `<option value="${book.id}">${book.text}</option>`
-    });
-    return str;
-  }
-
-  async setSeriesInSelectBox() {
-    let str = '<option value="">-- SELECT --</option>';
-    let series = await db.fetchSeriesForHtml();
-    series.forEach((serie) => {
-      str += `<option value="${serie.id}">${serie.text}</option>`
-    });
-    return str;
-  }
-
 
   getSortOptions(urlParams, requestRoute) {
     let str = `<option value="">-- SELECT --</option>`;//default one

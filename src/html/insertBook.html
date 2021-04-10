@@ -56,34 +56,15 @@
     </div>
     <div class = "insert-new-book-text-inputs">
       <div class="insert-new-book-text-inputs-title">Book Serie</div>
-      <div class = "insert-line-serie">
-        <div><label class = "radio-button-container"><input type="checkbox" id = 'serie-check' name='serie_flag' ><span class = "radio-button-checkmark"></span></label><p class = 'main-title-cbox'>Part of Serie: </p></div>
-        <div class="hide-div" id ='serie-div'>
-          <p>Filter: </p><input id = "serie-filter" >
-          <p>Serie: </p><select id = "serie-select" name='serie_id' >{{SERIES}}</select>
-          <p>Number: </p>  <input type="number" id = "serie-select-num" name='serie_num' value="" />
-        </div>
-      </div>
+      <div class = "insert-line-serie" id = 'series-holder'></div>
     </div>
     <div class = "insert-new-book-text-inputs">
       <div class="insert-new-book-text-inputs-title">Next Book</div>
-      <div class = "insert-line-book-select">
-        <div><label class = "radio-button-container"><input type="checkbox" id = 'next-book-check' name='followed_book_flag' ><span class = "radio-button-checkmark"></span></label><p class = 'main-title-cbox'>Is Followed By: </p></div>
-        <div class="hide-div" id ='next-book-div'>
-          <p>Filter: </p><input type='text' id ='next-filter'>
-          <p>Book: </p><select id ='next-select' name='followed_book' >{{BOOKS}}</select>
-        </div>
-      </div>
+      <div class = "insert-line-book-select" id = 'next-book-holder'></div>
     </div>
     <div class = "insert-new-book-text-inputs">
       <div class="insert-new-book-text-inputs-title">Previous Book</div>
-      <div class = "insert-line-book-select">
-        <div><label class = "radio-button-container"><input type="checkbox" id = 'prev-book-check' name='prev_book_flag' ><span class = "radio-button-checkmark"></span></label><p class = 'main-title-cbox'>Is Preceded By: </p></div>
-        <div class="hide-div" id ='prev-book-div'>
-          <p>Filter: </p><input type='text' id ='prev-filter'>
-          <p>Book: </p><select id='prev-select' name='prev_book' >{{BOOKS}}</select>
-        </div>
-      </div>
+      <div class = "insert-line-book-select" id = 'prev-book-holder'></div>
     </div>
     <div class = "insert-new-book-text-inputs">
       <div class="insert-new-book-text-inputs-title">Collection (Book Stories)</div>

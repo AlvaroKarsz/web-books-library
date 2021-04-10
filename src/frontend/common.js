@@ -2000,3 +2000,187 @@ class Tabs {
     }
   }
 }
+
+class Selector {
+  constructor(parent, opts) {
+    this.parent = parent;
+    this.additionalInputs = opts.additionalInputs;
+    this.withFilter = opts.withFilter;
+    this.title = opts.title;
+    this.selectName = opts.selectName;
+    this.actionScript = opts.actionScript;
+    this.options = this.fetchOptions();
+    this.mainHolderClass = opts.mainHolderClass || 'insert-line-book-select';
+    this.checkBoxSpanClass = opts.checkBoxSpanClass || 'radio-button-checkmark';
+    this.checkBoxLabelClass = opts.checkBoxLabelClass || 'radio-button-container';
+    this.titleClassName = opts.titleClassName || 'main-title-cbox';
+    this.toggleBodyClass = opts.toggleBodyClass || 'hide-div';
+    this.returns = [];
+    this.buildSkeleton();
+    this.activate();
+  }
+
+  activate() {
+    this.toggleElementOnChange();
+    if(this.withFilter) {
+      this.activateFilter();
+    }
+  }
+
+  buildSkeleton() {
+    this.makeMainHolder();
+    this.makeCheckbox();
+    this.makeToggleBody();
+    this.addContentToToggleBody();
+    this.makeAdditionals();
+  }
+
+  makeAdditionals() {
+    if(! this.additionalInputs || ! Array.isArray(this.additionalInputs) || ! this.additionalInputs.length) {
+      return;
+    }
+    let p, inp;
+    this.additionalInputs.forEach((i) => {
+      p = document.createElement('P');
+      inp = document.createElement('INPUT');
+      inp.type = i.type;
+      p.innerHTML = i.name;
+      this.toggleBody.appendChild(p);
+      this.toggleBody.appendChild(inp);
+      this.returns.push({
+        name: i.returnName,
+        inp: inp
+      });
+    });
+  }
+
+  makeMainHolder() {
+    this.mainHolder = document.createElement('DIV');
+    this.mainHolder.className = this.mainHolderClass;
+    this.parent.appendChild(this.mainHolder);
+  }
+
+  toggleElementOnChange() {
+    this.checkbox.onchange = () => {
+      if(this.checkbox.checked) {
+        this.showDiv();
+      } else {
+        this.hideDiv();
+      }
+    };
+  }
+
+  makeCheckbox() {
+    let div = document.createElement('DIV'),
+    label = document.createElement('LABEL'),
+    span = document.createElement('SPAN'),
+    p = document.createElement('P');
+    this.checkbox = document.createElement('INPUT');
+    this.checkbox.type = 'checkbox';
+    p.innerHTML = this.title;
+    span.className = this.checkBoxSpanClass;
+    label.className = this.checkBoxLabelClass;
+    p.className = this.titleClassName;
+    div.appendChild(label);
+    label.appendChild(this.checkbox);
+    label.appendChild(span);
+    div.appendChild(p);
+    this.mainHolder.appendChild(div);
+  }
+
+  showDiv() {
+    this.toggleBody.style.display = 'block';
+  }
+
+  hideDiv() {
+    this.toggleBody.style.display = 'none';
+  }
+
+  makeToggleBody() {
+    this.toggleBody = document.createElement('DIV');
+    this.toggleBody.className = this.toggleBodyClass;
+    this.mainHolder.appendChild(this.toggleBody);
+  }
+
+  addContentToToggleBody() {
+    if(this.withFilter) {
+      this.makeFilter();
+    }
+    this.makeSelect();
+  }
+
+  makeFilter() {
+    let p = document.createElement('P');
+    this.filter = document.createElement('INPUT');
+    this.filter.type = 'text';
+    p.innerHTML = 'Filter: ';
+    this.toggleBody.appendChild(p);
+    this.toggleBody.appendChild(this.filter);
+  }
+
+  activateFilter() {
+    this.filter.onkeyup = () => {
+      let val = this.filter.value,
+      options = [...this.select.getElementsByTagName('OPTION')];
+      this.clearSelect();
+      //hide non matches
+      options.filter(a => !this.insensitiveInclude(a.innerText, val)).forEach(a => a.style.display = 'none');
+      //show matched
+      options.filter(a => this.insensitiveInclude(a.innerText, val)).forEach(a => a.style.display = 'block');
+    };
+  }
+
+  insensitiveInclude(str, needle) {
+    return str.toUpperCase().includes(needle.toUpperCase());
+  }
+
+  makeSelect() {
+    let p = document.createElement('P');
+    this.select = document.createElement('SELECT');
+    p.innerHTML = this.selectName;
+    this.toggleBody.appendChild(p);
+    this.toggleBody.appendChild(this.select);
+    this.addSelectOptions();
+    this.returns.push({
+      name: 'value',
+      inp: this.select
+    });
+  }
+
+  get() {
+    if(!this.checkbox.checked) {//not selected
+      return null;
+    }
+    let output = {};
+    this.returns.forEach((a) => {
+      output[a.name] = a.inp.value;
+    });
+    return output;
+  }
+
+  clearSelect() {
+    this.select.value = '';
+  }
+
+  addSelectOptions() {
+    let optionsStr = '<option value="">-- SELECT --</option>';
+    Promise.resolve(this.options).then((opts) => {
+      opts.forEach((opt) => {
+        optionsStr += `<option value="${opt.id}">${opt.text}</option>`;
+        this.select.innerHTML = optionsStr;
+      });
+    });
+  }
+
+  async fetchOptions() {
+    let httpReq = await doHttpRequest(this.actionScript, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if(!httpReq) {
+      console.error('Error fetching server');
+      return [];
+    }
+    return httpReq;
+  }
+}
