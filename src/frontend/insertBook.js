@@ -1,7 +1,6 @@
 (async () => {
   let els = {
     typeDiv: document.getElementById('type-group'),
-    messageBox: document.getElementById('message'),
     titleInp: document.getElementById('book-title'),
     authorInp: document.getElementById('book-author'),
     isbnInp: document.getElementById('book-isbn'),
@@ -12,7 +11,11 @@
     nextBookHolder: document.getElementById('next-book-holder'),
     prevBookHolder: document.getElementById('prev-book-holder'),
     seriesHolder: document.getElementById('series-holder'),
-    autoFillHolder: document.getElementById('auto-fill')
+    autoFillHolder: document.getElementById('auto-fill'),
+    saveBtn: document.getElementById('save'),
+    bookStoreInp: document.getElementById('book-store'),
+    langInp: document.getElementById('book-lang'),
+    langOrgInp: document.getElementById('book-lang-org')
   };
 
   let bookTypeE = new CheckboxGroup(els.typeDiv, {
@@ -94,52 +97,133 @@
       pages: els.bookPagesInput,
       year: els.yearInp
     }
+  }),
+
+  messager = new Messager(),
+
+  loader = new Loader(document.body, {
+    classLoader: 'general-loader',
+    withOverlay: true,
+    autoPost: true,
+    message: 'Saving Book',
+    messageClass: 'main-olay-message'
   });
 
-  //  handleSumbits(els.form, els.messageBox);
+  els.saveBtn.onclick = () => {
+    saveBook({
+      values: {
+        title: els.titleInp.value,
+        author: els.authorInp.value,
+        isbn: els.isbnInp.value,
+        year: els.yearInp.value,
+        pages: els.bookPagesInput.value,
+        store: els.bookStoreInp.value,
+        lang: els.langInp.value,
+        langOrg: els.langOrgInp.value,
+        type: bookTypeE.get(),
+        serie: serieE.get(),
+        next: nextEl.get(),
+        prev: prevEl.get(),
+        cover: coverEl.getSelected(),
+        collection: collectionEl.get()
+      },
+      messager: messager,
+      loaderEl: loader,
+      saveButton: els.saveBtn
+    });
+  };
 })()
 
-function handleSumbits(form, messageBox) {
-  form.onsubmit = async (e) => {
-    e.preventDefault();
-    let object = getFormObject(form);
-    let serverResponse = await doHttpRequest('/save/book', {
-      method:'POST',
-      body:JSON.stringify(object),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-    if(serverResponse.status) {
-      //    showSuccessMessage(serverResponse.message);
-    } else {
-      showErrorMessage(messageBox, serverResponse.message);
+function saveBook(opts) {
+  if(!validValue(opts.values.title)) {
+    opts.messager.setError("Please fill Title Input");
+    return;
+  }
+  if(!validValue(opts.values.author)) {
+    opts.messager.setError("Please fill Author Input");
+    return;
+  }
+  if(!validValue(opts.values.isbn)) {
+    opts.messager.setError("Please fill ISBN Input");
+    return;
+  }
+  if(!validValue(opts.values.year)) {
+    opts.messager.setError("Please fill Year Input");
+    return;
+  }
+  if(!validValue(opts.values.pages)) {
+    opts.messager.setError("Please fill Pages Input");
+    return;
+  }
+  if(!validValue(opts.values.store)) {
+    opts.messager.setError("Please fill Store Input");
+    return;
+  }
+  if(!validValue(opts.values.lang)) {
+    opts.messager.setError("Please fill Language Input");
+    return;
+  }
+  if(!validValue(opts.values.langOrg)) {
+    opts.messager.setError("Please fill Original Language Input");
+    return;
+  }
+  if(!validValue(opts.values.type)) {
+    opts.messager.setError("Please select Type Format");
+    return;
+  }
+  if(opts.values.serie) {
+    if(!validValue(opts.values.serie.value)) {
+      opts.messager.setError("Please select Serie");
+      return;
     }
-  };
-
-}
-
-
-function getFormObject(form) {
-  let object = {};
-  [...form.getElementsByTagName('INPUT'), ...form.getElementsByTagName('SELECT')].filter(a => a.getAttribute('name')).forEach((a) => {
-    if(a.getAttribute('name').includes('[]')) {
-      if(typeof object[a.getAttribute('name')] !== 'undefined') {
-        object[a.getAttribute('name')].push(a.getAttribute('type') === 'checkbox' ? a.checked : a.value);
-      } else {
-        object[a.getAttribute('name')] = [a.getAttribute('type') === 'checkbox' ? a.checked : a.value];
-      }
-    } else {
-      object[a.getAttribute('name')] = a.getAttribute('type') === 'checkbox' ? a.checked : a.value;
+    if(!validValue(opts.values.serie.number)) {
+      opts.messager.setError("Please select number in Serie");
+      return;
     }
+  }
+  if(opts.values.next !== null && !validValue(opts.values.next)) {
+    opts.messager.setError("Please select Next book");
+    return;
+  }
+  if(opts.values.prev !== null && !validValue(opts.values.prev)) {
+    opts.messager.setError("Please select Previous book");
+    return;
+  }
+  opts.saveButton.disabled = true;//disable until http request finish
+  opts.loaderEl.show('Saving Book');
+  doHttpRequest('/save/book', {
+    method: 'POST',
+    body: jsonToFormData(opts.values)
+  }).then((response) => {
+    opts.loaderEl.hide();
+    opts.saveButton.disabled = false;
+    if(!response) {
+      opts.messager.setError("Error from Server, Please try again");
+      return;
+    }
+    if(response.status !== true) {
+      opts.messager.setError(response.message);
+      return;
+    }
+    opts.messager.setMessage("Book Saved");
+    location.reload();//reload in order to clear inputs
   });
-  return object;
 }
 
-function showErrorMessage(element,message) {
-  element.style.display = 'block';
-  element.getElementsByTagName('P')[0].innerHTML = message;
-  setTimeout(() => {
-    element.style.display = 'none';
-  },3000);
+
+function buildFormData(formData, data, parentKey) {
+  if (data && typeof data === 'object' && !(data instanceof Date) && !(data instanceof File)) {
+    Object.keys(data).forEach(key => {
+      buildFormData(formData, data[key], parentKey ? `${parentKey}[${key}]` : key);
+    });
+  } else {
+    const value = data == null ? '' : data;
+    formData.append(parentKey, value);
+  }
+}
+
+function jsonToFormData(data) {
+  const formData = new FormData();
+  buildFormData(formData, data);
+  return formData;
 }

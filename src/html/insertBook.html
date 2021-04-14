@@ -30,11 +30,11 @@
       </div>
       <div class = "insert-line">
         <p>Language: </p>
-        <input type="text" name='language' value="" required/>
+        <input type="text" name='language' value="" id='book-lang' required/>
       </div>
       <div class = "insert-line">
         <p>Original Language: </p>
-        <input type="text" name='original_language' value="" required/>
+        <input type="text" name='original_language' value="" id='book-lang-org' required/>
       </div>
       <div class = "insert-line">
         <p>ISBN:</p>
@@ -42,7 +42,7 @@
       </div>
       <div class = "insert-line">
         <p>Store/Site Name:</p>
-        <input type="text" name='store' value="" required/>
+        <input type="text" name='store' value="" id='book-store' required/>
       </div>
     </div>
     <div class = "insert-new-book-text-inputs">
@@ -71,13 +71,8 @@
     </div>
     <div class = "insert-line">
       <div class = "book-insert-submit-holder">
-        <button type="submit" class = "black-white-button">Save</button>
+        <button type="submit" class = "black-white-button" id = 'save'>Save</button>
       </div>
-    </div>
-  </form>
-  <div class = "insert-book-message" id='message'>
-    <div class="">
-      <p>Oppss. error!!</p>
     </div>
   </div>
 </body>

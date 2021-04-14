@@ -26,6 +26,26 @@ class Basic {
     return result;
   }
 
+  findAllIndexes(arr, el, insensitive = false) {
+    /*if insensitive convert all to lower case*/
+    if(insensitive) {
+      arr = arr.map(a => a.toLowerCase());
+    }
+    let output = [], idx;
+    /*infinite loop until break - indexOf returns (-1)*/
+    while(true) {
+      idx = arr.indexOf(el);
+      /*el not present in array - exit*/
+      if(idx === -1) {
+        break;
+      }
+      /*save index*/
+      output.push(idx);
+      /*cut arr - start next index search from (this index + 1)*/
+      arr = arr.slice(idx + 1);
+    }
+    return output;
+  }
 
   async doFetch(url, settings = null, options = {}) {
     let response = [fetch(url, settings)];
@@ -234,6 +254,12 @@ class Basic {
     return str;
   }
 
+  insensitiveCompare(a,b) {
+    if(typeof a === 'boolean' ||  typeof b === 'boolean') {//in case of booleans
+      return a === b;
+    }
+    return a.toLowerCase().trim() === b.toLowerCase().trim();
+  }
 
   buildBookObject(book,type) {
     return '<div class = "obj"><p>' + book.name + "</p>" + '<img src = "/pic/' + type + '/' + book.id + '"></div>';
@@ -285,6 +311,10 @@ class Basic {
 
   isObject(s) {
     return typeof s === 'object' && s;
+  }
+
+  isEmptyObject(e) {
+    return this.isObject(e) && Object.keys(e).length === 0;
   }
 
   isArray(arr){
@@ -360,6 +390,84 @@ class Basic {
     </div>
     </div>
     </div>`;
+  }
+
+  formDataToJson(formData) {
+    let json = {}, tmp, tracker;
+    for(let i in formData ) {
+      tmp = this.formDataNameToKeys(i);
+      if(tmp.path) {//this is a json
+        if(typeof json[tmp.name] === 'undefined') {//first time this name appers in json
+          json[tmp.name] = {};
+        }
+        //iterate path and create the parts that not exist
+        tracker = json[tmp.name];
+        for(let o = 0 , l = tmp.path.length ; o < l ; o ++ ) {
+          if(o !== tmp.path.length - 1) {//this is not the last element, create path or walk inside
+            if(typeof tracker[tmp.path[o]] === 'undefined') {//not eixst - create it
+              tracker[tmp.path[o]] = {};
+            }
+            //walk in
+            tracker = tracker[tmp.path[o]];
+          } else {//last element - set value
+            tracker[tmp.path[o]] = this.stringToDataAndType(formData[i]);//convert "false" to false, "null" to null
+          }
+        }
+      } else {//no path just a normal variable
+        json[tmp.name] = this.stringToDataAndType(formData[i]);//convert "false" to false, "null" to null
+      }
+    }
+    /*
+    if this book is a collection of stories it will appear like:
+    collection: {
+    '0': {title: '...',pages: '..',author: '..',cover: '..'},
+    '1': {title: '...',pages: '..',author: '..',cover: '..'},
+    ...
+
+    the keys are just the index in the array that was transformed to fromdata before submitting it
+    convert it to array
+    */
+
+    if(json.collection && this.isObject(json.collection) && !this.isEmptyObject(json.collection) ) {
+      json.collection = Object.values(json.collection);
+    }
+    return json;
+  }
+
+  stringToDataAndType(dta) {
+    /*
+    "false" to false
+    "undefined" to undefined
+    "null" to null
+    oterwise return the input
+    */
+    switch(dta) {
+      case 'false':
+      return false;
+      break;
+      case 'null':
+      return null;
+      break;
+      case 'undefined':
+      return undefined;
+      break;
+      default:
+      return dta;
+      break;
+    }
+  }
+
+  formDataNameToKeys(name) {
+    let out = {
+      /*get name before parameters*/
+      name: name.split('[')[0],
+      path: null
+    }
+    name = name.match(/\[(.*?)\]/g);
+    if(name) {
+      out.path = name.map(a => a.replace(/[\[]/,'').replace(/[\]]/,''));
+    }
+    return out;
   }
 }
 module.exports = new Basic();

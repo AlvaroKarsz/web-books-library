@@ -963,3 +963,145 @@ img:hover {
   font-size: 18px;
   display: none;
 }
+
+.messager-holder-error {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  z-index: 1000;
+  padding: 28px;
+  background-color: rgba(255,0,0,0.9);
+  font-size: 30px;
+  border-radius: 20px;
+  border: 2px solid white;
+  box-shadow: 10px 10px 60px rgb(255 255 255 / 40%);
+}
+
+.messager-holder-normal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  z-index: 1000;
+  padding: 28px;
+  background-color: rgba(0,255,0,0.9);
+  font-size: 30px;
+  border-radius: 20px;
+  border: 2px solid white;
+  box-shadow: 10px 10px 60px rgb(255 255 255 / 40%);
+}
+
+.general-loader {
+  /*display: none;*/
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%) scale(1.7);
+}
+
+.general-loader div {
+  animation: general-loader 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  transform-origin: 40px 40px;
+}
+.general-loader div:after {
+  content: " ";
+  display: block;
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  margin: -4px 0 0 -4px;
+}
+.general-loader div:nth-child(1) {
+  animation-delay: -0.036s;
+}
+.general-loader div:nth-child(1):after {
+  top: 63px;
+  left: 63px;
+}
+.general-loader div:nth-child(2) {
+  animation-delay: -0.072s;
+}
+.general-loader div:nth-child(2):after {
+  top: 68px;
+  left: 56px;
+}
+.general-loader div:nth-child(3) {
+  animation-delay: -0.108s;
+}
+.general-loader div:nth-child(3):after {
+  top: 71px;
+  left: 48px;
+}
+.general-loader div:nth-child(4) {
+  animation-delay: -0.144s;
+}
+.general-loader div:nth-child(4):after {
+  top: 72px;
+  left: 40px;
+}
+.general-loader div:nth-child(5) {
+  animation-delay: -0.18s;
+}
+.general-loader div:nth-child(5):after {
+  top: 71px;
+  left: 32px;
+}
+.general-loader div:nth-child(6) {
+  animation-delay: -0.216s;
+}
+.general-loader div:nth-child(6):after {
+  top: 68px;
+  left: 24px;
+}
+.general-loader div:nth-child(7) {
+  animation-delay: -0.252s;
+}
+.general-loader div:nth-child(7):after {
+  top: 63px;
+  left: 17px;
+}
+.general-loader div:nth-child(8) {
+  animation-delay: -0.288s;
+}
+.general-loader div:nth-child(8):after {
+  top: 56px;
+  left: 12px;
+}
+@keyframes general-loader {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.main-olay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.6);
+}
+
+.main-olay-message {
+  position: fixed;
+  left: 50%;
+  top: 60%;
+  color: white;
+  transform: translate(-50%,-50%);
+  font-size: 40px;
+  font-weight: 100;
+}

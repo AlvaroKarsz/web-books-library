@@ -89,7 +89,7 @@ class WikiClass {
       /*source pic exists*/
       imagesArr.push(
         (
-          returnLinks ? response['thumbnail']['source'] : 
+          returnLinks ? response['thumbnail']['source'] :
 
           new Promise((resolve,reject) => {
 

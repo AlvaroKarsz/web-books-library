@@ -6,6 +6,7 @@ class GoodReads {
     this.KEY = config.GOOD_READS_KEY;
     this.RATINGS_URL = 'https://www.goodreads.com/book/review_counts.json';
     this.ISBN_BY_TITLE_AND_AUTHOR_URL = 'https://www.goodreads.com/book/title.json';
+    this.MAX_ISBNS_IN_HTTP_PAYLOAD = 500;
   }
 
   async fetchRating(isbn) {
@@ -34,6 +35,64 @@ class GoodReads {
       rating: response.books[0].average_rating,
       count: response.books[0].work_ratings_count,
     };
+  }
+
+  async fetchRatings(isbns) {
+    /*
+    fetch goodreads's ratings by book isbns
+    MANY BOOK
+    */
+
+    /*must be an array*/
+    if(!basicFunctions.isArray(isbns)) {
+      isbns = [isbns];
+    }
+
+    /*if this array is empty return just an empty array*/
+    if(!isbns.length) {
+      return [];
+    }
+
+    /*
+    request payload has a limit
+    cut arr to small arrays to avoid error from HTTP request
+    */
+    isbns = this.cutIsbnArrToLegalSizeIsbnArr(isbns);
+
+    /*
+    loop through array of arrays and make http requests
+    */
+    let output = [];//save here all responses
+    let requestSettings = {
+      method:'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    },
+    response;
+
+    for(let d = 0 , f = isbns.length ; d < f ; d ++ ) {
+      /*create http payload for this list of arrays*/
+      requestSettings.body = JSON.stringify({
+        key: this.KEY,
+        isbns: isbns[d],
+        format: 'json'
+      });
+      /*make http request*/
+      response = await basicFunctions.doFetch(this.RATINGS_URL, requestSettings, {timeout:10000});
+      if(response && response.books) {
+        output = [...output, ...response.books];
+      }
+    }
+    return output;
+  }
+
+  cutIsbnArrToLegalSizeIsbnArr(arr) {
+    let output = [];
+    for(let i = 0, l = arr.length ; i < l ; i += this.MAX_ISBNS_IN_HTTP_PAYLOAD) {
+      output.push(arr.slice(i, i + this.MAX_ISBNS_IN_HTTP_PAYLOAD));
+    }
+    return output;
   }
 
   async fetchIsbnFromTitleAndAuthor(title, author) {

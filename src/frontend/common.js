@@ -1,3 +1,11 @@
+function validValue(val) {
+  return isString(validValue) ? val.trim() : val;
+}
+
+function isString(a) {
+  return typeof a === 'string';
+}
+
 async function doHttpRequest(url, settings = null) {
   let request = null;
   try {
@@ -13,8 +21,14 @@ class Loader {
   constructor(parent, ops = {}) {
     this.parent = parent;
     this.classCSS = ops.classLoader || 'bottom-loader';
+    this.overlayClass = ops.overlayClass || 'main-olay';
     this.numberOfInnerDivs = 8;
     this.ops = ops;
+
+    if(ops.autoPost) {
+      this.build();
+      this.hide();
+    }
   }
 
   build() {
@@ -29,6 +43,12 @@ class Loader {
   }
 
   makeHolder() {
+    if(this.ops.withOverlay) {
+      this.overlay = document.createElement('DIV');
+      this.overlay.className = this.overlayClass;
+      this.parent.appendChild(this.overlay);
+      this.parent = this.overlay;
+    }
     this.holder = document.createElement('DIV');
     this.holder.className = this.classCSS;
     if(this.ops.cssForceLoader) {
@@ -71,6 +91,9 @@ class Loader {
     if(this.messageP) {
       this.messageP.style.display = 'none';
     }
+    if(this.overlay) {
+      this.parent.style.display = 'none';
+    }
   }
 
   show() {
@@ -78,12 +101,18 @@ class Loader {
     if(this.messageP) {
       this.messageP.style.display = 'block';
     }
+    if(this.overlay) {
+      this.parent.style.display = 'block';
+    }
   }
 
   delete() {
     this.holder.remove();
     if(this.messageP) {
       this.messageP.remove();
+    }
+    if(this.overlay) {
+      this.parent.remove();
     }
   }
 }
@@ -876,6 +905,26 @@ class StoriesCollection {
     this.build();
   }
 
+  get() {
+    if(!this.checkBox.checked || this.noSavedStories()) {
+      return null;
+    }
+    let output = [];
+    for(let k in this.stories) {
+      output.push({
+        title: this.stories[k].title,
+        pages: this.stories[k].pages,
+        author: this.stories[k].author,
+        cover: this.stories[k].pointer.getCover()
+      });
+    }
+    return output;
+  }
+
+  noSavedStories() {
+    return Object.keys(this.stories).length === 0;
+  }
+
   clearStories() {
     this.stories = {};
     this.storiesInProcess = {};
@@ -1075,7 +1124,6 @@ class StoriesCollection {
   }
 
   getFolderFiles() {
-    console.log(this.folderUploader.files.length);
     return [...this.folderUploader.files].filter(a => /^image/.test(a.type)).sort((a, b) => {
       return parseInt(a.name).toString().localeCompare(parseInt(b.name).toString(), undefined, {
         numeric: true,
@@ -1263,6 +1311,7 @@ class StoriesCollection {
       counter = 0;
       while(counter < arrLength) {
         storiesToWorkWith[counter].pointer.setCover(imagesFromFolder[counter].src);
+        storiesToWorkWith[counter].pointer.remoteSave();
         counter ++;
       }
     };
@@ -1475,6 +1524,10 @@ class Story {
     if(opts.values) {
       this.autoLoadStory(opts.values);
     }
+  }
+
+  getCover() {
+    return this.cover;
   }
 
   declareStoryInProcess() {
@@ -1711,6 +1764,10 @@ class Story {
       this.authorCheckBox.checked = false;
       this.authorInput.value = values.author
     }
+    this.prepareToSaveStory();
+  }
+
+  remoteSave() {
     this.prepareToSaveStory();
   }
 
@@ -2356,6 +2413,7 @@ class CheckboxGroup {
     this.titleClassName = opts.titleClassName || 'main-title-cbox';
     this.checkboxesFromInput = opts.checkboxes || [];
     this.checkboxes = {};
+    this.selected = '';
     this.build();
     this.activate();
   }
@@ -2366,7 +2424,6 @@ class CheckboxGroup {
   }
 
   activate() {
-    this.setDefaultOne();
     this.allowOneCheckedAtAnyTime();
   }
 
@@ -2374,6 +2431,10 @@ class CheckboxGroup {
     this.mainHolder = document.createElement('DIV');
     this.mainHolder.classname = this.holderClass;
     this.parent.appendChild(this.mainHolder);
+  }
+
+  get() {
+    return this.selected;
   }
 
   makeCheckbox(title, code) {
@@ -2407,9 +2468,74 @@ class CheckboxGroup {
     for(let i in this.checkboxes) {
       this.checkboxes[i].onchange = (e) => {
         for(let j in this.checkboxes) {
-          this.checkboxes[j].checked = this.checkboxes[j] === e.target ? true : false;
+          if(this.checkboxes[j] === e.target) {
+            this.selected = j;
+            this.checkboxes[j].checked = true;
+          } else {
+            this.checkboxes[j].checked = false;
+          }
         }
       };
     }
+  }
+}
+
+class Messager {
+  constructor(opts = {}) {
+    this.parent = opts.parent || document.body;
+    this.errorClass = opts.errorClass || 'messager-holder-error';
+    this.messageClass = opts.messageClass || 'messager-holder-normal';
+    this.isShown = false;
+    this.makeSkeleton();
+  }
+
+  show() {
+    this.isShown = true;
+    this.div.style.display = 'block';
+  }
+
+  hide() {
+    this.isShown = false;
+    this.div.style.display = 'none';
+  }
+
+  isCurrentlyShown() {
+    return this.isShown;
+  }
+
+  set() {
+    if(this.isCurrentlyShown()) {
+      this.hide();
+    }
+    this.show();
+    setTimeout(() => {
+      this.hide();
+    }, 3000);
+  }
+
+  makeSkeleton() {
+    this.div = document.createElement('DIV');
+    this.setErrorClass();
+    this.parent.appendChild(this.div)
+  }
+
+  setError(m) {
+    this.div.innerHTML = m;
+    this.setErrorClass();
+    this.set();
+  }
+
+  setMessage(m) {
+    this.div.innerHTML = m;
+    this.setMessageClass();
+    this.set();
+  }
+
+  setErrorClass() {
+    this.div.className = this.errorClass;
+  }
+
+  setMessageClass() {
+    this.div.className = this.messageClass;
   }
 }

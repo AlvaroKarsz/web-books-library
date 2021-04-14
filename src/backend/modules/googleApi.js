@@ -74,6 +74,32 @@ class GoogleAPI {
     return null;
   }
 
+  async fetchIsbnByTitleAndAuthorBulk(dataArr) {
+    let isbns = [];
+    /*
+    exactly like fetchIsbnByTitleAndAuthor method, but for more than 1 element
+    just make some parallel requests to fetchIsbnByTitleAndAuthor method.
+    */
+    for(let i = 0 , l = dataArr.length ; i < l ; i ++ ) {
+      isbns.push(
+        this.fetchIsbnByTitleAndAuthor(dataArr[i].title, dataArr[i].author)
+      );
+    }
+
+    /*
+    now wait for all promises to resolve and return output
+    */
+    isbns = await Promise.all(isbns);
+    /*
+    now add isbn to evert element and return the dataArr with isbns attached
+    */
+    dataArr = dataArr.map((el, ind) => {
+      el.isbn = isbns[ind];
+      return el;
+    });
+    return dataArr;
+  }
+
   async fetchCoversByTitleAndAuthor(title, author = null, returnLinks = true) {
     /*
     if returnLinks is true, this function will return just remote links to pictures
