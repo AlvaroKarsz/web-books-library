@@ -704,4 +704,7 @@ app.get('/serieList', async (req, res) => {
   );
 });
 
-app.listen(config.PORT, '192.168.1.15');
+app.listen(
+  config.PORT,
+  basic.getLocalIpAddress()/*listen at current local IP address*/
+);

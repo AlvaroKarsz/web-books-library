@@ -2,6 +2,7 @@ const fetch = require('node-fetch');
 const db = require('../db/functions');
 const path = require('path');
 const fs = require('fs');
+const ip = require("ip");
 const config = require('../config.js');
 
 class Basic {
@@ -468,6 +469,10 @@ class Basic {
       out.path = name.map(a => a.replace(/[\[]/,'').replace(/[\]]/,''));
     }
     return out;
+  }
+
+  getLocalIpAddress() {
+    return  ip.address();
   }
 }
 module.exports = new Basic();
