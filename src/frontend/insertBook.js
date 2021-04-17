@@ -1,3 +1,1162 @@
+
+class StoriesCollection {
+  constructor(parent, opts = {}) {
+    this.parent = parent;
+    this.stories = {};//each story has a unique ID key (internal use) and story json as value
+    this.storiesInProcess = {};//same as this.stories but not saves stories
+    this.nextUniqueId = 0;//stories will ask for unique ID, save here
+    this.decodePicUrl = "/decodePicture";
+    this.checkBoxSpanClass = opts.checkBoxSpanClass || "radio-button-checkmark";
+    this.checkBoxLabelClass = opts.checkBoxSpanClass || "radio-button-container";
+    this.mainDivClass = opts.mainDivClass || "hide-div";
+    this.optionPanelButtonsClass = opts.optionPanelButtonsClass || "black-white-button";
+    this.hiddenFileUploaderClass = opts.hiddenFileUploaderClass || "hidden-file-uploader";
+    this.storiesHolderClass = opts.storiesHolderClass || "collection-stry-holder";
+    this.optionsPanelClass = opts.optionsPanelClass || "collection-stories-options";
+    this.checkBoxTextClass = opts.checkBoxTextCkass || "main-title-cbox";
+    this.folderPicsHolderClass = opts.folderPicsHolderClass || 'folder-pictures-holder';
+    this.folderPicturesCloseButtonHolder = opts.folderPicturesCloseButtonHolder || 'folder-pictures-holder-close-button-holder';
+    this.folderPictureImageHolderClass = opts.folderPictureImageHolderClass || 'folder-pictures-holder-single-pic-holder';
+    this.folderPicsHolderMainClass = opts.folderPicsHolderMainClass || 'folder-pictures-holder-main';
+    this.loaderMessageClass = opts.loaderMessageClass || 'loader-p-text';
+    this.mainPagesInput = opts.pagesInput || null;
+    this.mainAuthorInput = opts.mainAuthorInput || null;
+    this.lastPageInCaseOfCollectionDecoder = null;//in cases when 2 content pages are used, save last one page here, so first in next page will calculate pages value using this value
+    this.dragable = null;
+    this.build();
+  }
+
+  get() {
+    if(!this.checkBox.checked || this.noSavedStories()) {
+      return null;
+    }
+    let output = [];
+    for(let k in this.stories) {
+      output.push({
+        title: this.stories[k].title,
+        pages: this.stories[k].pages,
+        author: this.stories[k].author,
+        cover: this.stories[k].pointer.getCover()
+      });
+    }
+    return output;
+  }
+
+  noSavedStories() {
+    return Object.keys(this.stories).length === 0;
+  }
+
+  clearStories() {
+    this.stories = {};
+    this.storiesInProcess = {};
+    this.storiesHolder.innerHTML = '';
+    this.lastPageInCaseOfCollectionDecoder = null;
+  }
+
+  getUniqueID() {
+    return ++ this.nextUniqueId;
+  }
+
+  setStoryInProcess(id, pointer) {
+    delete this.stories[id];
+    this.storiesInProcess[id] = pointer;
+  }
+
+  deleteStory(id) {
+    delete this.stories[id];
+    delete this.storiesInProcess[id];
+  }
+
+  saveNewStory(storyData) {
+    delete this.storiesInProcess[storyData.id];//remove from in process object
+    this.stories[storyData.id] = {
+      title: storyData.title,
+      pages: storyData.pages,
+      author: storyData.author,
+      pointer: storyData.pointer
+    };
+  }
+
+  checkIfStoryExists(storyData) {
+    for(let val in this.stories) {
+      if(val != storyData.id) {//this is not the same one been updated
+        if(this.insensitiveCompare(this.stories[val].title, storyData.title) && this.insensitiveCompare(this.stories[val].author, storyData.author)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  insensitiveCompare(a,b) {
+    if(typeof a === 'boolean' ||  typeof b === 'boolean') {//in case of booleans
+      return a === b;
+    }
+    return a.toLowerCase().trim() === b.toLowerCase().trim();
+  }
+
+  build() {
+    this.makeSkeleton();
+    this.activate();
+  }
+
+  activate() {
+    this.toggleFeatureOnCheckboxChanges();
+    this.triggerFileUploaderOnButtonClick();
+    this.handleTableImport();
+    this.clearStoriesOnclick();
+    this.triggerFolderUploaderOnButtonClick();
+    this.handleFolderSelection();
+    this.clearFolderPicturesOnclick();
+    this.assertFolderPicturesOnclick();
+    this.addStoryOnclick();
+    this.triggerDecoderploaderOnButtonClick();
+    this.handlePicDecoding();
+    this.handleStoriesCoverSearch();
+    this.handleSaveAllClick();
+  }
+
+  handleStoriesCoverSearch() {
+    this.findCoversBtn.onclick = () => {
+      for(let o in this.stories) {//search in all saved stories
+        this.stories[o].pointer.searchForCover();
+      }
+      for(let o in this.storiesInProcess) {//search in all not saved stories
+        this.storiesInProcess[o].searchForCover();
+      }
+    };
+  }
+
+  triggerDecoderploaderOnButtonClick() {
+    this.decodeButton.onclick = () => {
+      this.fileUploaderDecoder.click();
+    };
+  }
+
+  handlePicDecoding() {
+    this.fileUploaderDecoder.onchange = (e) => {
+      if(this.fileUploaderDecoder.files) {
+        this.askServerToDecodePicture();
+      }
+    };
+  }
+
+  clearPictureDecoderFileInput() {
+    this.fileUploaderDecoder.value = '';
+  }
+
+  async askServerToDecodePicture() {
+    const formData = new FormData();
+    formData.append('file', this.fileUploaderDecoder.files[0]);
+    const settings = {
+      method: 'POST',
+      body: formData
+      //headers: { 'Content-Type': 'application/json' }
+    };
+    this.clearPictureDecoderFileInput();
+    this.showMainLoader();
+    let request = await doHttpRequest(this.decodePicUrl, settings);
+    this.hideMainLoader();
+    if(!request) {//error from server
+      return;
+    }
+    request.forEach((bookElement, index) => {//iterate books and make story elements
+
+      new Story(this.storiesHolder, {
+        values: {
+          name: bookElement.name,
+          /*calculate pages by checking when next story starts if this is not the last element
+          if this is the last element:
+          if number of pages is set for this book - use it - if not set default value 0
+          */
+          pages: this.calculatePagesNumInStory(bookElement.page,  index + 1 !== request.length ? request[index + 1].page : null),
+          author: false
+        },
+        collectionPointer: this,
+        authorInput: this.mainAuthorInput
+      });
+
+    });
+    //save last one page here, so first in next page decoded (if any) will calculate pages value using this value
+    this.lastPageInCaseOfCollectionDecoder = request[request.length - 1].page;
+  }
+
+  getLastBookPageValue(currVal) {
+    //check if a page was decoded (and current value is bigger - if not check in the pages inp) - if so use last line page as the prev. value
+    if(this.lastPageInCaseOfCollectionDecoder && this.toInt(currVal) >= this.toInt(this.lastPageInCaseOfCollectionDecoder)) {
+      return this.lastPageInCaseOfCollectionDecoder;
+    }
+    //if pages value is set take it as last page in book
+    if (this.mainPagesInput && this.mainPagesInput.value) {
+      return this.mainPagesInput.value;
+    }
+    return null;
+  }
+
+  calculatePagesNumInStory(storyPages, nextStoryPages) {
+    const defaultVal = 0;
+    if(nextStoryPages === null) {//if no nextstorypages - this is the last one in collection - get last page if exists
+      nextStoryPages = this.getLastBookPageValue(storyPages);
+    }
+
+    if(nextStoryPages && this.isNumber(storyPages) && this.isNumber(nextStoryPages)) {
+      if(this.toInt(nextStoryPages) >= this.toInt(storyPages)) {
+        return nextStoryPages - storyPages || "1";//if starts and ends in same page it will be 0 - convert to 1
+      }
+    }
+    return defaultVal;
+  }
+
+  toInt(z) {
+    return parseInt(z, 10);
+  }
+
+  isNumber(z) {
+    return /^[0-9]+$/.test(z);
+  }
+
+  handleFolderSelection() {
+    this.folderUploader.onchange = (e) => {
+      if(this.folderUploader.files) {
+        this.doClearFolderPicturesHolder();//clear old pictures
+        this.makeFolderPicturesView();
+      }
+    };
+  }
+
+  handleTableImport() {
+    this.fileUploader.onchange = (e) => {
+      let fileReader = new FileReader();
+      fileReader.onload = (loadEvt) => {
+        this.decodeStoriesTable(loadEvt.target.result);
+      };
+      fileReader.readAsBinaryString(this.fileUploader.files[0]);
+    };
+  }
+
+  decodeStoriesTable(rawData) {
+    let xlData = XLSX.read(rawData, {type : 'binary'}),
+    firstSheetName = xlData.SheetNames[0];
+    xlData = XLSX.utils.sheet_to_row_object_array(xlData.Sheets[firstSheetName]);
+    //array of 0 => story name, 1 => pages, 2 => author (if not exists will be set to collection author)
+    xlData = xlData.map(a => Object.values(a).slice(0,3));
+    xlData = xlData.filter(a => a.length >= 2);//at least 2
+    this.bulkInsertStories(xlData);
+  }
+
+  getFolderFiles() {
+    return [...this.folderUploader.files].filter(a => /^image/.test(a.type)).sort((a, b) => {
+      return parseInt(a.name).toString().localeCompare(parseInt(b.name).toString(), undefined, {
+        numeric: true,
+        sensitivity: 'base'
+      });
+    });
+  }
+
+  makeFolderPicturesView() {
+    this.showFolderHolder();
+    let readers = [],
+    files =  this.getFolderFiles();
+
+    for(let i = 0 , l = files.length ; i < l ; i ++ ) {
+      readers.push(new FileReader());
+      readers[readers.length - 1].onload = (evt) => {
+        this.addPictureToFolderHolder(evt.target.result, files[i].name);
+      };
+      readers[readers.length - 1].readAsDataURL(files[i]);
+    }
+  }
+
+  removeExtensionFromFileName(a) {
+    a = a.split('.');
+    a.pop();
+    return a.join('.');
+  }
+
+  addPictureToFolderHolder(src,fileName) {
+    fileName = this.removeExtensionFromFileName(fileName);
+    let imgHolder = document.createElement('DIV'),
+    img = document.createElement('IMG'),
+    title = document.createElement('P');
+    imgHolder.className = this.folderPictureImageHolderClass;
+    img.src = src;
+    title.innerHTML = fileName;
+    imgHolder.appendChild(title);
+    imgHolder.appendChild(img);
+    this.folderPicsHolder.appendChild(imgHolder);
+    this.makeDragablePicture(img);
+  }
+
+  makeDragablePicture(img) {
+    //make a copy and drag it, the original copy will not move
+    img.onmousedown = (e) => {//make the clone
+      e.preventDefault();
+      e.stopPropagation();
+      if(e.which === 1) {//left click
+        this.createPictureClose(e,img);
+        this.startDragable();
+      }
+    };
+  }
+
+  startDragable() {
+    window.onmousemove = (e) => {//element move
+      this.dragable.style.left = `${e.clientX-this.dragable.width*0.5}px`;
+      this.dragable.style.top = `${e.clientY-this.dragable.height*0.5}px`;
+      window.storyIsCurrentlyDragged = true;
+    };
+
+    window.onmouseup = () => {//element released
+      //remove cloned element and remove window listeners
+      this.dragable.remove();
+      this.dragable = null;
+      window.onmousemove = null;
+      window.onmouseup = null;
+      setTimeout(() => {//turn off, first preceed with the mouse event on endpoint
+        window.storyIsCurrentlyDragged = false;
+      },0);
+    };
+  }
+
+  createPictureClose(event, pic) {
+    this.dragable = pic.cloneNode();
+    document.body.appendChild(this.dragable);
+    this.dragable.style.cssText = `width:${pic.width}px;height:${pic.height}px;position: fixed; opacity:0.8;`;
+    this.dragable.style.left = `${event.clientX-pic.width * 0.5}px`;
+    this.dragable.style.top = `${event.clientY-pic.height * 0.5}px`;
+  }
+
+  triggerFolderUploaderOnButtonClick() {
+    this.selectPictureFolderButton.onclick = () => {
+      this.folderUploader.click();
+    };
+  }
+
+  makePictureFolderSelector() {
+    this.folderUploader = document.createElement('INPUT');
+    this.folderUploader.type = 'file';
+    this.folderUploader.className = this.hiddenFileUploaderClass;
+    this.folderUploader.webkitdirectory = true;
+    this.folderUploader.multiple = true;
+    this.optionPanel.appendChild(this.folderUploader);
+  }
+
+  makeSkeleton() {
+    this.buildCheckbox("Collection of Stories:");
+    this.makeMainHolder();
+    this.makeOptionsPanel();
+    this.makeMainLoader();
+    this.makePicturesFolderHolder();
+    this.makeStoriesHolder();
+  }
+
+  makeMainLoader() {
+    this.mainLoader = new Loader(this.mainHolder, {
+      message: 'Decoding Picture',
+      messageClass: this.loaderMessageClass
+    });
+    this.mainLoader.build();
+    this.hideMainLoader();
+  }
+
+  hideMainLoader() {
+    this.mainLoader.hide();
+  }
+
+  showMainLoader() {
+    this.mainLoader.show();
+  }
+
+  makeStoriesHolder() {
+    this.storiesHolder = document.createElement('DIV');
+    this.storiesHolder.className = this.storiesHolderClass;
+    this.mainHolder.appendChild(this.storiesHolder);
+  }
+
+  makePicturesFolderHolder() {
+    let headerTitle = document.createElement('P'),
+    btnHolder = document.createElement('DIV');
+    headerTitle.innerHTML = 'Pictures From Selected Folder';
+    this.folderHeaderMain = document.createElement('DIV');
+    this.folderHeaderMain.className = this.folderPicsHolderMainClass;
+    this.folderPicsHolder = document.createElement('DIV');
+    this.folderPicsHolder.className = this.folderPicsHolderClass;
+    this.folderPicsHolderCloseButton = document.createElement('BUTTON');
+    this.folderPicsHolderCloseButton.type = 'button';
+    this.folderPicsHolderCloseButton.innerHTML = 'Clear';
+    this.folderPicsHolderAssertButton = document.createElement('BUTTON');
+    this.folderPicsHolderAssertButton.type = 'button';
+    this.folderPicsHolderAssertButton.innerHTML = 'Order Asert';
+    this.folderPicsHolderCloseButton.className = this.optionPanelButtonsClass;
+    this.folderPicsHolderAssertButton.className = this.optionPanelButtonsClass;
+    this.folderPicsHolderAssertButton.style.marginLeft = '15px';
+    btnHolder.className = this.folderPicturesCloseButtonHolder;
+    this.folderHeaderMain.appendChild(headerTitle);
+    this.folderHeaderMain.appendChild(btnHolder);
+    btnHolder.appendChild(this.folderPicsHolderCloseButton);
+    btnHolder.appendChild(this.folderPicsHolderAssertButton);
+    this.folderHeaderMain.appendChild(this.folderPicsHolder);
+    this.mainHolder.appendChild(this.folderHeaderMain);
+  }
+
+  assertFolderPicturesOnclick() {
+    this.folderPicsHolderAssertButton.onclick = () => {
+      let savedAsWell = confirm('Do you want to overwrite covers in saved stories as well?'),
+      storiesToWorkWith = [];
+
+      for(let o in this.storiesInProcess) {//not saved surly will receive cover
+        storiesToWorkWith.push({
+          id: o,
+          pointer: this.storiesInProcess[o]
+        });
+      }
+
+      if(savedAsWell) {//user asked for saves as well
+        for(let o in this.stories) {
+          storiesToWorkWith.push({
+            id: o,
+            pointer: this.stories[o].pointer
+          });
+        }
+      }
+
+      //sort by id
+      storiesToWorkWith = storiesToWorkWith.sort((a, b) => {
+        return a.id.localeCompare(b.id, undefined, {
+          numeric: true,
+          sensitivity: 'base'
+        });
+      });
+      let imagesFromFolder = [...this.folderPicsHolder.getElementsByTagName('IMG')],
+      arrLength = Math.min(imagesFromFolder.length, storiesToWorkWith.length),//loop until the smallest array ends
+      counter = 0;
+      while(counter < arrLength) {
+        storiesToWorkWith[counter].pointer.setCover(imagesFromFolder[counter].src);
+        storiesToWorkWith[counter].pointer.remoteSave();
+        counter ++;
+      }
+    };
+  }
+
+  handleSaveAllClick() {
+    this.saveAllBtn.onclick = () => {
+      for(let o in this.storiesInProcess) {
+        this.storiesInProcess[o].sendSaveCommand();
+      }
+    };
+  }
+
+  clearFolderPicturesOnclick() {
+    this.folderPicsHolderCloseButton.onclick = () => {
+      this.doClearFolderPicturesHolder();
+      this.folderUploader.value = '';
+    };
+  }
+
+  doClearFolderPicturesHolder() {
+    this.folderPicsHolder.innerHTML = '';
+    this.hideFolderHolder();
+  }
+
+  hideFolderHolder() {
+    this.folderHeaderMain.style.display = 'none';
+  }
+
+  showFolderHolder() {
+    this.folderHeaderMain.style.display = 'block';
+  }
+
+
+  makeOptionsPanel() {
+    this.optionPanel = document.createElement('DIV');
+    this.optionPanel.className = this.optionsPanelClass;
+    this.mainHolder.appendChild(this.optionPanel);
+
+    this.clearButton = this.makeButton('Clear All', "Clear all Stories");
+    this.importTableButton = this.makeButton('Import Table', "Import a table of stories");
+    this.makeHiddenFileUploader();
+    this.selectPictureFolderButton = this.makeButton('Select Pictures Folder', "Import a Covers folder");
+    this.makePictureFolderSelector();
+    this.decodeButton = this.makeButton('Decode Contents Picture', "Decode Stories from content page");
+    this.makeHiddenFileUploaderDecoder();
+    this.addStoryButton = this.makeButton('Add Story', "Add a new story");
+    this.findCoversBtn = this.makeButton('Find Covers', "Find cover to all stories");
+    this.saveAllBtn = this.makeButton('Save All Stories', "Save all unsaved Stories");
+  }
+
+  makeHiddenFileUploaderDecoder() {
+    this.fileUploaderDecoder = document.createElement('INPUT');
+    this.fileUploaderDecoder.type = 'file';
+    this.fileUploaderDecoder.className = this.hiddenFileUploaderClass;
+    this.fileUploaderDecoder.setAttribute('accept', 'image/*');
+    this.optionPanel.appendChild(this.fileUploaderDecoder);
+  }
+
+  makeHiddenFileUploader() {
+    this.fileUploader = document.createElement('INPUT');
+    this.fileUploader.type = 'file';
+    this.fileUploader.className = this.hiddenFileUploaderClass;
+    this.fileUploader.setAttribute('accept', '.csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel');
+    this.optionPanel.appendChild(this.fileUploader);
+  }
+
+  makeButton(txt, title = null) {
+    let b = document.createElement('BUTTON');
+    b.type = 'button';
+    if(title) {
+      b.title = title;
+    }
+    b.className = this.optionPanelButtonsClass;
+    b.innerHTML = txt;
+    this.optionPanel.appendChild(b);
+    return b;
+  }
+
+  makeMainHolder() {
+    this.mainHolder = document.createElement('DIV');
+    this.mainHolder.className = this.mainDivClass;
+    this.parent.appendChild(this.mainHolder);
+  }
+
+  buildCheckbox(txt) {
+    let div = document.createElement('DIV'),
+    label = document.createElement('LABEL'),
+    span = document.createElement('SPAN'),
+    p = document.createElement('P');
+    p.className = this.checkBoxTextClass;
+    this.checkBox = document.createElement('INPUT');
+    this.checkBox.type = 'checkbox';
+    p.innerHTML = txt;
+    span.className = this.checkBoxSpanClass;
+    label.className = this.checkBoxLabelClass;
+    div.appendChild(label);
+    label.appendChild(this.checkBox);
+    label.appendChild(span);
+    div.appendChild(p);
+    this.parent.appendChild(div);
+  }
+
+  toggleFeatureOnCheckboxChanges() {
+    this.checkBox.onchange = (e) => {
+      if(this.checkBox.checked) {
+        this.show();
+      } else {
+        this.hide();
+      }
+    };
+  }
+
+  showCollection() {
+    this.checkBox.checked = true;
+    this.show();
+  }
+
+  triggerFileUploaderOnButtonClick() {
+    this.importTableButton.onclick = () => {
+      this.fileUploader.click();
+    };
+  }
+
+  clearStoriesOnclick() {
+    this.clearButton.onclick = () => {
+      this.clearStories();
+    };
+  }
+
+  addStoryOnclick() {
+    this.addStoryButton.onclick = () => {
+      new Story(this.storiesHolder, {
+        collectionPointer:this,
+        authorInput: this.mainAuthorInput
+      });
+    };
+  }
+
+  bulkInsertStories(stories) {
+    //array of 0 => story name, 1 => pages, 2 => author (if not exists will be set to collection author)
+    stories.forEach(a => this.addStoryWithValues(a));
+  }
+
+  addStoryWithValues(storyData) {
+    //array of 0 => story name, 1 => pages, 2 => author (if not exists will be set to collection author)
+    new Story(this.storiesHolder, {
+      values: {
+        name: storyData[0],
+        pages: storyData[1],
+        author: storyData[2] || false
+      },
+      collectionPointer: this,
+      authorInput: this.mainAuthorInput
+    });
+  }
+
+  newStoryTitle(title) {
+    this.showCollection();
+    new Story(this.storiesHolder, {
+      values: {
+        name: title,
+        pages: '',
+        author: false
+      },
+      collectionPointer: this,
+      authorInput: this.mainAuthorInput
+    });
+  }
+
+  show() {
+    this.mainHolder.style.display = 'block';
+  }
+
+  hide() {
+    this.mainHolder.style.display = 'none';
+  }
+}
+
+class Story {
+  constructor(parent, opts = {}) {
+    this.parent = parent;
+    this.collectionPointer = opts.collectionPointer;
+    this.title = '';
+    this.author = '';
+    this.pages = '';
+    this.cover = '';
+    this.id = '';
+    this.saved = false;
+    this.errorIsShown = false;
+    this.storyClass = opts.storyClass || 'collection-single-story-holder';
+    this.inputLineClass = opts.inputLineClass || 'collection-story-line';
+    this.checkBoxSpanClass = opts.checkBoxSpanClass || "radio-button-checkmark";
+    this.checkBoxLabelClass = opts.checkBoxSpanClass || "radio-button-container";
+    this.saveButtonClass = opts.saveButtonClass || 'black-white-button';
+    this.editButtonClass = opts.editButtonClass || 'black-white-button';
+    this.titleClass = opts.titleClass || "story-single-title";
+    this.closeButtonHolderClass = opts.closeButtonHolderClass || "close-single-story";
+    this.editButtonHolderClass = opts.editButtonHolderClass || "edit-single-story";
+    this.errorClass = opts.errorClass || 'story-single-error-div';
+    this.linePermanentClass = opts.linePermanentClass || 'story-single-line-permanent-p';
+    this.permanentCoverClass = opts.permanentCoverClass || 'super-mini-pic';
+    this.mainAuthorInput = opts.authorInput || null;
+    this.permanentLines = [];
+    this.build();
+    this.activate();
+    this.listenToDrops();//a image may be dropped
+    this.askCollectionForUniqueID();//generate unique ID
+    this.declareStoryInProcess();
+    if(opts.values) {
+      this.autoLoadStory(opts.values);
+    }
+  }
+
+  getCover() {
+    return this.cover;
+  }
+
+  declareStoryInProcess() {
+    this.collectionPointer.setStoryInProcess(this.id, this);
+  }
+
+  listenToDrops() {
+    this.body.onmouseenter = (e) => {
+      if(e.fromElement && e.which === 0 && window.storyIsCurrentlyDragged && e.fromElement.nodeName === 'IMG') {//pic was droped, mouse is not clicked - add it to cover holder
+        this.addCover(e.fromElement.src);
+      }
+    }
+  }
+
+  build() {
+    this.body = document.createElement('DIV');
+    this.body.className = this.storyClass;
+    this.parent.appendChild(this.body);
+    this.makeHeader();
+    this.makeTitle();
+    this.titleInput = this.makeNormalInput('Title:');
+    this.pagesInput = this.makeNormalInput('Pages:', {type:'number'});
+    this.makeAuthorInput();
+    this.makeCoverSelector();
+    this.makeSaveButton();
+    this.makeErrorDiv();
+  }
+
+  hideCoverSelector() {
+    this.coverSelector.hide();
+  }
+
+  showCoverSelector() {
+    this.coverSelector.show();
+  }
+
+  getSelectedCover() {
+    return this.coverSelector.getSelected();
+  }
+
+  makeCoverSelector() {
+    this.coverSelector = new CoverSelector(this.body,{
+      getSearchCoverParamsCallback: () => {
+        return {
+          isbn: null,
+          author: this.authorCheckBox.checked ? this.mainAuthorInput.value : this.authorInput.value,
+          title: this.titleInput.value
+        };
+      },
+      selectedImageClassForUploder: 'super-mini-pic',
+      title: 'Cover',
+      buttonHolderTableCoverSelectorClass: 'tabs-buttons-holder-mini',
+      coverSelectorSelectMessageClassForce: {
+        width: '100%',
+        margin: '0 auto',
+        'font-size': '20px',
+        'text-align': 'center',
+        'margin-top': '10px'
+      }
+    });
+  }
+
+  addCover(src) {
+    this.coverSelector.sendFileSrcToUploader(src);
+  }
+
+  listenToEditButton() {
+    this.editButton.onclick = () => {
+      this.saved = false;
+      this.declareStoryInProcess();
+      this.hideEditButton();
+      this.removePermanentCover();
+      this.showCoverSelector();
+      this.cancelPermanentStory();
+    };
+  }
+
+  searchForCover() {
+    if(this.saved) {//if book saved - unsave it - edit buttonn click
+      this.editButton.click();
+    }
+    this.coverSelector.search();
+  }
+
+  setCover(src) {
+    if(this.saved) {//if book saved - unsave it - edit buttonn click
+      this.editButton.click();
+    }
+    this.addCover(src);
+  }
+
+  save() {
+    this.saveDataVariables();
+    this.hideCoverSelector();
+    this.sendDataToCollection();
+    this.saved = true;
+    this.showEditButton();
+    this.makePermanentStory();
+    this.makePermanentCover();
+  }
+
+  cancelPermanentStory() {
+    this.showInputHolder(this.titleInput);
+    this.showInputHolder(this.pagesInput);
+    this.showAuthorHolder();
+    this.showSaveButton();
+    this.returnErrorDiv();
+    this.mainTitle.innerHTML = "Edit - " + this.title;
+    this.clearPermanentLines();
+  }
+
+  clearPermanentLines() {
+    this.permanentLines.forEach(a => a.remove());
+    this.permanentLines.length = 0;
+  }
+
+  makePermanentCover() {
+    this.permanentCover = document.createElement('IMG');
+    this.permanentCover.src = this.cover;
+    this.permanentCover.className = this.permanentCoverClass;
+    this.body.appendChild(this.permanentCover);
+  }
+
+  removePermanentCover() {
+    this.permanentCover.remove();
+  }
+
+  makePermanentStory() {
+    this.removeInputHolder(this.titleInput);//remove title holder - title story is div title
+    this.removeInputHolder(this.pagesInput);//remove pages holder - pages will be saved as P
+    this.removeAuthorHolder();//remove author holder - will be saved as P
+    this.removeSaveButton();
+    this.killErrorDiv();//no more need for error displaier
+    this.mainTitle.innerHTML = this.title;//change div title to be as story
+    this.saveAsLine(`Pages: ${this.pages}`);
+    this.saveAsLine(`Author: ${this.author ? this.author : 'Same as Collection'}`);
+  }
+
+  saveDataVariables() {
+    this.title = this.titleInput.value.trim();
+    this.pages = this.pagesInput.value.trim();
+    this.author = this.authorCheckBox.checked ? false : this.authorInput.value.trim();
+    this.cover = this.getSelectedCover();
+  }
+
+  saveAsLine(txt) {
+    let p = document.createElement('P');
+    p.innerHTML = txt;
+    this.forceCSS(p, 'width', '100%');
+    p.className = this.linePermanentClass;
+    this.body.appendChild(p);
+    this.permanentLines.push(p);
+  }
+
+  sendDataToCollection() {
+    this.collectionPointer.saveNewStory({
+      id: this.id,
+      title: this.title,
+      pages: this.pages,
+      author: this.author,
+      pointer: this
+    });
+  }
+
+  sendCollectionStoryDeletedMessage() {
+    this.collectionPointer.deleteStory(this.id);
+  }
+
+  askCollectionForUniqueID() {
+    this.id = this.collectionPointer.getUniqueID();
+  }
+
+  askCollectionIfStoryIsRepeated(data) {
+    return this.collectionPointer.checkIfStoryExists(data);
+  }
+
+  activate() {
+    this.listenToCloseButton();
+    this.listenToSaveButton();
+    this.listenToEditButton();
+  }
+
+  removeInputHolder(a) {
+    a.parentNode.style.display = 'none';
+  }
+
+  showInputHolder(a) {
+    a.parentNode.style.display = 'block';
+  }
+
+  makeErrorDiv() {
+    this.errorDiv = document.createElement('DIV');
+    this.errorDiv.className = this.errorClass;
+    this.body.appendChild(this.errorDiv)
+  }
+
+  returnErrorDiv() {
+    this.errorDiv.style.opacity = 1;
+  }
+
+  killErrorDiv() {
+    this.errorDiv.style.opacity = 0;
+  }
+
+  setError(err) {
+    if(this.errorIsCurrentlyShown()) {
+      this.hideError();
+    }
+    this.errorDiv.innerHTML = err;
+    this.showError();
+    setTimeout(() => {
+      this.hideError();
+    }, 3000);
+  }
+
+  showError() {
+    this.errorIsShown = true;
+    this.errorDiv.style.display = 'block';
+  }
+
+  hideError() {
+    this.errorIsShown = false;
+    this.errorDiv.style.display = 'none';
+  }
+
+  errorIsCurrentlyShown() {
+    return this.errorIsShown;
+  }
+
+  autoLoadStory(values) {
+    this.titleInput.value = values.name;
+    this.pagesInput.value = values.pages;
+    if(values.author) {
+      this.authorCheckBox.checked = false;
+      this.authorInput.value = values.author
+    }
+    this.prepareToSaveStory();
+  }
+
+  remoteSave() {
+    this.prepareToSaveStory();
+  }
+
+  prepareToSaveStory() {
+    this.hideError();
+    if(! this.validate() ) {
+      this.setError('Please fill all inputs');
+      return;
+    }
+    if( this.askCollectionIfStoryIsRepeated({
+      id: this.id,
+      title: this.titleInput.value,
+      pages: this.pagesInput.value,
+      author: this.authorCheckBox.checked ? false : this.authorInput.value
+    }) ) {
+      this.setError('Repeated Story');
+      return;
+    }
+    this.save();
+  }
+
+  sendSaveCommand() {
+    if(!this.saved) {
+      this.prepareToSaveStory();
+    }
+  }
+
+  listenToSaveButton() {
+    this.saveButton.onclick = () => {
+      this.prepareToSaveStory();
+    };
+  }
+
+  validate() {
+    return this.validInputValue(this.titleInput) && this.validInputValue(this.pagesInput) && ( this.authorCheckBox.checked || this.validInputValue(this.authorInput) );
+  }
+
+  validInputValue(inp) {
+    return inp.value.trim() !== '';
+  }
+
+  listenToCloseButton() {
+    this.closeButton.onclick = () => {
+      this.kill();
+    };
+  }
+
+  makeHeader() {
+    this.headerDiv = document.createElement('DIV');
+    this.body.appendChild(this.headerDiv);
+    this.makeEditButton();
+    this.makeCloseButton();
+  }
+
+  makeEditButton() {
+    let holder = document.createElement('DIV');
+    this.editButton = document.createElement('BUTTON');
+    this.editButton.type = 'button';
+    this.editButton.innerHTML = 'Edit';
+    holder.className = this.editButtonHolderClass;
+    this.editButton.className = this.editButtonClass;
+    this.headerDiv.appendChild(holder);
+    holder.appendChild(this.editButton);
+  }
+
+  showEditButton() {
+    this.editButton.parentNode.style.display = 'inline-block';
+  }
+
+  hideEditButton() {
+    this.editButton.parentNode.style.display = 'none';
+  }
+
+  makeCloseButton() {
+    let holder = document.createElement('DIV');
+    this.closeButton = document.createElement('BUTTON');
+    this.closeButton.type = 'button';
+    this.closeButton.innerHTML = 'X';
+    holder.className = this.closeButtonHolderClass;
+    this.headerDiv.appendChild(holder);
+    holder.appendChild(this.closeButton);
+  }
+
+  makeTitle() {
+    this.mainTitle = document.createElement('P');
+    this.mainTitle.innerHTML = 'New Story';
+    this.mainTitle.className = this.titleClass;
+    this.forceCSS(this.mainTitle, 'width', '100%') ;
+    this.body.appendChild(this.mainTitle);
+  }
+
+
+  showSaveButton() {
+    this.saveButton.style.display = 'inherit';
+  }
+
+  removeSaveButton() {
+    this.saveButton.style.display = 'none';
+  }
+
+  makeSaveButton() {
+    this.saveButton = document.createElement('BUTTON');
+    this.saveButton.className = this.saveButtonClass;
+    this.saveButton.innerHTML = 'Save';
+    this.saveButton.type = 'button';
+    this.body.appendChild(this.saveButton);
+  }
+
+  makeNormalInput(txt,opts = {}) {
+    let inp = document.createElement('INPUT'),
+    title = document.createElement('P'),
+    holder = opts.parent ? opts.parent : document.createElement('DIV');
+    inp.type = opts.type ? opts.type : 'text';
+    holder.className = this.inputLineClass;
+    title.innerHTML = txt;
+    holder.appendChild(title);
+    holder.appendChild(inp);
+    this.body.appendChild(holder);
+    return inp;
+  }
+
+  forceCSS(el, attribute, value) {
+    el.setAttribute('style', `${el.getAttribute('style') || ''};${attribute}:${value} !important`);
+  }
+
+  showAuthorHolder() {
+    this.authorMainHolder.style.display = 'block';
+    this.showInputHolder(this.authorInput);
+    this.checkBoxAuthorHolder.style.display = 'block';
+  }
+
+  removeAuthorHolder() {
+    this.authorMainHolder.style.display = 'none';
+    this.removeInputHolder(this.authorInput);
+    this.checkBoxAuthorHolder.style.display = 'none';
+  }
+
+  makeAuthorInput() {
+    this.authorMainHolder = document.createElement('DIV');
+    this.authorInputHolder = document.createElement('DIV');
+    this.body.appendChild(this.authorMainHolder);
+    this.authorMainHolder.appendChild(this.authorInputHolder);
+    this.buildCheckbox("Author as Collection Author", this.authorMainHolder);
+    this.authorInput = this.makeNormalInput("Author:", {parent:this.authorInputHolder});
+    this.hideAuthorInput();//hidden by default
+    this.hanleAuthorCheckbox();
+  }
+
+  hanleAuthorCheckbox() {
+    this.authorCheckBox.onchange = () => {
+      if(this.authorCheckBox.checked) {
+        this.hideAuthorInput();
+      } else {
+        this.showAuthorInput();
+      }
+    };
+  }
+
+  hideAuthorInput() {
+    this.authorInputHolder.style.visibility = 'hidden';
+  }
+
+  showAuthorInput() {
+    this.authorInputHolder.style.visibility = 'visible';
+  }
+
+  buildCheckbox(txt, parent) {
+    this.checkBoxAuthorHolder = document.createElement('DIV');
+    let label = document.createElement('LABEL'),
+    span = document.createElement('SPAN'),
+    p = document.createElement('P');
+    this.authorCheckBox = document.createElement('INPUT');
+    this.authorCheckBox.type = 'checkbox';
+    this.authorCheckBox.checked = true;
+    this.forceCSS(p, 'width', 'max-content');
+    this.forceCSS(p, 'font-size', '17px');
+    p.innerHTML = txt;
+    span.className = this.checkBoxSpanClass;
+    label.className = this.checkBoxLabelClass;
+    this.checkBoxAuthorHolder.appendChild(label);
+    label.appendChild(this.authorCheckBox);
+    label.appendChild(span);
+    this.checkBoxAuthorHolder.appendChild(p);
+    parent.appendChild(this.checkBoxAuthorHolder);
+  }
+
+  kill() {
+    this.sendCollectionStoryDeletedMessage();
+    this.body.remove();
+  }
+}
+
+class CheckboxGroup {
+  constructor(parent, opts = {}) {
+    this.parent = parent;
+    this.holderClass = opts.holderClass || 'checkbox-group';
+    this.checkBoxSpanClass = opts.checkBoxSpanClass || 'radio-button-checkmark';
+    this.checkBoxLabelClass = opts.checkBoxLabelClass || 'radio-button-container';
+    this.titleClassName = opts.titleClassName || 'main-title-cbox';
+    this.checkboxesFromInput = opts.checkboxes || [];
+    this.checkboxes = {};
+    this.selected = '';
+    this.build();
+    this.activate();
+  }
+
+  build() {
+    this.makeHolder();
+    this.checkboxesFromInput.forEach(a => this.makeCheckbox(a.title, a.code));
+  }
+
+  activate() {
+    this.allowOneCheckedAtAnyTime();
+  }
+
+  makeHolder() {
+    this.mainHolder = document.createElement('DIV');
+    this.mainHolder.classname = this.holderClass;
+    this.parent.appendChild(this.mainHolder);
+  }
+
+  get() {
+    return this.selected;
+  }
+
+  makeCheckbox(title, code) {
+    let div = document.createElement('DIV'),
+    label = document.createElement('LABEL'),
+    span = document.createElement('SPAN'),
+    p = document.createElement('P'),
+    checkbox = document.createElement('INPUT');
+    checkbox.type = 'checkbox';
+    p.innerHTML = title;
+    span.className = this.checkBoxSpanClass;
+    label.className = this.checkBoxLabelClass;
+    p.className = this.titleClassName;
+    div.appendChild(label);
+    label.appendChild(checkbox);
+    label.appendChild(span);
+    div.appendChild(p);
+    this.mainHolder.appendChild(div);
+    this.checkboxes[code] = checkbox;
+  }
+
+  setDefaultOne() {//check the first one
+    this.getFirstCheckBox().checked = true;
+  }
+
+  getFirstCheckBox() {
+    return this.checkboxes[Object.keys(this.checkboxes)[0]];
+  }
+
+  allowOneCheckedAtAnyTime() {
+    for(let i in this.checkboxes) {
+      this.checkboxes[i].onchange = (e) => {
+        for(let j in this.checkboxes) {
+          if(this.checkboxes[j] === e.target) {
+            this.selected = j;
+            this.checkboxes[j].checked = true;
+          } else {
+            this.checkboxes[j].checked = false;
+          }
+        }
+      };
+    }
+  }
+}
+
 (async () => {
   let els = {
     typeDiv: document.getElementById('type-group'),
@@ -208,22 +1367,4 @@ function saveBook(opts) {
     opts.messager.setMessage("Book Saved");
     location.reload();//reload in order to clear inputs
   });
-}
-
-
-function buildFormData(formData, data, parentKey) {
-  if (data && typeof data === 'object' && !(data instanceof Date) && !(data instanceof File)) {
-    Object.keys(data).forEach(key => {
-      buildFormData(formData, data[key], parentKey ? `${parentKey}[${key}]` : key);
-    });
-  } else {
-    const value = data == null ? '' : data;
-    formData.append(parentKey, value);
-  }
-}
-
-function jsonToFormData(data) {
-  const formData = new FormData();
-  buildFormData(formData, data);
-  return formData;
 }

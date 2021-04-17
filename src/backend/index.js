@@ -248,6 +248,10 @@ app.get('/frontend/insertBook', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'frontend', 'insertBook.js'));
 });
 
+app.get('/frontend/insertWish', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'frontend', 'insertWish.js'));
+});
+
 app.get('/pic/:picType/:picId', function (req, res) {
   let pictureId = req.params.picId, pictureType = req.params.picType;
   pictureType = basic.convertFolderType(pictureType);
@@ -261,6 +265,19 @@ app.get('/pic/:picType/:picId', function (req, res) {
 
 app.get('/insert/book', async (req, res) => {
   let file = fs.readFileSync(path.join(__dirname, '..', 'html', 'insertBook.html'), 'UTF8');
+  res.send(await basic.renderHtml({
+    html: file,
+    folder: '',
+    totalCount: '',
+    objects: '',
+    urlParams: '',
+    title: '',
+    route: ''
+  }));
+});
+
+app.get('/insert/wish', async (req, res) => {
+  let file = fs.readFileSync(path.join(__dirname, '..', 'html', 'insertWish.html'), 'UTF8');
   res.send(await basic.renderHtml({
     html: file,
     folder: '',
@@ -472,6 +489,68 @@ app.post('/save/book', async (req, res) => {
   res.send(JSON.stringify({status:true}));
 });
 
+app.post('/save/wish', async (req, res) => {
+  let requestBody = basic.formDataToJson(basic.trimAllFormData(req.body)), /*request body*/
+  /*save cover in another variable, and remove from requestBody*/
+  cover = requestBody.cover;
+  requestBody.cover = null;
+  /*check year validity*/
+  if(basic.toInt(requestBody.year) > new Date().getFullYear() || ! basic.isValidInt(requestBody.year)) {
+    res.send(JSON.stringify({status:false, message:'Invalid Year'}));
+    return;
+  }
+  /*if this book is part of serie - check serie parameters*/
+  if(requestBody.serie) {
+    /*both serie value (serie's id) and seire pages should be a valid integer - validate it*/
+    if(!basic.isValidInt(requestBody.serie.value)) {
+      res.send(JSON.stringify({status:false, message:'Invalid Serie'}));
+      return;
+    }
+    if(!basic.isValidInt(requestBody.serie.number)) {
+      res.send(JSON.stringify({status:false, message:'Invalid Number in Serie'}));
+      return;
+    }
+    /*make sure the serie ID actualy exist*/
+    if(! await db.checkIsSerieIdExists(requestBody.serie.value)) {
+      res.send(JSON.stringify({status:false, message:'Serie not exist'}));
+      return;
+    }
+    /*check if the number in serie is already taken*/
+    if(await db.bookFromSerieExistsInWishList(requestBody.serie.value, requestBody.serie.number)) {
+      res.send(JSON.stringify({status:false, message:'Number in serie is already taken'}));
+      return;
+    }
+  }
+
+  /*make sure isbn isn't taken*/
+  if(await db.checkIfIsbnExistsInWishList(requestBody.isbn)) {
+    res.send(JSON.stringify({status:false, message:'ISBN already exist in DB.'}));
+    return;
+  }
+
+  /*make sure this book has an unique title, author combination*/
+  if(await db.checkIfBookAuthorAndTitleAndYearExistsInWishList(requestBody.title,requestBody.author, requestBody.year)) {
+    res.send(JSON.stringify({status:false, message:'A book with this title by same author already exist.'}));
+    return;
+  }
+
+  //save data in DB
+  await db.saveWish(requestBody);
+
+  //now save cover (if any):
+  if(cover) {
+    const imagesHandler = require('./modules/images.js'),
+    wishId = await db.getWishIdFromISBN(requestBody.isbn),/*get new id, received when wish saved in DB*/
+    picPath = await imagesHandler.saveImage(cover,path.join(__dirname,'..','..','wishlist'), wishId);/*save picture and get the full path (in order to get picture md5)*/
+    //now save md5 in DB
+    await db.savePictureHashes({
+      id: wishId,
+      folder: 'wishlist',
+      md5: imagesHandler.calculateMD5(picPath)
+    });
+  }
+  res.send(JSON.stringify({status:true}));
+});
 
 app.post('/search/cover/', async (req, res) => {
   /*search book cover based on received ISBN*/

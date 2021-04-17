@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css"   href="/style">
+  <title>Library | Insert Wish</title>
+</head>
+<body>
+  {{TOP_NAV}}
+  <div class = 'title-new-book'>Insert New Wish</div>
+  <div class = "auto-fill-holder" id = 'auto-fill'></div>
+  <div class = "insert-book">
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Book Details</div>
+      <div class = "insert-line">
+        <p>Book Name:</p>
+        <input type="text"  name='title' required id='book-title' value=""/>
+      </div>
+      <div class = "insert-line">
+        <p>Author:</p>
+        <input type="text" name='author' id='book-author' value="" required/>
+      </div>
+      <div class = "insert-line">
+        <p>Publication Year:</p>
+        <input type="number" name='year' value="" id='book-year' required/>
+      </div>
+      <div class = "insert-line">
+        <p>ISBN:</p>
+        <input type="text" name='isbn' id='book-isbn' value="" required/>
+      </div>
+    </div>
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Book Serie</div>
+      <div class = "insert-line-serie" id = 'series-holder'></div>
+    </div>
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Book Cover</div>
+      <div class = "insert-pic-holder" id = 'cover-element-holder'></div>
+    </div>
+    <div class = "insert-line">
+      <div class = "book-insert-submit-holder">
+        <button type="submit" class = "black-white-button" id = 'save'>Save</button>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="/frontend/common"></script>
+<script src="/frontend/insertWish"></script>
+</html>

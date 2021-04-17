@@ -540,6 +540,39 @@ class dbFunctions {
     return res.rows;
   }
 
+  async saveWish(bookJson) {
+    /*
+    Needed actions:
+    1) Insert wish to DB.
+    2) Save the wish rating in ratings table.
+    */
+
+    /********************************************************************************************
+    INSERT WISH INTO DB
+    *********************************************************************************************/
+    /*general parameters*/
+    let queryParams = ['name','year','author','isbn'];
+    let queryArguments = [bookJson.title, bookJson.year, bookJson.author,bookJson.isbn];
+
+    /*if this wish is part of serie - add serie parameters*/
+    if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
+      queryParams.push('serie','serie_num');
+      queryArguments.push(bookJson.serie.value,bookJson.serie.number);
+    }
+
+    /*build SQL query, new wish id should be returned in order to use in other tables (if needed)*/
+    let query = `INSERT INTO wish_list(${queryParams.join(",")}) VALUES (${queryParams.map((element, index) => '$' + (index + 1))}) RETURNING id;`;
+
+    /*send query and get wish ID*/
+    let wishId = await pg.query(query, queryArguments);
+    wishId = wishId.rows[0].id;
+
+    /********************************************************************************************
+    SAVE WISH RATING IN DB
+    *********************************************************************************************/
+    this.saveBookRating(wishId, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
+  }
+
   async saveBook(bookJson) {
     /*
     Needed actions:
@@ -797,6 +830,13 @@ class dbFunctions {
       return result;
     }
 
+    async bookFromSerieExistsInWishList(serieId, serieNum) {
+      const query = "SELECT EXISTS(SELECT 1 FROM wish_list WHERE serie=$1 AND serie_num=$2);";
+      let result = await pg.query(query, [serieId, serieNum]);
+      result = result.rows[0]['exists'];
+      return result;
+    }
+
     async checkIfBookIdExists(id) {
       const query = "SELECT EXISTS(SELECT 1 FROM my_books WHERE id=$1);";
       let result = await pg.query(query, [id]);
@@ -811,6 +851,13 @@ class dbFunctions {
       return result;
     }
 
+    async checkIfIsbnExistsInWishList(isbn) {
+      const query = "SELECT EXISTS(SELECT 1 FROM wish_list WHERE UPPER(isbn)=$1);";
+      let result = await pg.query(query, [isbn.toUpperCase()]);
+      result = result.rows[0]['exists'];
+      return result;
+    }
+
     async checkIfBookAuthorAndTitleExists(title, author) {
       const query = "SELECT EXISTS(SELECT 1 FROM my_books WHERE UPPER(author)=$1 AND UPPER(name)=$2);";
       let result = await pg.query(query, [author.toUpperCase(), title.toUpperCase()]);
@@ -818,8 +865,22 @@ class dbFunctions {
       return result;
     }
 
+    async checkIfBookAuthorAndTitleAndYearExistsInWishList(title, author, year) {
+      const query = "SELECT EXISTS(SELECT 1 FROM wish_list WHERE UPPER(author)=$1 AND UPPER(name)=$2 AND year=$3);";
+      let result = await pg.query(query, [author.toUpperCase(), title.toUpperCase(), year]);
+      result = result.rows[0]['exists'];
+      return result;
+    }
+
     async getBookIdFromISBN(isbn) {
       const query = "SELECT id FROM my_books WHERE isbn=$1;";
+      let result = await pg.query(query, [isbn]);
+      result = result.rows[0]['id'];
+      return result;
+    }
+
+    async getWishIdFromISBN(isbn) {
+      const query = "SELECT id FROM wish_list WHERE isbn=$1;";
       let result = await pg.query(query, [isbn]);
       result = result.rows[0]['id'];
       return result;
@@ -842,6 +903,9 @@ class dbFunctions {
     }
 
     async savePictureHashes(dataArr) {
+      if(!Array.isArray(dataArr)) {/*force array*/
+        dataArr = [dataArr];
+      }
       let query = `INSERT INTO cache(md5, folder, id) VALUES `, paramCounter = 0, paramArr = [];
       dataArr.forEach((cvr) => {
         query += `($${++ paramCounter},$${++ paramCounter},$${++ paramCounter}),`;
