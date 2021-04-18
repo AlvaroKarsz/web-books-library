@@ -149,7 +149,7 @@ class OpenLibrary {
     /*number of pages can appear in 2 different values*/
     if(response.number_of_pages) {
       output.pages = response.number_of_pages;
-    } else if (response.pagination) {
+    } else if (response.pagination && /[0-9]+/.test(response.pagination)) {
       output.pages = response.pagination.match(/[0-9]+/)[0];
     }
 
