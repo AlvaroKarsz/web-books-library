@@ -6,6 +6,10 @@ function isString(a) {
   return typeof a === 'string';
 }
 
+function sleep(t) {
+  return new Promise(res => setTimeout(res, t));
+}
+
 async function doHttpRequest(url, settings = null) {
   let request = null;
   try {

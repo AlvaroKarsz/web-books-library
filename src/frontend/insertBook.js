@@ -1293,7 +1293,7 @@ class CheckboxGroup {
   };
 })()
 
-function saveBook(opts) {
+async function saveBook(opts) {
   if(!validValue(opts.values.title)) {
     opts.messager.setError("Please fill Title Input");
     return;
@@ -1350,21 +1350,21 @@ function saveBook(opts) {
   }
   opts.saveButton.disabled = true;//disable until http request finish
   opts.loaderEl.show('Saving Book');
-  doHttpRequest('/save/book', {
+  let response = await doHttpRequest('/save/book', {
     method: 'POST',
     body: jsonToFormData(opts.values)
-  }).then((response) => {
-    opts.loaderEl.hide();
-    opts.saveButton.disabled = false;
-    if(!response) {
-      opts.messager.setError("Error from Server, Please try again");
-      return;
-    }
-    if(response.status !== true) {
-      opts.messager.setError(response.message);
-      return;
-    }
-    opts.messager.setMessage("Book Saved");
-    location.reload();//reload in order to clear inputs
   });
+  opts.loaderEl.hide();
+  opts.saveButton.disabled = false;
+  if(!response) {
+    opts.messager.setError("Error from Server, Please try again");
+    return;
+  }
+  if(response.status !== true) {
+    opts.messager.setError(response.message);
+    return;
+  }
+  opts.messager.setMessage("Book Saved");
+  await sleep(3000);
+  location.reload();//reload in order to clear inputs
 }
