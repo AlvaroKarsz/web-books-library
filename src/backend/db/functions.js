@@ -914,6 +914,535 @@ class dbFunctions {
       query = query.replace(/[,]$/,'') + " ON CONFLICT (id, folder) DO UPDATE SET md5 = EXCLUDED.md5, timestamp=TIMEZONE('ASIA/JERUSALEM'::TEXT, NOW());";//remove last comma + handle updates
       await pg.query(query, paramArr);
     }
+
+    async fetchWishById(id, filters, type) {
+      let query = ` SELECT
+      main.id AS id,
+      main.name AS name,
+      main.isbn AS isbn,
+      main.year AS year,
+      main.author AS author,
+      main.store AS store,
+      main.order_date AS order_date,
+      main.serie AS serie_id,
+      main.serie_num AS serie_num,
+      series.name AS serie,
+      ratings_e.rating AS rating,
+      ratings_e.count AS rating_count
+
+      FROM wish_list main
+
+      LEFT JOIN  series series
+      ON main.serie = series.id
+
+      LEFT JOIN  ratings ratings_e
+      ON main.id = ratings_e.id AND ratings_e.table_name = 'wish_list'
+
+      WHERE main.id = $1
+      GROUP BY
+
+      main.id,
+      main.name,
+      main.year,
+      main.author,
+      main.store,
+      main.ordered,
+      main.serie_num,
+      main.serie,
+      series.name,
+      ratings_e.rating,
+      ratings_e.count;`;
+      let result = await pg.query(query, [id]);
+      result = result.rows[0];
+
+      /*now get the next book id and prev. book id based on filters received*/
+      /*fetch all wishes in wanted order, then get the next and prev. id*/
+      let allWishes = [];
+      if(type === 'wish') {//fetch all wished and search there
+        allWishes = await this.fetchAllWishes(filters);
+      } else if (type === 'purchase') {//fetch from purchased list
+        allWishes = await this.fetchAllPurchased(filters);
+      }
+
+      /*iterate all wished until we reach the one with our ID*/
+      for(let i = 0 , l = allWishes.rows.length ; i < l ; i ++ ) {
+        if (allWishes.rows[i].id == id) {/*this listing is the one we are looking for*/
+          /*
+          first get "next id"
+          if selected wish is the last in the list, grab the first as next, if not just grab the next one
+          */
+          result.nextListingId = i === allWishes.rows.length - 1 ? allWishes.rows[0].id : allWishes.rows[i + 1].id;
+          /*
+          get "prev. id"
+          if selected wish is the first in the list, grab the last as prev., if not just grab the prev. one
+          */
+          result.prevListingId = i === 0 ? allWishes.rows[allWishes.rows.length - 1].id : allWishes.rows[i - 1].id;
+
+          /*exit loop - wanted data found*/
+          break;
+        }
+      }
+
+      /*if this book is part of serie, fetch next and prev. in serie*/
+      if(result.serie) {
+        query = `SELECT
+        (
+          SELECT id FROM wish_list WHERE serie = $1 AND serie_num = $2
+        ) AS serie_next_id,
+
+        (
+          SELECT name FROM wish_list WHERE serie = $3 AND serie_num = $4
+        ) AS serie_next_name,
+
+        (
+          SELECT id FROM wish_list WHERE serie = $5 AND serie_num = $6
+        ) AS serie_prev_id,
+
+        (
+          SELECT name FROM wish_list WHERE serie = $7 AND serie_num = $8
+        ) AS serie_prev_name
+        ;`;
+
+        let seriesResult = await pg.query(query, [
+          result.serie_id,
+          parseInt(result.serie_num,10) + 1,
+          result.serie_id,
+          parseInt(result.serie_num,10) + 1,
+          result.serie_id,
+          parseInt(result.serie_num,10) - 1,
+          result.serie_id,
+          parseInt(result.serie_num,10) - 1,
+        ]);
+        seriesResult = seriesResult.rows[0];
+        //merge results
+        result = {...result, ...seriesResult};
+      }
+      return result;
+    }
+
+    async fetchBookById(id, filters, type) {
+      let query = ` SELECT
+      my_books_main.id AS id,
+      my_books_main.name AS name,
+      my_books_main.isbn AS isbn,
+      my_books_main.year AS year,
+      my_books_main.author AS author,
+      my_books_main.store AS store,
+      my_books_main.language AS language,
+      my_books_main.original_language AS o_language,
+      my_books_main.type AS type,
+      my_books_main.pages AS pages,
+      my_books_main.read_order AS read_order,
+      my_books_main.read_date AS read_date,
+      my_books_main.listed_date AS listed_date,
+      my_books_main.completed AS read_completed,
+      my_books_main.collection AS is_collection,
+      my_books_main.serie AS serie_id,
+      my_books_main.serie_num AS serie_num,
+      series_table.name AS serie,
+      ratings_entry.rating AS rating,
+      ratings_entry.count AS rating_count,
+      JSON_STRIP_NULLS(
+        JSON_AGG(
+          JSONB_BUILD_OBJECT(
+            'name',
+            stories_table.name,
+            'id',
+            stories_table.id::TEXT,
+            'author',
+            COALESCE(
+              stories_table.author,
+              my_books_main.author
+            )
+          )
+        )
+      ) AS stories,
+      my_books_entry1.id AS next_id,
+      my_books_entry1.name AS next_name,
+      my_books_entry2.id AS prev_id,
+      my_books_entry2.name AS prev_name
+
+      FROM my_books my_books_main
+
+      LEFT JOIN my_books my_books_entry1
+      ON my_books_main.next = my_books_entry1.id
+
+      LEFT JOIN my_books my_books_entry2
+      ON my_books_main.id = my_books_entry2.next
+
+      LEFT JOIN ratings ratings_entry
+      ON my_books_main.id = ratings_entry.id AND ratings_entry.table_name = 'my_books'
+
+      LEFT JOIN series series_table
+      ON my_books_main.serie = series_table.id
+
+      LEFT JOIN stories stories_table
+      ON my_books_main.id = stories_table.parent
+
+      WHERE my_books_main.id = $1
+
+      GROUP BY
+
+      my_books_main.id,
+      my_books_main.name,
+      my_books_main.year,
+      my_books_main.author,
+      my_books_main.language,
+      my_books_main.original_language,
+      my_books_main.isbn,
+      my_books_main.type,
+      my_books_main.pages,
+      my_books_main.store,
+      my_books_main.read_order,
+      my_books_main.serie_num,
+      my_books_main.completed,
+      my_books_main.collection,
+      series_table.name,
+      my_books_main.listed_date,
+      my_books_entry1.id,
+      my_books_entry1.name,
+      my_books_entry2.id,
+      my_books_entry2.name,
+      ratings_entry.rating,
+      ratings_entry.count;`;
+
+
+      let result = await pg.query(query, [id]);
+      result = result.rows[0];
+
+      /*now get the next book id and prev. book id based on filters received*/
+      /*fetch all books in wanted order, then get the next and prev. id*/
+      let allBooks = [];
+      if(type === 'book') {//fetch all wished and search there
+        allBooks = await this.fetchAllBooks(filters);
+      } else if (type === 'read') {
+        allBooks = await this.fetchAllReads(filters);
+      }
+
+      /*iterate all book until we reach the one with our ID*/
+      for(let i = 0 , l = allBooks.rows.length ; i < l ; i ++ ) {
+        if (allBooks.rows[i].id == id) {/*this listing is the one we are looking for*/
+          /*
+          first get "next id"
+          if selected wish is the last in the list, grab the first as next, if not just grab the next one
+          */
+          result.nextListingId = i === allBooks.rows.length - 1 ? allBooks.rows[0].id : allBooks.rows[i + 1].id;
+          /*
+          get "prev. id"
+          if selected wish is the first in the list, grab the last as prev., if not just grab the prev. one
+          */
+          result.prevListingId = i === 0 ? allBooks.rows[allBooks.rows.length - 1].id : allBooks.rows[i - 1].id;
+
+          /*exit loop - wanted data found*/
+          break;
+        }
+      }
+      /*
+      if this is not a collection - clear stories value
+      it will contain empty line with author's name
+      */
+      if(!result.is_collection) {
+        result.stories = null;
+      } else {//if this is a collection of stories, sort the stories by ID
+        result.stories.sort((x,y) => x.id.localeCompare(y.id));
+      }
+
+      /*if this book is part of serie, fetch next and prev. in serie*/
+      if(result.serie) {
+        query = `SELECT
+        (
+          SELECT id FROM my_books WHERE serie = $1 AND serie_num = $2
+        ) AS serie_next_id,
+
+        (
+          SELECT name FROM my_books WHERE serie = $3 AND serie_num = $4
+        ) AS serie_next_name,
+
+        (
+          SELECT id FROM my_books WHERE serie = $5 AND serie_num = $6
+        ) AS serie_prev_id,
+
+        (
+          SELECT name FROM my_books WHERE serie = $7 AND serie_num = $8
+        ) AS serie_prev_name,
+
+        (
+          SELECT serie_num FROM my_books WHERE serie = $9 AND serie_num = $10
+        ) AS serie_next_num,
+
+        (
+          SELECT serie_num FROM my_books WHERE serie = $11 AND serie_num = $12
+        ) AS serie_prev_num;`;
+
+        let seriesResult = await pg.query(query, [
+          result.serie_id,
+          parseInt(result.serie_num,10) + 1,
+          result.serie_id,
+          parseInt(result.serie_num,10) + 1,
+          result.serie_id,
+          parseInt(result.serie_num,10) - 1,
+          result.serie_id,
+          parseInt(result.serie_num,10) - 1,
+          result.serie_id,
+          parseInt(result.serie_num,10) + 1,
+          result.serie_id,
+          parseInt(result.serie_num,10) - 1,
+        ]);
+        seriesResult = seriesResult.rows[0];
+        //merge results
+        result = {...result, ...seriesResult};
+      }
+      return result;
+    }
+
+    async markWishAsPurchased(id,store) {
+      /*get today's date*/
+      let date = new Date();
+      date  = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+
+      const query = `UPDATE wish_list
+      SET
+      ordered = 't',
+      store = $1,
+      order_date = $2
+      WHERE id = $3;`;
+      await pg.query(query, [store.trim().toUpperCase(), date, id]);
+    }
+
+    async fetchStoryById(id, filters) {
+      const query = `SELECT
+      my_stories_main.id AS id,
+      my_stories_main.name AS name,
+      my_stories_main.pages AS pages,
+      my_stories_main.author AS story_author,
+      my_stories_main.readed_date AS read_date,
+      my_stories_main.read_order AS read_order,
+      my_stories_main.completed AS read_completed,
+      my_books_main.year AS year,
+      my_books_main.name AS collection_name,
+      (
+        SELECT
+        stories_temp_entry_nested_double.index
+        FROM (
+          SELECT
+          stories_temp_entry_nested.id,
+          ROW_NUMBER () OVER (ORDER BY stories_temp_entry_nested.id) AS index
+          FROM stories stories_temp_entry_nested
+          WHERE my_books_main.id = stories_temp_entry_nested.parent
+          ORDER BY stories_temp_entry_nested.id
+        ) stories_temp_entry_nested_double
+        WHERE stories_temp_entry_nested_double.id = $1
+      ) AS collection_number,
+      my_books_main.author AS author,
+      my_books_main.language AS language,
+      my_books_main.listed_date AS listed_date,
+      my_books_main.original_language AS o_language,
+      my_books_main.id AS collection_id,
+      my_stories_entry1.id AS next_collection_id,
+      my_stories_entry1.name AS next_collection_name,
+      my_stories_entry2.id AS prev_collection_id,
+      my_stories_entry2.name AS prev_collection_name,
+      ratings_e.rating AS rating,
+      ratings_e.count AS rating_count
+
+      FROM stories my_stories_main
+
+      LEFT JOIN  my_books my_books_main
+      ON my_stories_main.parent = my_books_main.id
+
+      LEFT JOIN stories my_stories_entry1
+      ON my_stories_entry1.id = (
+        SELECT id FROM stories temp_stories
+        WHERE temp_stories.parent = my_stories_main.parent
+        AND
+        temp_stories.id > my_stories_main.id
+        ORDER BY temp_stories.id ASC
+        LIMIT 1
+      )
+
+      LEFT JOIN stories my_stories_entry2
+      ON my_stories_entry2.id = (
+        SELECT id FROM stories temp_stories
+        WHERE temp_stories.parent = my_stories_main.parent
+        AND
+        temp_stories.id < my_stories_main.id
+        ORDER BY temp_stories.id DESC
+        LIMIT 1
+      )
+
+      LEFT JOIN  ratings ratings_e
+      ON my_stories_main.id = ratings_e.id AND ratings_e.table_name = 'stories'
+
+      WHERE my_stories_main.id = $1
+      GROUP BY
+      my_stories_main.id,
+      my_stories_main.name,
+      my_stories_main.pages,
+      my_stories_main.author,
+      my_books_main.id,
+      my_books_main.name,
+      my_books_main.year,
+      my_books_main.author,
+      my_books_main.language,
+      my_books_main.listed_date,
+      my_stories_main.completed,
+      my_books_main.original_language,
+      my_books_main.read_order,
+      my_stories_entry1.id,
+      my_stories_entry1.name,
+      my_stories_entry2.id,
+      my_stories_entry2.name,
+      ratings_e.rating,
+      ratings_e.count;`;
+
+
+      let result = await pg.query(query, [id]);
+      result = result.rows[0];
+
+      /*now get the next story id and prev. book id based on filters received*/
+      /*fetch all stories in wanted order, then get the next and prev. id*/
+
+      let allBooks = await this.fetchAllStories(filters);
+
+
+      /*iterate all book until we reach the one with our ID*/
+      for(let i = 0 , l = allBooks.rows.length ; i < l ; i ++ ) {
+        if (allBooks.rows[i].id == id) {/*this listing is the one we are looking for*/
+          /*
+          first get "next id"
+          if selected wish is the last in the list, grab the first as next, if not just grab the next one
+          */
+          result.nextListingId = i === allBooks.rows.length - 1 ? allBooks.rows[0].id : allBooks.rows[i + 1].id;
+          /*
+          get "prev. id"
+          if selected wish is the first in the list, grab the last as prev., if not just grab the prev. one
+          */
+          result.prevListingId = i === 0 ? allBooks.rows[allBooks.rows.length - 1].id : allBooks.rows[i - 1].id;
+
+          /*exit loop - wanted data found*/
+          break;
+        }
+      }
+      return result;
+    }
+
+    async fetchSerieById(id, filters) {
+      const query = `SELECT
+      id,
+      name,
+      author,
+
+      (
+        SELECT
+        JSON_STRIP_NULLS(
+          JSON_AGG(
+            JSONB_BUILD_OBJECT(
+              'name',
+              name,
+              'id',
+              id::TEXT,
+              'number',
+              serie_num::TEXT
+            )
+            ORDER BY serie_num
+          )
+        ) FROM my_books
+        WHERE serie = $1
+      ) AS books,
+
+      (
+        SELECT
+        JSON_STRIP_NULLS(
+          JSON_AGG(
+            JSONB_BUILD_OBJECT(
+              'name',
+              name,
+              'id',
+              id::TEXT,
+              'number',
+              serie_num::TEXT
+            )
+            ORDER BY serie_num
+          )
+        )  FROM my_books
+        WHERE serie = $1 AND read_order IS NOT NULL
+      ) AS books_read,
+
+      (
+        SELECT
+        JSON_STRIP_NULLS(
+          JSON_AGG(
+            JSONB_BUILD_OBJECT(
+              'name',
+              name,
+              'id',
+              id::TEXT,
+              'number',
+              serie_num::TEXT
+            )
+            ORDER BY serie_num
+          )
+        ) FROM wish_list
+        WHERE serie = $1 AND ordered != 't'
+      ) AS wish_books,
+
+      (
+        SELECT
+        JSON_STRIP_NULLS(
+          JSON_AGG(
+            JSONB_BUILD_OBJECT(
+              'name',
+              name,
+              'id',
+              id::TEXT,
+              'number',
+              serie_num::TEXT
+            )
+            ORDER BY serie_num
+          )
+        ) FROM wish_list
+        WHERE serie = $1 AND ordered = 't'
+      ) AS purchased_books
+
+      FROM series
+
+      WHERE id = $1`;
+
+      let result = await pg.query(query, [id]);
+      result = result.rows[0];
+
+      /*now get the next serie id and prev. book id based on filters received*/
+      /*fetch all stories in wanted order, then get the next and prev. id*/
+
+      let allBooks = await this.fetchAllSeries(filters);
+
+
+      /*iterate all book until we reach the one with our ID*/
+      for(let i = 0 , l = allBooks.rows.length ; i < l ; i ++ ) {
+        if (allBooks.rows[i].id == id) {/*this listing is the one we are looking for*/
+          /*
+          first get "next id"
+          if selected wish is the last in the list, grab the first as next, if not just grab the next one
+          */
+          result.nextListingId = i === allBooks.rows.length - 1 ? allBooks.rows[0].id : allBooks.rows[i + 1].id;
+          /*
+          get "prev. id"
+          if selected wish is the first in the list, grab the last as prev., if not just grab the prev. one
+          */
+          result.prevListingId = i === 0 ? allBooks.rows[allBooks.rows.length - 1].id : allBooks.rows[i - 1].id;
+
+          /*exit loop - wanted data found*/
+          break;
+        }
+      }
+      return result;
+    }
+
+    async fetchReadById(id, filters, type) {
+      /*same as "fetch book by id, just different type"*/
+      return this.fetchBookById(...arguments);
+    }
+
   };
 
   module.exports = new dbFunctions();

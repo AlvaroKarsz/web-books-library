@@ -47,14 +47,6 @@ function setUrlParams(params) {
   window.location.href = url;
 }
 
-function getUrlParams() {
-  let currentURL = window.location.href.split('?')[0];
-  let params = new URLSearchParams(window.location.search),
-  result = {};
-  for(let val of params) result[val[0]] = val[1];
-  return result;
-}
-
 function handleFilterSubmit(filter, loader) {
   filter.onsubmit = (e) => {
     loader.style.display = 'inline-block';
@@ -121,12 +113,15 @@ async function loadBooksOnBottomReach(ratio, actionScript, fetchScript, imagesHo
 function buildBookObject(bookName, bookType, bookId, htmlHolder) {
   let div = document.createElement('DIV'),
   p = document.createElement('P'),
+  a = document.createElement('A'),
   img = document.createElement('IMG');
   div.className = 'obj';
   p.innerHTML = bookName;
   img.src = "/pic/" + bookType + '/' + bookId;
+  a.setAttribute('onclick', `window.location = "/${bookType}/${bookId}" + window.location.search;`);
   div.appendChild(p);
-  div.appendChild(img);
+  a.appendChild(img);
+  div.appendChild(a);
   htmlHolder.appendChild(div);
 }
 

@@ -14,6 +14,16 @@
 
 * {
   box-sizing: border-box;
+  font-family: cursive;
+}
+
+div{
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
 }
 
 body {
@@ -24,6 +34,12 @@ body {
 img {
   border: 2px solid gray;
   cursor: pointer;
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
 }
 img:hover {
   transform: scale(1.05);
@@ -52,7 +68,7 @@ img:hover {
 
 .line {
   text-align: center;
-  min-width: 1200px;
+  min-width: 1500px;
 }
 
 .obj {
@@ -495,7 +511,7 @@ img:hover {
 
 .folder-pictures-holder {
   display: block;
-  max-height: 400px;
+  max-height: 500px;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
@@ -509,12 +525,21 @@ img:hover {
   display: inline-block;
 }
 
+.folder-pictures-holder-single-pic-holder[big='t'] {
+  width: 440px;
+}
+
+.folder-pictures-holder-single-pic-holder[marked='t'] {
+  border: 3px solid rgba(255,255,255,0.4);
+  box-shadow: 5px 5px 20px rgb(255 255 255 / 20%);
+}
+
 .folder-pictures-holder-single-pic-holder p {
   text-align: center;
   width: inherit;
   padding: 0;
   margin: 5px 0;
-  font-size: 18px;
+  font-size: 17px;
   white-space: break-spaces;
   word-break: break-all;
   overflow-wrap: break-word;
@@ -522,10 +547,33 @@ img:hover {
   display: block;
 }
 
-.folder-pictures-holder img{
+.folder-pictures-holder-single-pic-holder[big='t'] p {
+  font-size: 22px;
+}
+
+.folder-pictures-holder-single-pic-holder[marked='t'] p{
+  font-size: 26px !important;
+}
+
+.folder-pictures-holder-single-pic-holder:not([big='t']) img{
   width: 104px !important;
   height: 140px !important;
   margin: 0 5px 0 5px !important;
+}
+
+.folder-pictures-holder-single-pic-holder[big='t']:not([marked='t']) img{
+  width: 205px !important;
+  height: 250px !important;
+  margin: auto;
+  display: block;
+}
+
+
+.folder-pictures-holder-single-pic-holder[marked='t'] img{
+  width: 250px !important;
+  height: 300px !important;
+  margin: auto;
+  display: block;
 }
 
 .collection-stry-holder {
@@ -1104,4 +1152,194 @@ img:hover {
   transform: translate(-50%,-50%);
   font-size: 40px;
   font-weight: 100;
+}
+
+.displayer-title div{
+  font-size: 35px;
+  text-align: center;
+  color: white;
+  font-weight: bold;
+  position: relative;
+  display: inline-block;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.displayer-title {
+  padding: 12px;
+}
+.displayer-title a{
+  display: inline-block;
+  color: white;
+  float: right;
+  cursor: pointer;
+  font-size: 40px;
+  margin-right: 20px;
+}
+
+.displayer-title a:hover {
+  transform: scale(1.05);
+}
+
+.displayer-body-pic-holder {
+  text-align: center;
+  min-width: 1200px;
+}
+
+.displayer-body {
+  padding: 20px;
+}
+
+.displayer-body-pic-holder img{
+  width: 300px;
+  height: 400px;
+  display: inline-block;
+}
+
+.displayer-body-line {
+  color: white;
+  font-size: 25px;
+  text-align: left;
+  color: white;
+  font-weight: 100;
+  position: relative;
+  padding: 8px;
+}
+
+.displayer-body-line p{
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+  font-size: 26px;
+  margin-left: 20px;
+}
+
+.rating-star {
+  color: white;
+  position: relative;
+  width: max-content;
+  transform: scale(1.8);
+  display: inline-block;
+  margin: 0 7px;
+}
+
+.partial-rating-star {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: gold;
+  overflow: hidden;
+}
+
+.displayer-body-arrow {
+  display: inline-block;
+  font-size: 110px;
+  top: -155px;
+  position: relative;
+  margin: 0 150px;
+  padding: 0;
+}
+
+.displayer-body-arrow a {
+  color: white;
+  cursor: pointer;
+}
+
+.displayer-body-arrow:hover {
+  transform: scale(1.05);
+}
+
+.displayer-body-serie {
+  color: white;
+  font-size: 25px;
+  text-align: left;
+  font-weight: 100;
+  position: relative;
+  padding: 8px;
+}
+
+.displayer-body-serie div {
+  margin-left: 25px;
+  padding: 5px 0;
+}
+
+.displayer-body-serie a{
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.displayer-body-serie a:hover {
+  color: grey;
+}
+
+.general-holder-book-displayer {
+  color: white;
+  font-size: 25px;
+  text-align: left;
+  font-weight: 100;
+  position: relative;
+  padding: 12px 6px;
+}
+
+.general-holder-book-displayer div {
+  margin-left: 25px;
+  padding: 5px 0;
+}
+
+.displayer-rating-line {
+  margin-left: 25px;
+  padding: 5px 0;
+}
+
+.displayer-options {
+  color: white;
+  text-align: center;
+  font-size: 20px;
+}
+
+.displayer-options div {
+  display: inline-block;
+  padding: 5px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+.displayer-options label {
+  cursor: pointer;
+}
+
+.displayer-options i {
+  font-size: 38px;
+}
+
+.displayer-options i:hover {
+  transform: scale(1.05);
+}
+
+.displayer-options p {
+  padding: 0;
+  margin: 0;
+  font-size: 24px;
+}
+
+.displayer-options form {
+  display: none;
+  position: absolute;
+  margin-left: -41px;
+  z-index: 5;
+}
+
+.displayer-options input{
+  border: none;
+  padding: 8px;
+  border-radius: 8px;
+  margin: 5px;
+}
+
+.invisible-cb-displayer-option {
+  display: none;
+}
+
+.invisible-cb-displayer-option:checked ~ form {
+  display: block;
 }

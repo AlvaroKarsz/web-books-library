@@ -6,14 +6,48 @@ const ip = require("ip");
 const config = require('../config.js');
 
 class Basic {
-  constructor(){}
-
   toInt(num, base=10) {
     return parseInt(num, base);
   }
 
+  capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  monthNameFromIndex(i) {
+    return ["January", "February", "March", "April", "May", "June","July", "August", "September", "October", "November", "December"][i];
+  }
+
+  dayMonthToMonthDay(date) {
+    date = date.split("/");
+    /*swap day and month*/
+    [date[0], date[1]] = [date[1], date[0]];
+    return date.join("/");
+  }
+
+  beautifyDate(uglyDate) {
+    uglyDate = new Date(uglyDate);
+    return `${uglyDate.getDate()}/${this.monthNameFromIndex(uglyDate.getMonth())}/${uglyDate.getFullYear()}`;
+  }
+
   intSum(a, b) {
     return this.toInt(a) + this.toInt(b);
+  }
+
+  isBiggerInt(a, b) {
+    return this.toInt(a) > this.toInt(b);
+  }
+
+  getDecimalPartOfNumber(num) {
+    return Number((num - Math.trunc(num)).toFixed(3));
+  }
+
+  isEqualInt(a, b) {
+    return this.toInt(a) === this.toInt(b);
+  }
+
+  isBiggerOrEqualInt(a, b) {
+    return this.isBiggerInt(a,b) || this.isEqualInt(a,b);
   }
 
   getPictureMime(folderName, pictureId) {
@@ -116,11 +150,11 @@ class Basic {
       FILTER_VAL_TITLE: "this.getFilterValue(params.urlParams, 'title')",
       FILTER_VAL_AUTHOR: "this.getFilterValue(params.urlParams, 'author')",
       SORT_OPTIONS: "this.getSortOptions(params.urlParams, params.route)",
-      IMAGES: "this.postPictures(params.folder, params.objects)",
+      IMAGES: "this.postPictures(params.folder, params.objects, params.imageHref)",
       LOADER_IF_BOOKS: "this.createMainLoaderIfBooksFound(params.totalCount)",
-      TOP_NAV: "this.echoTopNav()"
+      TOP_NAV: "this.echoTopNav()",
+      DISPLAYER:"params.displayer"
     };
-
     let rgx = '';
     for(let key in keys) {
       rgx = new RegExp("\{\{" + key + "\}\}",'g');
@@ -243,16 +277,20 @@ class Basic {
     return str;
   }
 
-  postPictures(folder, objects) {
+  postPictures(folder, objects, actionScriptOnclick) {
     let str = '<div class = "line">';
     for(let i = 0 , l = objects.length; i < l ; i ++ ) {
       if(i % config.BOOKS_PER_ROW === 0) {
         str += "</div><div class = 'line'>";
       }
-      str += this.buildBookObject(objects[i],folder);
+      str += this.buildBookObject(objects[i],folder ,actionScriptOnclick);
     }
     str += '</div>';
     return str;
+  }
+
+  addCommasToNum(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
 
   insensitiveCompare(a,b) {
@@ -262,8 +300,13 @@ class Basic {
     return a.toLowerCase().trim() === b.toLowerCase().trim();
   }
 
-  buildBookObject(book,type) {
-    return '<div class = "obj"><p>' + book.name + "</p>" + '<img src = "/pic/' + type + '/' + book.id + '"></div>';
+  buildBookObject(book,type, href) {
+    return `<div class = "obj"><p>${book.name}</p><a onclick = "window.location = '${href + book.id}' + window.location.search;">${this.putPicture(type, book.id)}</a></div>`;
+  }
+
+
+  putPicture(type, id) {
+    return `<img src="/pic/${type}/${id}">`;
   }
 
   getUrlParams(url) {
@@ -388,6 +431,7 @@ class Basic {
     <a href="/insert/book">Insert Book</a>
     <a href="/insert/wish">Insert Wish</a>
     <a href="/insert/serie">Insert Serie</a>
+    <a href="/insert/story">Insert Story</a>
     </div>
     </div>
     </div>`;

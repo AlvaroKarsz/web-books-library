@@ -21,6 +21,26 @@ async function doHttpRequest(url, settings = null) {
   return request;
 }
 
+function removeUrlParam(paramName) {
+  let params = getUrlParams();
+  delete params[paramName];
+
+  let url = window.location.href.split('?')[0] + '?';
+  for(let val in params) {
+    url += val + '=' + params[val] + '&';
+  }
+  url = url.replace(/([&]|[?])$/,'');//remove last & or ?
+  window.history.pushState({}, "", url);
+}
+
+function getUrlParams() {
+  let currentURL = window.location.href.split('?')[0];
+  let params = new URLSearchParams(window.location.search),
+  result = {};
+  for(let val of params) result[val[0]] = val[1];
+  return result;
+}
+
 class Loader {
   constructor(parent, ops = {}) {
     this.parent = parent;

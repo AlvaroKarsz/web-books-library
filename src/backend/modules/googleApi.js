@@ -1,5 +1,4 @@
 const basicFunctions = require('./basic');
-const settings = require('../settings');
 const fs = require('fs');
 
 class GoogleAPI {
@@ -100,11 +99,7 @@ class GoogleAPI {
     return dataArr;
   }
 
-  async fetchCoversByTitleAndAuthor(title, author = null, returnLinks = true) {
-    /*
-    if returnLinks is true, this function will return just remote links to pictures
-    if false, this will download the picture, save locally and return the local path
-    */
+  async fetchCoversByTitleAndAuthor(title, author = null) {
     /*
     use google API in order to fetch covers
     */
@@ -185,54 +180,25 @@ class GoogleAPI {
       /*try to fetch the thumbnail*/
 
       /*
-      make the http request and ask for buffer
-      make it async, so it will fetch many in parallel
+      save the url
       */
-      imagesArr.push(
-        ( returnLinks ? response.items[item]['volumeInfo']['imageLinks']['thumbnail'] :
-        new Promise((resolve,reject) => {
-          basicFunctions.doFetch(response.items[item]['volumeInfo']['imageLinks']['thumbnail'], imageRequestSettings, {buffer:true, timeout:3000}).then((res) => {
-            if(!res) {
-              /*
-              error from http request
-              ignore
-              */
-              resolve(null);
-              return;
-            }
-            /*
-            generate a random string as picture name
-            */
-            const fileNameRand = basicFunctions.generateRandomString(50) + '.jpg',
-            imageRandomName = settings.TMP_FOLDER_PATH + '/' + fileNameRand;
+      imagesArr.push(response.items[item]['volumeInfo']['imageLinks']['thumbnail']);
 
-            /*write to the file to tmp file*/
-            fs.writeFileSync(imageRandomName, Buffer.from(res));
-            resolve(settings.TMP_FOLDER_NAME + '/' + fileNameRand);
-
-          });
-        })
-      )
-    );
-
-
-
-    if(counter === maxImages) {
-      /*
-      reached maxinum images wanted
-      break loop
-      */
-      break;
+      if(counter === maxImages) {
+        /*
+        reached maxinum images wanted
+        break loop
+        */
+        break;
+      }
     }
-  }
 
-  /*
-  return pictures found
-  */
-  imagesArr = await Promise.all(imagesArr);
-  imagesArr = imagesArr.filter(r => r);//remove nulls
-  return imagesArr;
-}
+    /*
+    return pictures found
+    */
+    imagesArr = imagesArr.filter(r => r);//remove nulls
+    return imagesArr;
+  }
 
 };
 module.exports = new GoogleAPI();

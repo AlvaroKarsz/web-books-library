@@ -1,5 +1,4 @@
 const basicFunctions = require('./basic');
-const settings = require('../settings');
 const fs = require('fs');
 
 
@@ -18,11 +17,7 @@ class WikiClass {
     return title;
   }
 
-  async getCoverByTitle(title, returnLinks = true) {
-    /*
-    if returnLinks is true, this function will return just remote links to pictures
-    if false, this will download the picture, save locally and return the local path
-    */
+  async getCoverByTitle(title) {
     /*settings in order to fetch API for json*/
     const requestSettings = {
       method:'GET',
@@ -52,70 +47,14 @@ class WikiClass {
     //check if originalimage exists ion response
     if ( basicFunctions.exists(response['originalimage'])  &&  basicFunctions.exists(response['originalimage']['source']) ) {
       /*source pic exists*/
-      imagesArr.push(
-        (
-          returnLinks ? response['originalimage']['source'] :
-          new Promise((resolve,reject) => {
-
-            basicFunctions.doFetch(response['originalimage']['source'], imageRequestSettings, {buffer:true, timeout:3000}).then((res) => {
-              if(!res) {
-                /*
-                error from http request
-                ignore
-                */
-                resolve(null);
-                return;
-              }
-              /*
-              generate a random string as picture name
-              */
-              const fileNameRand = basicFunctions.generateRandomString(50) + '.jpg',
-              imageRandomName = settings.TMP_FOLDER_PATH + '/' + fileNameRand;
-
-              /*write to the file to tmp file*/
-              fs.writeFileSync(imageRandomName, Buffer.from(res));
-
-              resolve(settings.TMP_FOLDER_NAME + '/' + fileNameRand);
-            });
-
-          })
-        )
-      );
+      imagesArr.push(response['originalimage']['source']);
 
     }
 
     //check if thumbnail exists ion response
     if ( basicFunctions.exists(response['thumbnail'])  &&  basicFunctions.exists(response['thumbnail']['source']) ) {
       /*source pic exists*/
-      imagesArr.push(
-        (
-          returnLinks ? response['thumbnail']['source'] :
-
-          new Promise((resolve,reject) => {
-
-            basicFunctions.doFetch(response['thumbnail']['source'], imageRequestSettings, {buffer:true, timeout:3000}).then((res) => {
-              if(!res) {
-                /*
-                error from http request
-                ignore
-                */
-                resolve(null);
-                return;
-              }
-              /*
-              generate a random string as picture name
-              */
-
-              let imageRandomName = settings.TMP_FOLDER_PATH + '/' + basicFunctions.generateRandomString(50) + '.jpg';
-
-              /*write to the file to tmp file*/
-              fs.writeFileSync(imageRandomName, Buffer.from(res));
-              resolve(imageRandomName);
-            });
-
-          })
-        )
-      );
+      imagesArr.push(response['thumbnail']['source']);
 
     }
 
@@ -123,9 +62,6 @@ class WikiClass {
     if(imagesArr.length === 0) {
       return null;
     }
-
-    /*wait untill fetch is done*/
-    imagesArr = await Promise.all(imagesArr);
     /*filter empty*/
     imagesArr = imagesArr.filter(o => o);
     return imagesArr;

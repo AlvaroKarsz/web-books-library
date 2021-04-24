@@ -1,5 +1,4 @@
 const basicFunctions = require('./basic');
-const settings = require('../settings');
 const fs = require('fs');
 
 
@@ -10,11 +9,7 @@ class OpenLibrary {
     this.DATA_URL_BY_ISBN = 'https://openlibrary.org/api/books?jscmd=data&format=json&bibkeys=ISBN:';
   }
 
-  async getCoverByIsbn(isbn, returnLinks = true) {
-    /*
-    if returnLinks is true, this function will return just remote links to pictures
-    if false, this will download the picture, save locally and return the local path
-    */
+  async getCoverByIsbn(isbn) {
     /*set http request settings*/
     const requestSettings = {
       method:'GET',
@@ -28,21 +23,7 @@ class OpenLibrary {
       /*error from http request*/
       return null;
     }
-    /*if returnLinks is true just return url*/
-    if(returnLinks) {
-      return this.COVER_URL + isbn + this.COVER_URL_ENDING;
-    }
-    /*we have the picture - save it in tmp folder*/
-
-    //generate a random string as picture name
-    const fileNameRand = basicFunctions.generateRandomString(50) + '.jpg',
-    filePath = settings.TMP_FOLDER_PATH + '/' + fileNameRand;
-
-    //write to the file
-    fs.writeFileSync(filePath, Buffer.from(response));
-
-    //return file path
-    return settings.TMP_FOLDER_NAME + '/' + fileNameRand;
+    return this.COVER_URL + isbn + this.COVER_URL_ENDING;
   }
 
   async getCoverByIsbnBasedOnID(isbn) {
