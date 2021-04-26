@@ -56,7 +56,14 @@ module.exports = (app) => {
     }));
   });
 
-  app.get('/insert/book', async (req, res) => {
+  app.get('/insert/books/:id?', async (req, res) => {
+    /*
+    if id exists - the book already exists, and is been updated
+    if id doesn't exists - this is a ney book
+    frontend will handle with this id and fetch relevant data
+    use this param in order to set the html page title
+    */
+    const id = req.params.id;
     let file = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'insertBook.html'), 'UTF8');
     res.send(await basic.renderHtml({
       html: file,
@@ -65,13 +72,39 @@ module.exports = (app) => {
       objects: '',
       urlParams: '',
       title: '',
-      route: ''
+      route: '',
+      pageTitle: id ? 'Edit Book' : 'Enter New Book' //if id exists - the page will load id's info
     }));
+  });
+
+  /*fetch book data by book id*/
+  app.get('/get/book/:id', async(req, res) => {
+    let id = req.params.id;
+    res.send(
+      await db.fetchBookById(id)
+    );
   });
 
   app.post('/save/book', async (req, res) => {
     let requestBody = basic.formDataToJson(basic.trimAllFormData(req.body)); /*request body*/
     let covers = [];/*save here covers to save/download and save*/
+
+    /*
+    this route can be called in 3 different cases:
+    1) insert a new book (default case).
+    2) alter an existsing book, in this case requestBody.id will contain the existing book id
+    3) convert wishlist to book, in this case requestBody.idFromWish will contain the existing wish id
+
+    notes:
+    in case 2), some unique checks will fail (unique ISBN for example, if wasn't modified), so pass the existing id as excluded
+    */
+
+    let existingBookId = requestBody.id || null;
+    let existingWishId = requestBody.idFromWish || null;
+
+    /*module to hanlde images*/
+    const imagesHandler = require('../modules/images.js');
+
 
     /*get all covers and remove from requestBody*/
     /*main cover*/
@@ -177,7 +210,7 @@ module.exports = (app) => {
         return;
       }
       /*check if the number in serie is already taken*/
-      if(await db.bookFromSerieExists(requestBody.serie.value, requestBody.serie.number)) {
+      if(await db.bookFromSerieExists(requestBody.serie.value, requestBody.serie.number, existingBookId)) {
         res.send(JSON.stringify({status:false, message:'Number in serie is already taken'}));
         return;
       }
@@ -229,23 +262,42 @@ module.exports = (app) => {
 
     /*make sure isbn isn't taken*/
 
-    if(await db.checkIfIsbnExists(requestBody.isbn)) {
+    if(await db.checkIfIsbnExists(requestBody.isbn, existingBookId)) {
       res.send(JSON.stringify({status:false, message:'ISBN already exist in DB.'}));
       return;
     }
 
     /*make sure this book has an unique title, author combination*/
-    if(await db.checkIfBookAuthorAndTitleExists(requestBody.title,requestBody.author)) {
+    if(await db.checkIfBookAuthorAndTitleExists(requestBody.title,requestBody.author, existingBookId)) {
       res.send(JSON.stringify({status:false, message:'A book with this title by same author already exist.'}));
       return;
     }
 
     //save data in DB
-    await db.saveBook(requestBody);
 
-    //now save covers if any:
+    /*
+    if this is a book that was modified, save the stories list (relevant only for collection).
+    in this case, we need to delete pictures from old stories that were deleted.
+    so fetch stories list
+    */
+    let oldStoriesList = [];
+    if(existingBookId) {
+      oldStoriesList = await db.fetchCollectionStories(existingBookId);
+      /*existing book - alter it*/
+      await db.alterBookById(existingBookId, requestBody);
+    } else if (existingWishId) {
+      /*this is a wish, save book and delete wish*/
+    } else {
+      /*new book to save*/
+      await db.saveBook(requestBody);
+    }
+
+
+    /*
+    now save covers if any
+    if a book is been altered - the old picture may be overwrited
+    */
     if(covers.length) {
-      const imagesHandler = require('../modules/images.js');
       covers = await Promise.all(covers.map(async (cvr) => {
         if(cvr.type === 'book') {//main cover for book
           cvr.id = await db.getBookIdFromISBN(cvr.isbn);
@@ -266,6 +318,36 @@ module.exports = (app) => {
       }));
     }
 
+    /*
+    if this is a book that was modified, and if this book was a collection
+    a story may have been deleted.
+    in these cases, the md5sum hash will be deleted from DB in alterBookById function, but the actual picture should be deleted from file system
+    so in these cases, delete old stories pictures
+    */
+    if(existingBookId) {//if a book was modified
+      if(oldStoriesList.length) {//if this book had stories before the modification (and maybe still does)
+        /*fetch current stories and check if any story was deleted*/
+        let newStoriesList = await db.fetchCollectionStories(existingBookId);
+        let storyFoundFlag = false;//default value
+        /*iterate all old stories list, and delete deleted stories*/
+        for(let i = 0 , d = oldStoriesList.length ; i < d ; i ++ ) {
+          storyFoundFlag = false;//reset
+          for(let j = 0 , v = newStoriesList.length ; j < v ; j ++ ) {
+            if(oldStoriesList[i].id.toString() === newStoriesList[j].id.toString()) {//match - story still exists, no need to delete this picture
+              storyFoundFlag = true;
+              break;
+            }
+          }
+          if(!storyFoundFlag) {//story has beed deleted - delete the picture (if any)
+            imagesHandler.deleteImage('stories', oldStoriesList[i].id);
+          }
+        }
+      }
+    }
+
+
+
+    //return sucess message
     res.send(JSON.stringify({status:true}));
   });
 

@@ -91,7 +91,7 @@ module.exports = (app) => {
     }));
   });
 
-  app.get('/insert/wish', async (req, res) => {
+  app.get('/insert/wishlist', async (req, res) => {
     let file = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'insertWish.html'), 'UTF8');
     res.send(await basic.renderHtml({
       html: file,

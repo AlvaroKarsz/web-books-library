@@ -7,7 +7,7 @@ class BookDisplayer {
     let output = `<div class = "displayer-title"><div>${data.name}</div>`;
 
     /*add edit option*/
-    output += this.addEditOption(data);
+    output += this.addEditOption(data, type);
 
     /*close main title div*/
     output += `</div>`;
@@ -63,9 +63,9 @@ class BookDisplayer {
     return output;
   }
 
-  addEditOption(data) {
+  addEditOption(data, type) {
     /*add edit button with relevant redirector*/
-    return `<a title="Edit"><i class = "fa fa-edit"></i></a>`;
+    return `<a title="Edit" href="/insert/${type}/${data.id}"><i class = "fa fa-edit"></i></a>`;
   }
 
   addChronologicallyRelations(data, type) {

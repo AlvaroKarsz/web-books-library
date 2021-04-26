@@ -153,7 +153,8 @@ class Basic {
       IMAGES: "this.postPictures(params.folder, params.objects, params.imageHref)",
       LOADER_IF_BOOKS: "this.createMainLoaderIfBooksFound(params.totalCount)",
       TOP_NAV: "this.echoTopNav()",
-      DISPLAYER:"params.displayer"
+      DISPLAYER:"params.displayer",
+      INSERTION_TITLE: "params.pageTitle"
     };
     let rgx = '';
     for(let key in keys) {
@@ -428,10 +429,10 @@ class Basic {
     <div class = "dropmenu">
     <button>Insert</button>
     <div class = "dropmenu-list">
-    <a href="/insert/book">Insert Book</a>
-    <a href="/insert/wish">Insert Wish</a>
-    <a href="/insert/serie">Insert Serie</a>
-    <a href="/insert/story">Insert Story</a>
+    <a href="/insert/books">Insert Book</a>
+    <a href="/insert/wishlist">Insert Wish</a>
+    <a href="/insert/series">Insert Serie</a>
+    <a href="/insert/stories">Insert Story</a>
     </div>
     </div>
     </div>`;

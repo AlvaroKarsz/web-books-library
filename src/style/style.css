@@ -649,7 +649,7 @@ img:hover {
   display: none;
 }
 
-.auto-search-pic-uploader img{
+.auto-search-pic-uploader img, .folder-pictures-holder img{
   width: 100px;
   height: 150px;
   margin: 3px 8px;
@@ -944,7 +944,8 @@ img:hover {
   line-height: 35px;
   margin-right: 1px;
   text-align: center;
-  width: 100px;
+  width: 30%;
+  max-width: 130px;
   opacity: 0.8;
   transition: all 0.4s;
   border: 2px solid white;

@@ -36,6 +36,7 @@ class StoriesCollection {
         title: this.stories[k].title,
         pages: this.stories[k].pages,
         author: this.stories[k].author,
+        id: this.stories[k].id,
         cover: this.stories[k].pointer.getCover()
       });
     }
@@ -73,7 +74,8 @@ class StoriesCollection {
       title: storyData.title,
       pages: storyData.pages,
       author: storyData.author,
-      pointer: storyData.pointer
+      pointer: storyData.pointer,
+      id: storyData.storyExistingId//if this story already saved in DB (collection update)
     };
   }
 
@@ -572,21 +574,38 @@ class StoriesCollection {
     };
   }
 
+  set(stories) {
+    /*
+    array of jsons
+    name -> story name
+    author -> story author or false/null (same author as collection)
+    pages -> number of pages
+    id -> story id (to search picture)
+    */
+    this.checkBox.click();//enable collection
+    stories.forEach((stry) => {
+      this.addStoryWithValues([stry.name, stry.pages, stry.author, stry.id], `/pic/stories/${stry.id}`);
+    });
+  }
+
   bulkInsertStories(stories) {
     //array of 0 => story name, 1 => pages, 2 => author (if not exists will be set to collection author)
     stories.forEach(a => this.addStoryWithValues(a));
   }
 
-  addStoryWithValues(storyData) {
+  addStoryWithValues(storyData, picSrc = false) {
     //array of 0 => story name, 1 => pages, 2 => author (if not exists will be set to collection author)
+    //if picSrc is set - Story class should make a pic out of this link
     new Story(this.storiesHolder, {
       values: {
         name: storyData[0],
         pages: storyData[1],
-        author: storyData[2] || false
+        author: storyData[2] || false,
+        id: storyData[3] || false
       },
       collectionPointer: this,
-      authorInput: this.mainAuthorInput
+      authorInput: this.mainAuthorInput,
+      defaultPic: picSrc ? picSrc : null
     });
   }
 
@@ -623,6 +642,7 @@ class Story {
     this.id = '';
     this.saved = false;
     this.errorIsShown = false;
+    this.storyExistingId = false;//if a collection is modified, save here the story ID (already saved in DB)
     this.storyClass = opts.storyClass || 'collection-single-story-holder';
     this.inputLineClass = opts.inputLineClass || 'collection-story-line';
     this.checkBoxSpanClass = opts.checkBoxSpanClass || "radio-button-checkmark";
@@ -636,6 +656,7 @@ class Story {
     this.linePermanentClass = opts.linePermanentClass || 'story-single-line-permanent-p';
     this.permanentCoverClass = opts.permanentCoverClass || 'super-mini-pic';
     this.mainAuthorInput = opts.authorInput || null;
+    this.defaultPic = opts.defaultPic || null;
     this.permanentLines = [];
     this.build();
     this.activate();
@@ -709,6 +730,9 @@ class Story {
         'margin-top': '10px'
       }
     });
+    if(this.defaultPic) {
+      this.coverSelector.set(this.defaultPic);
+    }
   }
 
   addCover(src) {
@@ -767,7 +791,12 @@ class Story {
 
   makePermanentCover() {
     this.permanentCover = document.createElement('IMG');
-    this.permanentCover.src = this.cover;
+    //by default  - use cover returned from cover handler, if empty ask for the default value if exists
+    let cover = this.cover;
+    if(!cover) {
+      cover = this.coverSelector.getDefault();
+    }
+    this.permanentCover.src = cover;
     this.permanentCover.className = this.permanentCoverClass;
     this.body.appendChild(this.permanentCover);
   }
@@ -809,6 +838,7 @@ class Story {
       title: this.title,
       pages: this.pages,
       author: this.author,
+      storyExistingId: this.storyExistingId,
       pointer: this
     });
   }
@@ -881,10 +911,17 @@ class Story {
   autoLoadStory(values) {
     this.titleInput.value = values.name;
     this.pagesInput.value = values.pages;
+
     if(values.author) {
       this.authorCheckBox.checked = false;
       this.authorInput.value = values.author
     }
+
+    if(values.id) {//if this story is already saved in DB - save the id
+      this.storyExistingId = values.id
+    }
+
+
     this.prepareToSaveStory();
   }
 
@@ -1114,6 +1151,12 @@ class CheckboxGroup {
     return this.selected;
   }
 
+  set(code) {
+    if(this.checkboxes[code]) {
+      this.checkboxes[code].click();
+    }
+  }
+
   makeCheckbox(title, code) {
     let div = document.createElement('DIV'),
     label = document.createElement('LABEL'),
@@ -1268,9 +1311,65 @@ class CheckboxGroup {
     messageClass: 'main-olay-message'
   });
 
+
+  //check if pathname have an id, if so, user is trying to edit an existing book, fetch current data
+  let currentId = getIdFromUrl();
+
+  if(currentId) {//fetch data
+    let currentData = await doHttpRequest(`/get/book/${currentId}`);
+    if(currentData) {//enter current data into relevant inputs
+      //start with standard data (normal inputs)
+      addValueToInput(currentData.name, els.titleInp);
+      addValueToInput(currentData.author, els.authorInp);
+      addValueToInput(currentData.isbn, els.isbnInp);
+      addValueToInput(currentData.language, els.langInp);
+      addValueToInput(currentData.o_language, els.langOrgInp);
+      addValueToInput(currentData.pages, els.bookPagesInput);
+      addValueToInput(currentData.year, els.yearInp);
+      addValueToInput(currentData.store, els.bookStoreInp);
+      //add book format
+      bookTypeE.set(currentData.type);
+      //add prev. book if exists
+      if(currentData.prev_id) {
+        prevEl.set({
+          value: currentData.prev_id
+        });
+      }
+      //add next book if exists
+      if(currentData.next_id) {
+        nextEl.set({
+          value: currentData.next_id
+        });
+      }
+
+      //add serie if exists
+      if(currentData.serie_id) {
+        serieE.set({
+          value: currentData.serie_id,
+          number: currentData.serie_num
+        });
+      }
+
+      //add collection if exists
+      if(currentData.is_collection) {
+        //if author is the same one as collection author, change value to false so collection class will mark author as "same as collection"
+        currentData.stories = currentData.stories.map((stry) => {
+          if(stry.author === currentData.author) {
+            stry.author = false;
+          }
+          return stry;
+        });
+        collectionEl.set(currentData.stories);
+      }
+    }
+    //add pic if exists
+    coverEl.set(`/pic/books/${currentData.id}`);
+  }
+
   els.saveBtn.onclick = () => {
     saveBook({
       values: {
+        id: currentId,
         title: els.titleInp.value,
         author: els.authorInp.value,
         isbn: els.isbnInp.value,
@@ -1366,5 +1465,5 @@ async function saveBook(opts) {
   }
   opts.messager.setMessage("Book Saved");
   await sleep(3000);
-  location.reload();//reload in order to clear inputs
+  window.location = '/insert/books';//reload in order to clear inputs
 }

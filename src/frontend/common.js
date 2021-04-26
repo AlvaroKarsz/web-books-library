@@ -10,6 +10,13 @@ function sleep(t) {
   return new Promise(res => setTimeout(res, t));
 }
 
+function addValueToInput(data, inp) {
+  if(data) {
+    inp.value = data;
+  }
+}
+
+
 async function doHttpRequest(url, settings = null) {
   let request = null;
   try {
@@ -39,6 +46,11 @@ function getUrlParams() {
   result = {};
   for(let val of params) result[val[0]] = val[1];
   return result;
+}
+
+function getIdFromUrl() {
+  let id  = window.location.pathname.match(/[0-9]+$/);
+  return id ? id[0] : null;
 }
 
 class Loader {
@@ -653,9 +665,11 @@ class CoverSelector {
     this.buttonHolderTableCoverSelectorClass = opts.buttonHolderTableCoverSelectorClass || null;
     this.selectedImageClassForUploder = opts.selectedImageClassForUploder || null;
     this.getSearchCoverParamsCallback = opts.getSearchCoverParamsCallback;
+    this.defaultPictureClass = opts.selectedImageClassForUploder || 'uploaded-picture-img';
     this.uploadTitle = 'Upload';
     this.searchTitle = 'Search';
     this.errorIsShown = false;
+    this.defaultCover = null;
     this.build();
   }
 
@@ -683,6 +697,37 @@ class CoverSelector {
   killDropZone() {
     this.parent.ondragenter = this.parent.ondragleave = this.parent.ondragover = this.parent.ondrop = null;
   }
+
+  set(src) {
+    //user asks for a default value to be set
+    //add a new tab - default (and focus)
+    const defaultTabName = 'Default';
+    this.tabsPointer.addTab(defaultTabName, {
+      focus: true
+    });
+    //get tab and set inside the default picture
+    this.buildDefaultPicture(src ,this.tabsPointer.getTab(defaultTabName));
+    this.defaultCover = src;
+  }
+
+  getDefault() {//return default cover if exists (may be null)
+    return this.defaultCover;
+  }
+
+  buildDefaultPicture(src, parent) {
+    let img = document.createElement('IMG');
+    img.src = src;
+    img.className = this.defaultPictureClass;
+    parent.appendChild(img);
+  }
+
+  buildOptionChanger() {
+    this.tabsPointer = new Tabs(this.parent, [this.uploadTitle, this.searchTitle], {
+      buttonHolderClass: this.buttonHolderTableCoverSelectorClass
+    });
+    this.tabsPointer.set();
+  }
+
 
   activateDropZone() {
     this.parent.ondragenter = (e) => {this.dragEnterEvent(e)};
@@ -797,13 +842,6 @@ class CoverSelector {
   makeFeatures() {
     this.makeUploader();
     this.makeSearcher();
-  }
-
-  buildOptionChanger() {
-    this.tabsPointer = new Tabs(this.parent, [this.uploadTitle, this.searchTitle], {
-      buttonHolderClass: this.buttonHolderTableCoverSelectorClass
-    });
-    this.tabsPointer.set();
   }
 
   getSelected() {
@@ -988,6 +1026,13 @@ class Tabs {
     this.tabs[name].tab = tab;
   }
 
+  removeFocus() {
+    for(let t in this.tabs) {
+      this.cancelActive(this.tabs[t].tab,this.tabs[t].label);
+    }
+  }
+
+
   setActive(tab,label,name) {
     tab.style.display = 'block';
     label.setAttribute('marked','t');
@@ -1009,6 +1054,28 @@ class Tabs {
 
   focus(name) {
     this.tabs[name].input.click();
+  }
+
+  addTab(name, options) {
+    //add new tab in "real time"
+    //make GUI
+    if(options.focus) {//remove current focus
+      this.removeFocus();
+    }
+    this.buildSingleTab(name, options.focus);
+    //reactivate so it will listen to the new one as well
+    this.reactivate();
+  }
+
+  reactivate() {
+    this.stop();
+    this.activate();
+  }
+
+  stop() {
+    for(let tab in this.tabs) {
+      this.tabs[tab].input.onclick = null;
+    }
   }
 
   activate() {
@@ -1169,6 +1236,17 @@ class Selector {
     this.returns.push({
       name: 'value',
       inp: this.select
+    });
+  }
+
+  set(data) {
+    Promise.resolve(this.options).then((opts) => {
+      this.checkbox.click();
+      for(let i = 0 , l = this.returns.length ; i < l ; i ++ ) {
+        if(typeof data[this.returns[i].name] !== 'undefined') {
+          this.returns[i].inp.value = data[this.returns[i].name];
+        }
+      }
     });
   }
 

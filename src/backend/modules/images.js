@@ -41,6 +41,18 @@ class Images {
     };
   }
 
+  deleteImage(folderName,fileTitle) {
+    /*function to delete picture from file system (if picture exists)*/
+    /*get picture full name (including extension type)*/
+    const picFullName = basicFunctions.getPictureMime(folderName, fileTitle);
+    if(!picFullName) {
+      /*file not found - no need to delete - exit function*/
+      return;
+    }
+    /*delete the picture*/
+    fs.unlinkSync(path.join(__dirname, '..', '..','..', folderName, picFullName));
+  }
+
   imageFromRaw(raw,filePath,fileTitle, format) {
     /*make full path from file path and file name*/
     const fullPath = path.join(filePath, fileTitle + '.' + format);
