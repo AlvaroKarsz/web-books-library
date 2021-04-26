@@ -91,7 +91,14 @@ module.exports = (app) => {
     }));
   });
 
-  app.get('/insert/wishlist', async (req, res) => {
+  app.get('/insert/wishlist/:id?', async (req, res) => {
+    /*
+    if id exists - the wish already exists, and is been updated
+    if id doesn't exists - this is a new wish
+    frontend will handle with this id and fetch relevant data
+    use this param in order to set the html page title
+    */
+    const id = req.params.id;
     let file = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'insertWish.html'), 'UTF8');
     res.send(await basic.renderHtml({
       html: file,
@@ -100,16 +107,27 @@ module.exports = (app) => {
       objects: '',
       urlParams: '',
       title: '',
-      route: ''
+      route: '',
+      pageTitle: id ? 'Edit Wish' : 'Enter New Wish' //if id exists - the page will load id's info
+
     }));
   });
-
 
   app.post('/save/wish', async (req, res) => {
     let requestBody = basic.formDataToJson(basic.trimAllFormData(req.body)), /*request body*/
     /*save cover in another variable, and remove from requestBody*/
     cover = requestBody.cover;
     requestBody.cover = null;
+    /*
+    this route can be called in 2 different cases:
+    1) insert a new wish (default case).
+    2) alter an existsing wish, in this case requestBody.id will contain the existing book id
+
+    notes:
+    in case 2), some unique checks will fail (unique ISBN for example, if wasn't modified), so pass the existing id as excluded
+    */
+    let existingWishId = requestBody.id || null;
+
     /*check year validity*/
     if(basic.toInt(requestBody.year) > new Date().getFullYear() || ! basic.isValidInt(requestBody.year)) {
       res.send(JSON.stringify({status:false, message:'Invalid Year'}));
@@ -132,28 +150,39 @@ module.exports = (app) => {
         return;
       }
       /*check if the number in serie is already taken*/
-      if(await db.bookFromSerieExistsInWishList(requestBody.serie.value, requestBody.serie.number)) {
+      if(await db.bookFromSerieExistsInWishList(requestBody.serie.value, requestBody.serie.number, existingWishId)) {
         res.send(JSON.stringify({status:false, message:'Number in serie is already taken'}));
         return;
       }
     }
 
     /*make sure isbn isn't taken*/
-    if(await db.checkIfIsbnExistsInWishList(requestBody.isbn)) {
+    if(await db.checkIfIsbnExistsInWishList(requestBody.isbn, existingWishId)) {
       res.send(JSON.stringify({status:false, message:'ISBN already exist in DB.'}));
       return;
     }
 
     /*make sure this book has an unique title, author combination*/
-    if(await db.checkIfBookAuthorAndTitleAndYearExistsInWishList(requestBody.title,requestBody.author, requestBody.year)) {
+    if(await db.checkIfBookAuthorAndTitleAndYearExistsInWishList(requestBody.title,requestBody.author, requestBody.year, existingWishId)) {
       res.send(JSON.stringify({status:false, message:'A book with this title by same author already exist.'}));
       return;
     }
 
     //save data in DB
-    await db.saveWish(requestBody);
 
-    //now save cover (if any):
+    if(existingWishId) {
+      /*existing book - alter it*/
+      await db.alterWishById(existingWishId, requestBody);
+    }  else {
+      /*new wish to save*/
+      await db.saveWish(requestBody);
+    }
+
+
+    /*
+    now save covers if any
+    if a wish is been altered - the old picture may be overwrited
+    */
     if(cover) {
       const imagesHandler = require('../modules/images.js'),
       wishId = await db.getWishIdFromISBN(requestBody.isbn),/*get new id, received when wish saved in DB*/
@@ -168,5 +197,12 @@ module.exports = (app) => {
     res.send(JSON.stringify({status:true}));
   });
 
+  /*fetch book data by book id*/
+  app.get('/get/wish/:id', async(req, res) => {
+    let id = req.params.id;
+    res.send(
+      await db.fetchWishById(id)
+    );
+  });
 
 }

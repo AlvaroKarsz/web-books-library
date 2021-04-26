@@ -63,9 +63,35 @@
     messageClass: 'main-olay-message'
   });
 
+  //check if pathname have an id, if so, user is trying to edit an existing wish, fetch current data
+  let currentId = getIdFromUrl();
+
+  if(currentId) {//fetch data
+    let currentData = await doHttpRequest(`/get/wish/${currentId}`);
+    if(currentData) {//enter current data into relevant inputs
+      //start with standard data (normal inputs)
+      addValueToInput(currentData.name, els.titleInp);
+      addValueToInput(currentData.author, els.authorInp);
+      addValueToInput(currentData.isbn, els.isbnInp);
+      addValueToInput(currentData.year, els.yearInp);
+
+      //add serie if exists
+      if(currentData.serie_id) {
+        serieE.set({
+          value: currentData.serie_id,
+          number: currentData.serie_num
+        });
+      }
+    }
+    //add pic if exists
+    coverEl.set(`/pic/wishlist/${currentData.id}`);
+  }
+
+
   els.saveBtn.onclick = () => {
     saveWish({
       values: {
+        id: currentId,
         title: els.titleInp.value,
         author: els.authorInp.value,
         isbn: els.isbnInp.value,
@@ -125,5 +151,5 @@ async function saveWish(opts) {
   }
   opts.messager.setMessage("Wish Saved");
   await sleep(3000);
-  location.reload();//reload in order to clear inputs
+  window.location = '/insert/wishlist';//reload in order to clear inputs
 }
