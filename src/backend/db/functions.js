@@ -2,6 +2,19 @@ const pg = require('./connection').pgClient;
 
 class dbFunctions {
   constructor() {}
+
+  async deleteWish(id) {
+    await pg.query(`DELETE FROM wish_list WHERE id = $1;`, [id]);
+  }
+
+  async deleteRatings(tableName, id) {
+    await pg.query(`DELETE FROM ratings WHERE id = $1 AND table_name = $2;`, [id, tableName]);
+  }
+
+  async deleteMD5(folderName, id) {
+    await pg.query(`DELETE FROM cache WHERE id = $1 AND folder = $2;`, [id, folderName]);
+  }
+
   async fetchAllBooks(ops = {}) {
     const limit = typeof ops.limit !== 'undefined' ? ops.limit : '99999999999';
     const offset = typeof ops.offset !== 'undefined' ? ops.offset : '0';

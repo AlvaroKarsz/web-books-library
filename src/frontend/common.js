@@ -49,8 +49,9 @@ function getUrlParams() {
 }
 
 function getIdFromUrl() {
-  let id  = window.location.pathname.match(/[0-9]+$/);
-  return id ? id[0] : null;
+  let id  = window.location.pathname.split('/').pop();//get last element from url
+  id = /[0-9]+/.test(id) ? id : null;//if id has no numbers - this is not a valid one
+  return id;
 }
 
 class Loader {

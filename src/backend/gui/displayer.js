@@ -294,6 +294,12 @@ class BookDisplayer {
     if(actions.buy) {
       output += `<div title="Click if you've bought this book"><label for='invi-cb'><i class="fa fa-shopping-cart"></i></label><input type='checkbox' class = 'invisible-cb-displayer-option' id = 'invi-cb'><p>Mark as Purchased</p><form action="./purchased/${data.id}" method="post"><input name="store" placeholder="Store Name" required><button type="submit" class="black-white-button">Save</button></form></div>`;
     }
+
+    /*option for purchased books to mark as received*/
+    if(actions.received) {
+      output += `<div title="Click if you've received this book"><a href = "/insert/books/wish${data.id}"><i class="fa fa-truck"></i><p>Book Received</p></a></div>`;
+    }
+
     output += '</div>';
     return output;
   }

@@ -1313,10 +1313,17 @@ class CheckboxGroup {
 
 
   //check if pathname have an id, if so, user is trying to edit an existing book, fetch current data
-  let currentId = getIdFromUrl();
-
-  if(currentId) {//fetch data
-    let currentData = await doHttpRequest(`/get/book/${currentId}`);
+  let currentIdFromPath = getIdFromUrl();
+  /*
+  3 posible cases:
+  * currentIdFromPath is null - normal case - user is inserting a new book
+  * currentIdFromPath is a integer - user is updating an existing book
+  * currentIdFromPath follows pattern wish[0-9]+ - user is converting a wish to book (purchased book arrived)
+  */
+  let currentData, currentId, wishId;
+  if(/^[0-9]+$/.test(currentIdFromPath)) {//user is updating a book - fetch book's data
+    currentId = currentIdFromPath;
+    currentData = await doHttpRequest(`/get/book/${currentId}`);
     if(currentData) {//enter current data into relevant inputs
       //start with standard data (normal inputs)
       addValueToInput(currentData.name, els.titleInp);
@@ -1364,12 +1371,36 @@ class CheckboxGroup {
     }
     //add pic if exists
     coverEl.set(`/pic/books/${currentData.id}`);
+  } else if (/^wish[0-9]+$/.test(currentIdFromPath)) {  //user is converting wish to book - fetch wish data
+
+    wishId = currentIdFromPath.match(/[0-9]+/)[0];//get wish id from string
+
+    currentData = await doHttpRequest(`/get/wish/${wishId}`);
+    if(currentData) {//enter current data into relevant inputs
+      //start with standard data (normal inputs)
+      addValueToInput(currentData.name, els.titleInp);
+      addValueToInput(currentData.author, els.authorInp);
+      addValueToInput(currentData.isbn, els.isbnInp);
+      addValueToInput(currentData.year, els.yearInp);
+      addValueToInput(currentData.store, els.bookStoreInp);
+
+      //add serie if exists
+      if(currentData.serie_id) {
+        serieE.set({
+          value: currentData.serie_id,
+          number: currentData.serie_num
+        });
+      }
+
+    }
+    coverEl.set(`/pic/wishlist/${currentData.id}`);
   }
 
   els.saveBtn.onclick = () => {
     saveBook({
       values: {
         id: currentId,
+        idFromWish: wishId,
         title: els.titleInp.value,
         author: els.authorInp.value,
         isbn: els.isbnInp.value,

@@ -42,7 +42,7 @@ module.exports = (app) => {
       title: wishData.name,
       folder: 'wishlist',
       id: id,
-      displayer: entryDisplayer.build(wishData, 'wishlist', {})
+      displayer: entryDisplayer.build(wishData, 'wishlist', {received:true})
     }));
   });
 

@@ -41,6 +41,38 @@ class Images {
     };
   }
 
+  moveImage(from, to) {
+    /*
+    both from and to shoud be a json with folder and id values
+    */
+
+    /*get full picture name (including extension)*/
+    let picFullName = basicFunctions.getPictureMime(from.folder, from.id);
+    /*if file not exists - exit function*/
+    if(!picFullName) {
+      return;
+    }
+    /*get file extension from full name*/
+    let fileExtension = picFullName.split('.').pop();
+
+    /*move the file*/
+    fs.renameSync( path.join(__dirname, '..', '..','..', from.folder, picFullName)  , path.join(__dirname, '..', '..','..', to.folder, to.id + '.' + fileExtension ) );
+  }
+
+  getFullPath(folder, fileName) {
+    /*find full path of file based on folder name and file name without extension*/
+
+    /*get full picture name (including extension)*/
+    const picFullName = basicFunctions.getPictureMime(folder, fileName);
+
+    /*file not exists*/
+    if(!picFullName) {
+      return;
+    }
+
+    return path.join(__dirname, '..', '..','..', folder, picFullName);
+  }
+
   deleteImage(folderName,fileTitle) {
     /*function to delete picture from file system (if picture exists)*/
     /*get picture full name (including extension type)*/

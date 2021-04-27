@@ -58,9 +58,12 @@ module.exports = (app) => {
 
   app.get('/insert/books/:id?', async (req, res) => {
     /*
-    if id exists - the book already exists, and is been updated
-    if id doesn't exists - this is a ney book
-    frontend will handle with this id and fetch relevant data
+    id cases:
+    not exists -> insert a new book
+    id is an intiger -> edit an existing book
+    id follows format wish[0-9]+ -> a wish is converted to book
+
+    frontend will handle with id parameter and fetch relevant data
     use this param in order to set the html page title
     */
     const id = req.params.id;
@@ -73,7 +76,7 @@ module.exports = (app) => {
       urlParams: '',
       title: '',
       route: '',
-      pageTitle: id ? 'Edit Book' : 'Enter New Book' //if id exists - the page will load id's info
+      pageTitle: id ? (basic.isValidInt(id) ? 'Edit Book' : 'Save Book From Wish' ) : 'Enter New Book' //if id exists - the page will load id's info
     }));
   });
 
@@ -105,6 +108,12 @@ module.exports = (app) => {
     /*module to hanlde images*/
     const imagesHandler = require('../modules/images.js');
 
+    /*
+    flag indicates that user passed a cover picture
+    this flag is useful for cases when existingWishId exists.
+    using this flag we know if we need to delete wish cover or just move it to the books folder
+    */
+    let mainCoverReceivedFromUser = false;
 
     /*get all covers and remove from requestBody*/
     /*main cover*/
@@ -117,6 +126,8 @@ module.exports = (app) => {
       } );
       /*remove main cover from request body*/
       requestBody.cover = '';
+      //toggle flag
+      mainCoverReceivedFromUser = true;
     }
     /*get story covers*/
     if(basic.isArray(requestBody.collection) && requestBody.collection.length) {
@@ -285,11 +296,53 @@ module.exports = (app) => {
       oldStoriesList = await db.fetchCollectionStories(existingBookId);
       /*existing book - alter it*/
       await db.alterBookById(existingBookId, requestBody);
-    } else if (existingWishId) {
-      /*this is a wish, save book and delete wish*/
-    } else {
+    } else { /* existingWishId or normal case*/
       /*new book to save*/
       await db.saveBook(requestBody);
+    }
+
+
+    /*
+    if this book is a "converted wish" - the following steps should be done:
+    * delete wish entry in wish_list table
+    * delete rating information in ratings table
+    * delete md5sum hash from cache table
+    * move picture to books folder (if used uses the same picture, if not just delete the picture)
+    */
+    if(existingWishId) {
+      /*delete entry from wish_list*/
+      await db.deleteWish(existingWishId);
+      /*delete ratings table*/
+      await db.deleteRatings('wish_list', existingWishId);
+      /*delete md5sum hash from cache table*/
+      await db.deleteMD5('wishlist', existingWishId);
+
+      /*user used another cover, delete this one*/
+      if (mainCoverReceivedFromUser) {
+        imagesHandler.deleteImage('wishlist', existingWishId);
+      } else { /*user is using wish cover as book cover, move the picture and save the md5sum in DB*/
+        /*get inserted book ID*/
+        let newInsertedBookId = await db.getBookIdFromISBN(requestBody.isbn);
+
+        /*move picture*/
+        imagesHandler.moveImage({
+          folder: 'wishlist',
+          id: existingWishId
+        }, {
+          folder: 'books',
+          id: newInsertedBookId
+        });
+
+        /*save md5hash*/
+        await db.savePictureHashes({
+          id: newInsertedBookId,
+          folder: 'books',
+          md5: imagesHandler.calculateMD5(
+            imagesHandler.getFullPath('books', newInsertedBookId)
+          )
+        });
+
+      }
     }
 
 

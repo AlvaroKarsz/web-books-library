@@ -1308,9 +1308,13 @@ img:hover {
 .displayer-options label {
   cursor: pointer;
 }
+.displayer-options a {
+  text-decoration: none;
+  color: white;
+}
 
 .displayer-options i {
-  font-size: 38px;
+  font-size: 40px;
 }
 
 .displayer-options i:hover {
