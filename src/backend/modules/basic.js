@@ -346,7 +346,8 @@ class Basic {
       series: 'series',
       stories: 'stories',
       reads: 'books',
-      purchased: 'wishlist'
+      purchased: 'wishlist',
+      icon: 'icons'
     }[type];
   }
 

@@ -1330,7 +1330,6 @@ img:hover {
 .displayer-options form {
   display: none;
   position: absolute;
-  margin-left: -41px;
   z-index: 5;
 }
 
@@ -1339,6 +1338,15 @@ img:hover {
   padding: 8px;
   border-radius: 8px;
   margin: 5px;
+  width: 150px;
+}
+
+.displayer-options img {
+  display: block;
+  width: 50px;
+  height: 50px;
+  margin: auto;
+  border: none;
 }
 
 .invisible-cb-displayer-option {
@@ -1347,4 +1355,17 @@ img:hover {
 
 .invisible-cb-displayer-option:checked ~ form {
   display: block;
+}
+
+#web-stores-holder {
+  margin-left: 20px;
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  width: 180px;
+  margin-top: -25px;
+}
+
+#mark-book-as-purchased {
+  margin-left: -12px;
 }
