@@ -14,6 +14,130 @@ class Basic {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  readDateForDB(date) {
+    /*
+    Examples for valid dates:
+    jan 2020
+    jan 2020 - mar 2020
+    */
+
+    /*trim string*/
+    date = date.trim();
+    /*empty date (may be the case is date is only white spaces)*/
+    if(!date) {
+      return null;
+    }
+
+    /*get today date*/
+    let today = new Date(),
+    thisYear = today.getFullYear(),
+    thisMonth = today.getMonth();//returns INDEX!!
+
+    /*list of valid month codes that can be used*/
+    const validMonthCodes = [
+      'jan',
+      'feb',
+      'mar',
+      'apr',
+      'may',
+      'jun',
+      'jul',
+      'aug',
+      'sep',
+      'oct',
+      'nov',
+      'dec'
+    ];
+
+    /*months will be capitalize later, for now convert to lower case*/
+    date = date.toLowerCase();
+
+    /*remove all white spaces from date*/
+    date = date.replace(/\s+/g, '');
+
+    /*
+    without withspaces date format should follow:
+
+    CASE 1:
+    3 letters (first month) and 4 digits (year)                                                                 EXAMPLE: jan2020
+    CASE 2:
+    3 letters (from month) and 4 digits (from year) and "-" and 3 letters (to month) and 4 digits (to year)     EXAMPLE: jan2020-mar2020
+    */
+
+    /*CASE 1:*/
+
+    if(/^[a-z]{3}[0-9]{4}$/.test(date)) {
+      let month = date.slice(0,3),//first 3 chars
+      year = date.slice(-4);//last 4 chars
+
+      /*invalid month code*/
+      if(! validMonthCodes.includes(month)) {
+        return false;
+      }
+
+      /*inserted year is bigger than current year*/
+      if(this.isBiggerInt(year, thisYear)) {
+        return false;
+      }
+
+      /*same year as today's year - but bigger month*/
+      if(this.isEqualInt(year, thisYear) && this.isBiggerInt(validMonthCodes.indexOf(month), thisMonth)) {
+        return false;
+      }
+
+      /*valid date - beautify it*/
+      return `${this.capitalize(month)} ${year}`;
+    }
+
+    /*CASE 2:*/
+
+    if(/^[a-z]{3}[0-9]{4}\-[a-z]{3}[0-9]{4}$/.test(date)) {
+      let month1 = date.slice(0,3),//first 3 chars
+      year1 = date.slice(3,7),//following 4 chars
+      month2 =  date.slice(8,11),//following 3 chars (ignoring "-")
+      year2 =  date.slice(-4);//last 4 chars
+
+      /*invalid month code for one of the months*/
+      if(! validMonthCodes.includes(month1) || ! validMonthCodes.includes(month2)) {
+        return false;
+      }
+
+      /*first year is bigger than second year*/
+      if(this.isBiggerInt(year1, year2)) {
+        return false;
+      }
+
+      /*same year but first month is bigger than second month*/
+      if(this.isEqualInt(year1, year2) && this.isBiggerInt(validMonthCodes.indexOf(month1), validMonthCodes.indexOf(month2))) {
+        return false;
+      }
+
+      /*second year is bigger than today's year*/
+      if(this.isBiggerInt(year2, thisYear)) {
+        return false;
+      }
+
+      /*second year is same as today's year but has bigger month*/
+      if(this.isEqualInt(year2, thisYear) && this.isBiggerInt(validMonthCodes.indexOf(month2), thisMonth)) {
+        return false;
+      }
+
+      /*
+      same month and year
+      not an error - just return like CASE 1 format
+      */
+      if(this.isEqualInt(year2, year1) && month1 === month2) {
+        return `${this.capitalize(month1)} ${year1}`;
+      }
+
+      /*valid date - beautify it*/
+      return `${this.capitalize(month1)} ${year1} - ${this.capitalize(month2)} ${year2}`;
+    }
+
+    /*no match for any of the allowed cases*/
+    return false;
+  }
+
   monthNameFromIndex(i) {
     return ["January", "February", "March", "April", "May", "June","July", "August", "September", "October", "November", "December"][i];
   }

@@ -1327,18 +1327,43 @@ img:hover {
   font-size: 24px;
 }
 
+.displayer-options p[oneline='f'] {
+  display: inline-block;
+  margin: auto;
+}
+
+.displayer-options button[oneline='t'] {
+  display: block;
+  margin: auto;
+  margin-top: 7px;
+  margin-bottom: 7px;
+}
+
+
 .displayer-options form {
   display: none;
   position: absolute;
   z-index: 5;
 }
 
-.displayer-options input{
+.displayer-options input:not([type='checkbox']){
   border: none;
   padding: 8px;
   border-radius: 8px;
   margin: 5px;
   width: 150px;
+}
+
+.displayer-options input[long='t'] {
+  width: 200px;
+}
+
+
+.displayer-options input[oneline='t'] {
+  display: block;
+  margin: auto;
+  margin-top: 7px;
+  margin-bottom: 7px;
 }
 
 .displayer-options img {
@@ -1357,6 +1382,10 @@ img:hover {
   display: block;
 }
 
+#input-number-read-pages-book {
+  display: none;
+}
+
 #web-stores-holder {
   margin-left: 20px;
   background-color: white;
@@ -1368,4 +1397,9 @@ img:hover {
 
 #mark-book-as-purchased {
   margin-left: -12px;
+}
+
+#mark-book-as-read {
+  margin-left: -53px;
+
 }

@@ -3,6 +3,11 @@ const pg = require('./connection').pgClient;
 class dbFunctions {
   constructor() {}
 
+  async getBookPages(id) {
+    let res = await pg.query(`SELECT pages FROM my_books WHERE id = $1;`, [id]);
+    return res.rows[0].pages;
+  }
+
   async deleteWish(id) {
     await pg.query(`DELETE FROM wish_list WHERE id = $1;`, [id]);
   }
@@ -1793,6 +1798,72 @@ class dbFunctions {
                       SAVE WISH RATING IN DB
                       *********************************************************************************************/
                       this.saveBookRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
+                    }
+
+
+                    async markBookAsRead(id, date, completedPages) {
+                      /*
+                      STEPS:
+                      * MARK BOOK AS READ
+                      * IF THIS IS A COLLECTION, MARK IT STORIES AS READ
+                      */
+
+
+                      /********************************************************************************************
+                      MARK BOOK AS READ
+                      *********************************************************************************************/
+                      let queryParams = [];
+                      let queryCounter = 0;
+                      let query = `UPDATE my_books
+                      SET read_order = (
+                        (
+                          SELECT read_order FROM my_books WHERE read_order IS NOT NULL ORDER BY read_order DESC LIMIT 1
+                        ) + 1
+                      ),
+                      read_date = $${++queryCounter},
+                      completed = `;
+                      queryParams.push(date);
+                      if(completedPages) {
+                        /*completedPages is not null - book was not completed - save number of read pages*/
+                        query += `$${++queryCounter}`
+                        queryParams.push(completedPages);
+                      } else {
+                        /*completedPages is null - book was completed, set completed column as NULL*/
+                        query += `NULL`
+                      }
+                      /*end query*/
+                      query += ` WHERE id = $${++queryCounter};`;
+                      queryParams.push(id);
+                      /*send query*/
+                      await pg.query(query, queryParams);
+
+                      /********************************************************************************************
+                      MARK COLLECTION STORIES AS READ (IF RELEVANT)
+                      *********************************************************************************************/
+
+                      let moreStoriesToUpdateFlag = true;/*flag to indicate if this collection have more stories without read order flag*/
+                      queryParams.length = 0;//reset
+                      query = `UPDATE stories
+                      SET readed_date = $1,
+                      read_order = (
+                        SELECT read_order FROM stories WHERE read_order IS NOT NULL ORDER BY read_order DESC LIMIT 1
+                      ) + 1
+
+                      WHERE id = (
+                        SELECT id FROM stories WHERE parent = $2 AND read_order IS NULL ORDER BY id ASC LIMIT 1
+                      );`;
+
+                      queryParams.push(date, id);
+
+                      /*run until all stories are marked as read*/
+                      let tmpResultHolder = null;
+                      while(moreStoriesToUpdateFlag) {
+                        tmpResultHolder = await pg.query(query, queryParams);
+                        /*
+                        IF rowCount IS 0, NO ROWS WERE UPDATED, SO WHILE (0) WILL BREAK LOOP - NO MORE STORIES TO UPDATE
+                        */
+                        moreStoriesToUpdateFlag = tmpResultHolder.rowCount;
+                      }
                     }
                   };
 

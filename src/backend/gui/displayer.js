@@ -292,19 +292,39 @@ class BookDisplayer {
     let output = '<div class="displayer-options">';
     /*option to mark this book as purchased*/
     if(actions.buy) {
-      output += `<div title="Click if you've bought this book"><label for='invi-cb'><i class="fa fa-shopping-cart"></i></label><input type='checkbox' class = 'invisible-cb-displayer-option' id = 'invi-cb'><p>Mark as Purchased</p><form action="./purchased/${data.id}" method="post" id = 'mark-book-as-purchased'><input name="store" placeholder="Store Name" required><button type="submit" class="black-white-button">Save</button></form></div>`;
+      output += `<div title="Click if you've bought this book">` +
+      `<label for='invi-cb'>` +
+      `<i class="fa fa-shopping-cart"></i>` +
+      `</label>` +
+      `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'invi-cb'>` +
+      `<p>Mark as Purchased</p>` +
+      `<form action="./purchased/${data.id}" method="post" id = 'mark-book-as-purchased'>` +
+      `<input name="store" placeholder="Store Name" required>` +
+      `<button type="submit" class="black-white-button">Save</button>` +
+      `</form>` +
+      `</div>`;
     }
 
     /*option for purchased books to mark as received*/
     if(actions.received) {
-      output += `<div title="Click if you've received this book"><a href = "/insert/books/wish${data.id}"><i class="fa fa-truck"></i><p>Book Received</p></a></div>`;
+      output += `<div title="Click if you've received this book">` +
+      `<a href = "/insert/books/wish${data.id}">` +
+      `<i class="fa fa-truck"></i>` +
+      `<p>Book Received</p>` +
+      `</a>` +
+      `</div>`;
     }
 
     /*option to search book in web stores*/
     if(actions.search) {
       /*local module to find books on web stores*/
       const webStoreSearcher = require('../modules/webStoreSearcher.js');
-      output += `<div title="Search book online"><label for='search-book'><i class="fa fa-search"></i></label><input type='checkbox' class = 'invisible-cb-displayer-option' id = 'search-book'><p>Search Book Online</p>` +
+      output += `<div title="Search book online">` +
+      `<label for='search-book'>` +
+      `<i class="fa fa-search"></i>` +
+      `</label>` +
+      `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'search-book'>` +
+      `<p>Search Book Online</p>` +
       `<form id = 'web-stores-holder'>` +
       `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'betterworldbooks')}"><img src='/pic/icon/betterworldbooks'></a>` +
       `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'thriftbooks')}"><img src='/pic/icon/thriftbooks'></a>` +
@@ -312,7 +332,33 @@ class BookDisplayer {
       `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'bookdepository')}"><img src='/pic/icon/bookdepository'></a>` +
       `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'ebay')}"><img src='/pic/icon/ebay'></a>` +
       `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'amazon')}"><img src='/pic/icon/amazon'></a>` +
-      `</form></div>`;
+      `</form>` +
+      `</div>`;
+    }
+
+    /*option to mark a book as read*/
+    if(actions.bookRead) {
+      /*this option is relevant for book that were not read yet*/
+      if(!data.read_date) {
+        output += `<div title="Click if you've read this book">` +
+        `<label for='read-book-label'>` +
+        `<i class="fa fa-book"></i>` +
+        `</label>` +
+        `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'read-book-label'>` +
+        `<p>Mark as Read</p>` +
+        `<form action="/books/read/${data.id}" method="post" id = 'mark-book-as-read'>` +
+        `<input oneline='t' name="date" placeholder="Read Date (Jan 2020, Jan 2020 - Mar 2020)" required long='t'>` +
+        `<label class="radio-button-container">` +
+        `<input name='completed' type="checkbox" checked class = "book-completed-check-box" id='mark-book-as-completed'>` +
+        `<span class="radio-button-checkmark"></span>` +
+        `</label>` +
+        `<p oneline='f'>Book was Completed</p>` +
+        `<input oneline='t' name="pages" placeholder="Number of Read Pages" id='input-number-read-pages-book' type='number' long='t'>` +
+        `<button type="submit" class="black-white-button" oneline='t'>Save</button>` +
+        `</form>` +
+        `</div>` +
+        `<script src="/frontend/markBookAsRead"></script>`;
+      }
     }
 
     output += '</div>';

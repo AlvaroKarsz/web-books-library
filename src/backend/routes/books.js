@@ -39,7 +39,7 @@ module.exports = (app) => {
       html: file,
       title: bookData.name,
       folder: 'books',
-      displayer: entryDisplayer.build(bookData, 'books', {})
+      displayer: entryDisplayer.build(bookData, 'books', {bookRead:true})
     }));
   });
 
@@ -413,4 +413,76 @@ module.exports = (app) => {
     );
   });
 
+  app.post('/books/read/:id', async (req, res) => {
+    /*change book status to "read"*/
+
+    /*get book id from url*/
+    const id = req.params.id;
+
+    /*
+    get post data:
+    date: read date
+    completed: checkbox so may no be present, and may be on - indicates if book was completed
+    pages: number of pages read - relevant only if completed is not on
+    */
+    let data = req.body,
+    date = data.date,
+    completedFlag = data.completed && data.completed === 'on',
+    pages = completedFlag ? null : data.pages;
+
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    errorMessage = 'err-msg';
+    /*validate date format and beautify it*/
+    date = basic.readDateForDB(date);
+
+    /*invalid date format*/
+    if(!date) {
+      errorMessage += '=Invalid Date';//add error
+      if(referer.indexOf('?') === -1) {//no query params, add the first one
+        referer += '?' + errorMessage;
+      } else {//query params exists - add a new one
+        referer += '&' + errorIndicator;
+      }
+      res.redirect(referer);
+      return;
+    }
+
+    /*if book was not completed - check pages*/
+    if(!completedFlag) {
+      pages = pages.trim();//remove white spaces
+      if(!basic.isValidInt(
+        basic.toInt(pages)
+      )) {/*invalid pages number*/
+
+        errorMessage += '=Invalid Number of Pages';//add error
+        if(referer.indexOf('?') === -1) {//no query params, add the first one
+          referer += '?' + errorMessage;
+        } else {//query params exists - add a new one
+          referer += '&' + errorIndicator;
+        }
+        res.redirect(referer);
+        return;
+      }
+
+      /*number of read pages is bigger than book total pages*/
+      if( basic.isBiggerInt(pages, await db.getBookPages(id) )) {
+
+        errorMessage += '=Number of Read Pages is Bigger than Total Book Pages';//add error
+        if(referer.indexOf('?') === -1) {//no query params, add the first one
+          referer += '?' + errorMessage;
+        } else {//query params exists - add a new one
+          referer += '&' + errorIndicator;
+        }
+        res.redirect(referer);
+        return;
+      }
+
+    }
+
+    /*valid data - update DB*/
+    await db.markBookAsRead(id, date, pages);
+    res.redirect(referer);
+  });
 }
