@@ -68,5 +68,85 @@ module.exports = (app) => {
     }));
   });
 
+  app.get('/insert/series/:id?', async (req, res) =>  {
+    /*
+    if id exists - the serie already exists, and is been updated
+    if id doesn't exists - this is a new serie
+
+    frontend will handle with this id and fetch relevant data
+    use this param in order to set the html page title
+    */
+    const id = req.params.id;
+    let file = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'insertSerie.html'), 'UTF8');
+    res.send(await basic.renderHtml({
+      html: file,
+      folder: '',
+      totalCount: '',
+      objects: '',
+      urlParams: '',
+      title: '',
+      route: '',
+      pageTitle: id ? 'Edit Serie' : 'Enter New Serie' //if id exists - the page will load id's info
+    }));
+  });
+
+  /*fetch serie data by serie id*/
+  app.get('/get/serie/:id', async(req, res) => {
+    let id = req.params.id;
+    res.send(
+      await db.fetchSerieById(id)
+    );
+  });
+
+
+  app.post('/save/serie', async (req, res) => {
+    let requestBody = basic.formDataToJson(basic.trimAllFormData(req.body)), /*request body*/
+    /*save cover in another variable, and remove from requestBody*/
+    cover = requestBody.cover;
+    requestBody.cover = null;
+    /*
+    this route can be called in 2 different cases:
+    1) insert a new serie (default case).
+    2) alter an existsing serie, in this case requestBody.id will contain the existing serie id
+
+    notes:
+    in case 2), some unique checks will fail, so pass the existing id as excluded
+    */
+    let existingId = requestBody.id || null;
+
+    /*make sure this serie has an unique title<->author combination*/
+    if(await db.checkIfSerieAuthorAndTitleExistsInSeriesList(requestBody.title,requestBody.author, existingId)) {
+      res.send(JSON.stringify({status:false, message:'A serie with this title by same author already exist.'}));
+      return;
+    }
+
+    //save data in DB
+
+    if(existingId) {
+      /*existing serie - alter it*/
+      await db.alterSerieById(existingId, requestBody);
+    }  else {
+      /*new serie to save*/
+      await db.saveSerie(requestBody);
+    }
+
+
+    /*
+    now save cover if any
+    if a serie is been altered - the old picture may be overwrited
+    */
+    if(cover) {
+      const imagesHandler = require('../modules/images.js'),
+      serieId = await db.getSerieIdFromTitleAndAuthor(requestBody.title, requestBody.author),/*get new id, received when serie saved in DB*/
+      picPath = await imagesHandler.saveImage(cover,path.join(__dirname,'..','..','..','series'), serieId);/*save picture and get the full path (in order to get picture md5)*/
+      //now save md5 in DB
+      await db.savePictureHashes({
+        id: serieId,
+        folder: 'series',
+        md5: imagesHandler.calculateMD5(picPath)
+      });
+    }
+    res.send(JSON.stringify({status:true}));
+  });
 
 }

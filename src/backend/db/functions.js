@@ -20,6 +20,18 @@ class dbFunctions {
     await pg.query(`DELETE FROM cache WHERE id = $1 AND folder = $2;`, [id, folderName]);
   }
 
+  async fetchSerieById(id) {
+    const query = `SELECT
+    id,
+    name,
+    author
+    FROM series
+    WHERE id = $1;`;
+    let res = await pg.query(query, [id]);
+
+    return res.rows[0];
+  }
+
   async fetchAllBooks(ops = {}) {
     const limit = typeof ops.limit !== 'undefined' ? ops.limit : '99999999999';
     const offset = typeof ops.offset !== 'undefined' ? ops.offset : '0';
@@ -591,6 +603,19 @@ class dbFunctions {
     this.saveBookRating(wishId, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
   }
 
+  async saveSerie(serieJson) {
+    await pg.query(`INSERT INTO series(name, author) VALUES($1,$2);`, [serieJson.title, serieJson.author]);
+  }
+
+  async alterSerieById(id, serieJson) {
+    await pg.query(`UPDATE series SET name = $1, author = $2 WHERE id = $3;`, [serieJson.title, serieJson.author, id]);
+  }
+
+  async getSerieIdFromTitleAndAuthor(title, author) {
+    let res = await pg.query(`SELECT id FROM series WHERE LOWER(name) = $1 AND LOWER(author) = $2;`, [title.toLowerCase(), author.toLowerCase()]);
+    return res.rows[0].id;
+  }
+
   async saveBook(bookJson) {
     /*
     Needed actions:
@@ -947,259 +972,468 @@ class dbFunctions {
                   return result;
                 }
 
-                async getBookIdFromISBN(isbn) {
-                  const query = "SELECT id FROM my_books WHERE isbn=$1;";
-                  let result = await pg.query(query, [isbn]);
-                  result = result.rows[0]['id'];
-                  return result;
-                }
-
-                async getWishIdFromISBN(isbn) {
-                  const query = "SELECT id FROM wish_list WHERE isbn=$1;";
-                  let result = await pg.query(query, [isbn]);
-                  result = result.rows[0]['id'];
-                  return result;
-                }
-
-                async getStoryIdFromAuthorAndTitleAndParentISBN(title, author, parentISBN) {
-
-                  const query = `SELECT id FROM stories WHERE name=$1 AND parent = (
-                    SELECT id FROM my_books WHERE isbn=$2
-                  ) AND (
-                    author = $3
-                    OR
-                    (
-                      SELECT author FROM my_books WHERE isbn=$4
-                    ) = $5
-                  );`;
-                  let result = await pg.query(query, [title, parentISBN, author, parentISBN, author]);
-                  result = result.rows[0]['id'];
-                  return result;
-                }
-
-                async savePictureHashes(dataArr) {
-                  if(!Array.isArray(dataArr)) {/*force array*/
-                    dataArr = [dataArr];
-                  }
-                  let query = `INSERT INTO cache(md5, folder, id) VALUES `, paramCounter = 0, paramArr = [];
-                  dataArr.forEach((cvr) => {
-                    query += `($${++ paramCounter},$${++ paramCounter},$${++ paramCounter}),`;
-                    paramArr.push(cvr.md5,cvr.folder,cvr.id);
-                  });
-                  query = query.replace(/[,]$/,'') + " ON CONFLICT (id, folder) DO UPDATE SET md5 = EXCLUDED.md5, timestamp=TIMEZONE('ASIA/JERUSALEM'::TEXT, NOW());";//remove last comma + handle updates
-                  await pg.query(query, paramArr);
-                }
-
-                async fetchWishById(id, filters, type) {
-                  let query = ` SELECT
-                  main.id AS id,
-                  main.name AS name,
-                  main.isbn AS isbn,
-                  main.year AS year,
-                  main.author AS author,
-                  main.store AS store,
-                  main.order_date AS order_date,
-                  main.serie AS serie_id,
-                  main.serie_num AS serie_num,
-                  series.name AS serie,
-                  ratings_e.rating AS rating,
-                  ratings_e.count AS rating_count
-
-                  FROM wish_list main
-
-                  LEFT JOIN  series series
-                  ON main.serie = series.id
-
-                  LEFT JOIN  ratings ratings_e
-                  ON main.id = ratings_e.id AND ratings_e.table_name = 'wish_list'
-
-                  WHERE main.id = $1
-                  GROUP BY
-
-                  main.id,
-                  main.name,
-                  main.year,
-                  main.author,
-                  main.store,
-                  main.ordered,
-                  main.serie_num,
-                  main.serie,
-                  series.name,
-                  ratings_e.rating,
-                  ratings_e.count;`;
-                  let result = await pg.query(query, [id]);
-                  result = result.rows[0];
-
-                  /*now get the next book id and prev. book id based on filters received*/
-                  /*fetch all wishes in wanted order, then get the next and prev. id*/
-                  let allWishes = [];
-                  if(type === 'wish') {//fetch all wished and search there
-                    allWishes = await this.fetchAllWishes(filters);
-                  } else if (type === 'purchase') {//fetch from purchased list
-                    allWishes = await this.fetchAllPurchased(filters);
+                async checkIfSerieAuthorAndTitleExistsInSeriesList(title, author, idToExclude = null) {
+                  let query = `SELECT EXISTS(
+                    SELECT 1 FROM series WHERE UPPER(author)=$1 AND UPPER(name)=$2 `;
+                    let params = [author.toUpperCase(), title.toUpperCase()];
+                    /*if idToExclude is not null, exclude this id from query*/
+                    if(idToExclude) {
+                      query += ` AND id != $3`;
+                      params.push(idToExclude);
+                    }
+                    /*close query*/
+                    query += ');';
+                    let result = await pg.query(query, params);
+                    result = result.rows[0]['exists'];
+                    return result;
                   }
 
-                  /*allWishes.rows will not be defined when this function was called without type argument*/
-                  if(typeof allWishes.rows !== 'undefined') {
-                    /*iterate all wished until we reach the one with our ID*/
-                    for(let i = 0 , l = allWishes.rows.length ; i < l ; i ++ ) {
-                      if (allWishes.rows[i].id == id) {/*this listing is the one we are looking for*/
-                        /*
-                        first get "next id"
-                        if selected wish is the last in the list, grab the first as next, if not just grab the next one
-                        */
-                        result.nextListingId = i === allWishes.rows.length - 1 ? allWishes.rows[0].id : allWishes.rows[i + 1].id;
-                        /*
-                        get "prev. id"
-                        if selected wish is the first in the list, grab the last as prev., if not just grab the prev. one
-                        */
-                        result.prevListingId = i === 0 ? allWishes.rows[allWishes.rows.length - 1].id : allWishes.rows[i - 1].id;
+                  async getBookIdFromISBN(isbn) {
+                    const query = "SELECT id FROM my_books WHERE isbn=$1;";
+                    let result = await pg.query(query, [isbn]);
+                    result = result.rows[0]['id'];
+                    return result;
+                  }
 
-                        /*exit loop - wanted data found*/
-                        break;
+                  async getWishIdFromISBN(isbn) {
+                    const query = "SELECT id FROM wish_list WHERE isbn=$1;";
+                    let result = await pg.query(query, [isbn]);
+                    result = result.rows[0]['id'];
+                    return result;
+                  }
+
+                  async getStoryIdFromAuthorAndTitleAndParentISBN(title, author, parentISBN) {
+
+                    const query = `SELECT id FROM stories WHERE name=$1 AND parent = (
+                      SELECT id FROM my_books WHERE isbn=$2
+                    ) AND (
+                      author = $3
+                      OR
+                      (
+                        SELECT author FROM my_books WHERE isbn=$4
+                      ) = $5
+                    );`;
+                    let result = await pg.query(query, [title, parentISBN, author, parentISBN, author]);
+                    result = result.rows[0]['id'];
+                    return result;
+                  }
+
+                  async savePictureHashes(dataArr) {
+                    if(!Array.isArray(dataArr)) {/*force array*/
+                      dataArr = [dataArr];
+                    }
+                    let query = `INSERT INTO cache(md5, folder, id) VALUES `, paramCounter = 0, paramArr = [];
+                    dataArr.forEach((cvr) => {
+                      query += `($${++ paramCounter},$${++ paramCounter},$${++ paramCounter}),`;
+                      paramArr.push(cvr.md5,cvr.folder,cvr.id);
+                    });
+                    query = query.replace(/[,]$/,'') + " ON CONFLICT (id, folder) DO UPDATE SET md5 = EXCLUDED.md5, timestamp=TIMEZONE('ASIA/JERUSALEM'::TEXT, NOW());";//remove last comma + handle updates
+                    await pg.query(query, paramArr);
+                  }
+
+                  async fetchWishById(id, filters, type) {
+                    let query = ` SELECT
+                    main.id AS id,
+                    main.name AS name,
+                    main.isbn AS isbn,
+                    main.year AS year,
+                    main.author AS author,
+                    main.store AS store,
+                    main.order_date AS order_date,
+                    main.serie AS serie_id,
+                    main.serie_num AS serie_num,
+                    series.name AS serie,
+                    ratings_e.rating AS rating,
+                    ratings_e.count AS rating_count
+
+                    FROM wish_list main
+
+                    LEFT JOIN  series series
+                    ON main.serie = series.id
+
+                    LEFT JOIN  ratings ratings_e
+                    ON main.id = ratings_e.id AND ratings_e.table_name = 'wish_list'
+
+                    WHERE main.id = $1
+                    GROUP BY
+
+                    main.id,
+                    main.name,
+                    main.year,
+                    main.author,
+                    main.store,
+                    main.ordered,
+                    main.serie_num,
+                    main.serie,
+                    series.name,
+                    ratings_e.rating,
+                    ratings_e.count;`;
+                    let result = await pg.query(query, [id]);
+                    result = result.rows[0];
+
+                    /*now get the next book id and prev. book id based on filters received*/
+                    /*fetch all wishes in wanted order, then get the next and prev. id*/
+                    let allWishes = [];
+                    if(type === 'wish') {//fetch all wished and search there
+                      allWishes = await this.fetchAllWishes(filters);
+                    } else if (type === 'purchase') {//fetch from purchased list
+                      allWishes = await this.fetchAllPurchased(filters);
+                    }
+
+                    /*allWishes.rows will not be defined when this function was called without type argument*/
+                    if(typeof allWishes.rows !== 'undefined') {
+                      /*iterate all wished until we reach the one with our ID*/
+                      for(let i = 0 , l = allWishes.rows.length ; i < l ; i ++ ) {
+                        if (allWishes.rows[i].id == id) {/*this listing is the one we are looking for*/
+                          /*
+                          first get "next id"
+                          if selected wish is the last in the list, grab the first as next, if not just grab the next one
+                          */
+                          result.nextListingId = i === allWishes.rows.length - 1 ? allWishes.rows[0].id : allWishes.rows[i + 1].id;
+                          /*
+                          get "prev. id"
+                          if selected wish is the first in the list, grab the last as prev., if not just grab the prev. one
+                          */
+                          result.prevListingId = i === 0 ? allWishes.rows[allWishes.rows.length - 1].id : allWishes.rows[i - 1].id;
+
+                          /*exit loop - wanted data found*/
+                          break;
+                        }
                       }
                     }
+                    /*if this book is part of serie, fetch next and prev. in serie*/
+                    if(result.serie) {
+                      query = `SELECT
+                      (
+                        SELECT id FROM wish_list WHERE serie = $1 AND serie_num = $2
+                      ) AS serie_next_id,
+
+                      (
+                        SELECT name FROM wish_list WHERE serie = $3 AND serie_num = $4
+                      ) AS serie_next_name,
+
+                      (
+                        SELECT id FROM wish_list WHERE serie = $5 AND serie_num = $6
+                      ) AS serie_prev_id,
+
+                      (
+                        SELECT name FROM wish_list WHERE serie = $7 AND serie_num = $8
+                      ) AS serie_prev_name
+                      ;`;
+
+                      let seriesResult = await pg.query(query, [
+                        result.serie_id,
+                        parseInt(result.serie_num,10) + 1,
+                        result.serie_id,
+                        parseInt(result.serie_num,10) + 1,
+                        result.serie_id,
+                        parseInt(result.serie_num,10) - 1,
+                        result.serie_id,
+                        parseInt(result.serie_num,10) - 1,
+                      ]);
+                      seriesResult = seriesResult.rows[0];
+                      //merge results
+                      result = {...result, ...seriesResult};
+                    }
+                    return result;
                   }
-                  /*if this book is part of serie, fetch next and prev. in serie*/
-                  if(result.serie) {
-                    query = `SELECT
-                    (
-                      SELECT id FROM wish_list WHERE serie = $1 AND serie_num = $2
-                    ) AS serie_next_id,
 
-                    (
-                      SELECT name FROM wish_list WHERE serie = $3 AND serie_num = $4
-                    ) AS serie_next_name,
-
-                    (
-                      SELECT id FROM wish_list WHERE serie = $5 AND serie_num = $6
-                    ) AS serie_prev_id,
-
-                    (
-                      SELECT name FROM wish_list WHERE serie = $7 AND serie_num = $8
-                    ) AS serie_prev_name
-                    ;`;
-
-                    let seriesResult = await pg.query(query, [
-                      result.serie_id,
-                      parseInt(result.serie_num,10) + 1,
-                      result.serie_id,
-                      parseInt(result.serie_num,10) + 1,
-                      result.serie_id,
-                      parseInt(result.serie_num,10) - 1,
-                      result.serie_id,
-                      parseInt(result.serie_num,10) - 1,
-                    ]);
-                    seriesResult = seriesResult.rows[0];
-                    //merge results
-                    result = {...result, ...seriesResult};
-                  }
-                  return result;
-                }
-
-                async fetchBookById(id, filters, type) {
-                  let query = ` SELECT
-                  my_books_main.id AS id,
-                  my_books_main.name AS name,
-                  my_books_main.isbn AS isbn,
-                  my_books_main.year AS year,
-                  my_books_main.author AS author,
-                  my_books_main.store AS store,
-                  my_books_main.language AS language,
-                  my_books_main.original_language AS o_language,
-                  my_books_main.type AS type,
-                  my_books_main.pages AS pages,
-                  my_books_main.read_order AS read_order,
-                  my_books_main.read_date AS read_date,
-                  my_books_main.listed_date AS listed_date,
-                  my_books_main.completed AS read_completed,
-                  my_books_main.collection AS is_collection,
-                  my_books_main.serie AS serie_id,
-                  my_books_main.serie_num AS serie_num,
-                  series_table.name AS serie,
-                  ratings_entry.rating AS rating,
-                  ratings_entry.count AS rating_count,
-                  JSON_STRIP_NULLS(
-                    JSON_AGG(
-                      JSONB_BUILD_OBJECT(
-                        'name',
-                        stories_table.name,
-                        'id',
-                        stories_table.id::TEXT,
-                        'pages',
-                        stories_table.pages,
-                        'author',
-                        COALESCE(
-                          stories_table.author,
-                          my_books_main.author
+                  async fetchBookById(id, filters, type) {
+                    let query = ` SELECT
+                    my_books_main.id AS id,
+                    my_books_main.name AS name,
+                    my_books_main.isbn AS isbn,
+                    my_books_main.year AS year,
+                    my_books_main.author AS author,
+                    my_books_main.store AS store,
+                    my_books_main.language AS language,
+                    my_books_main.original_language AS o_language,
+                    my_books_main.type AS type,
+                    my_books_main.pages AS pages,
+                    my_books_main.read_order AS read_order,
+                    my_books_main.read_date AS read_date,
+                    my_books_main.listed_date AS listed_date,
+                    my_books_main.completed AS read_completed,
+                    my_books_main.collection AS is_collection,
+                    my_books_main.serie AS serie_id,
+                    my_books_main.serie_num AS serie_num,
+                    series_table.name AS serie,
+                    ratings_entry.rating AS rating,
+                    ratings_entry.count AS rating_count,
+                    JSON_STRIP_NULLS(
+                      JSON_AGG(
+                        JSONB_BUILD_OBJECT(
+                          'name',
+                          stories_table.name,
+                          'id',
+                          stories_table.id::TEXT,
+                          'pages',
+                          stories_table.pages,
+                          'author',
+                          COALESCE(
+                            stories_table.author,
+                            my_books_main.author
+                          )
                         )
                       )
-                    )
-                  ) AS stories,
-                  my_books_entry1.id AS next_id,
-                  my_books_entry1.name AS next_name,
-                  my_books_entry2.id AS prev_id,
-                  my_books_entry2.name AS prev_name
+                    ) AS stories,
+                    my_books_entry1.id AS next_id,
+                    my_books_entry1.name AS next_name,
+                    my_books_entry2.id AS prev_id,
+                    my_books_entry2.name AS prev_name
 
-                  FROM my_books my_books_main
+                    FROM my_books my_books_main
 
-                  LEFT JOIN my_books my_books_entry1
-                  ON my_books_main.next = my_books_entry1.id
+                    LEFT JOIN my_books my_books_entry1
+                    ON my_books_main.next = my_books_entry1.id
 
-                  LEFT JOIN my_books my_books_entry2
-                  ON my_books_main.id = my_books_entry2.next
+                    LEFT JOIN my_books my_books_entry2
+                    ON my_books_main.id = my_books_entry2.next
 
-                  LEFT JOIN ratings ratings_entry
-                  ON my_books_main.id = ratings_entry.id AND ratings_entry.table_name = 'my_books'
+                    LEFT JOIN ratings ratings_entry
+                    ON my_books_main.id = ratings_entry.id AND ratings_entry.table_name = 'my_books'
 
-                  LEFT JOIN series series_table
-                  ON my_books_main.serie = series_table.id
+                    LEFT JOIN series series_table
+                    ON my_books_main.serie = series_table.id
 
-                  LEFT JOIN stories stories_table
-                  ON my_books_main.id = stories_table.parent
+                    LEFT JOIN stories stories_table
+                    ON my_books_main.id = stories_table.parent
 
-                  WHERE my_books_main.id = $1
+                    WHERE my_books_main.id = $1
 
-                  GROUP BY
+                    GROUP BY
 
-                  my_books_main.id,
-                  my_books_main.name,
-                  my_books_main.year,
-                  my_books_main.author,
-                  my_books_main.language,
-                  my_books_main.original_language,
-                  my_books_main.isbn,
-                  my_books_main.type,
-                  my_books_main.pages,
-                  my_books_main.store,
-                  my_books_main.read_order,
-                  my_books_main.serie_num,
-                  my_books_main.completed,
-                  my_books_main.collection,
-                  series_table.name,
-                  my_books_main.listed_date,
-                  my_books_entry1.id,
-                  my_books_entry1.name,
-                  my_books_entry2.id,
-                  my_books_entry2.name,
-                  ratings_entry.rating,
-                  ratings_entry.count;`;
+                    my_books_main.id,
+                    my_books_main.name,
+                    my_books_main.year,
+                    my_books_main.author,
+                    my_books_main.language,
+                    my_books_main.original_language,
+                    my_books_main.isbn,
+                    my_books_main.type,
+                    my_books_main.pages,
+                    my_books_main.store,
+                    my_books_main.read_order,
+                    my_books_main.serie_num,
+                    my_books_main.completed,
+                    my_books_main.collection,
+                    series_table.name,
+                    my_books_main.listed_date,
+                    my_books_entry1.id,
+                    my_books_entry1.name,
+                    my_books_entry2.id,
+                    my_books_entry2.name,
+                    ratings_entry.rating,
+                    ratings_entry.count;`;
 
 
-                  let result = await pg.query(query, [id]);
-                  result = result.rows[0];
+                    let result = await pg.query(query, [id]);
+                    result = result.rows[0];
 
-                  /*now get the next book id and prev. book id based on filters received*/
-                  /*fetch all books in wanted order, then get the next and prev. id*/
-                  let allBooks = [];
-                  if(type === 'book') {//fetch all wished and search there
-                    allBooks = await this.fetchAllBooks(filters);
-                  } else if (type === 'read') {
-                    allBooks = await this.fetchAllReads(filters);
+                    /*now get the next book id and prev. book id based on filters received*/
+                    /*fetch all books in wanted order, then get the next and prev. id*/
+                    let allBooks = [];
+                    if(type === 'book') {//fetch all wished and search there
+                      allBooks = await this.fetchAllBooks(filters);
+                    } else if (type === 'read') {
+                      allBooks = await this.fetchAllReads(filters);
+                    }
+
+                    /*if type param received - if not (fetch for data from frontend) ignore this step*/
+                    if(typeof allBooks.rows !== 'undefined') {
+                      /*iterate all book until we reach the one with our ID*/
+                      for(let i = 0 , l = allBooks.rows.length ; i < l ; i ++ ) {
+                        if (allBooks.rows[i].id == id) {/*this listing is the one we are looking for*/
+                          /*
+                          first get "next id"
+                          if selected wish is the last in the list, grab the first as next, if not just grab the next one
+                          */
+                          result.nextListingId = i === allBooks.rows.length - 1 ? allBooks.rows[0].id : allBooks.rows[i + 1].id;
+                          /*
+                          get "prev. id"
+                          if selected wish is the first in the list, grab the last as prev., if not just grab the prev. one
+                          */
+                          result.prevListingId = i === 0 ? allBooks.rows[allBooks.rows.length - 1].id : allBooks.rows[i - 1].id;
+
+                          /*exit loop - wanted data found*/
+                          break;
+                        }
+                      }
+                    }
+                    /*
+                    if this is not a collection - clear stories value
+                    it will contain empty line with author's name
+                    */
+                    if(!result.is_collection) {
+                      result.stories = null;
+                    } else {//if this is a collection of stories, sort the stories by ID
+                      result.stories.sort((x,y) => x.id.localeCompare(y.id, undefined, {numeric: true}));
+                    }
+
+                    /*if this book is part of serie, fetch next and prev. in serie*/
+                    if(result.serie) {
+                      query = `SELECT
+                      (
+                        SELECT id FROM my_books WHERE serie = $1 AND serie_num = $2
+                      ) AS serie_next_id,
+
+                      (
+                        SELECT name FROM my_books WHERE serie = $3 AND serie_num = $4
+                      ) AS serie_next_name,
+
+                      (
+                        SELECT id FROM my_books WHERE serie = $5 AND serie_num = $6
+                      ) AS serie_prev_id,
+
+                      (
+                        SELECT name FROM my_books WHERE serie = $7 AND serie_num = $8
+                      ) AS serie_prev_name,
+
+                      (
+                        SELECT serie_num FROM my_books WHERE serie = $9 AND serie_num = $10
+                      ) AS serie_next_num,
+
+                      (
+                        SELECT serie_num FROM my_books WHERE serie = $11 AND serie_num = $12
+                      ) AS serie_prev_num;`;
+
+                      let seriesResult = await pg.query(query, [
+                        result.serie_id,
+                        parseInt(result.serie_num,10) + 1,
+                        result.serie_id,
+                        parseInt(result.serie_num,10) + 1,
+                        result.serie_id,
+                        parseInt(result.serie_num,10) - 1,
+                        result.serie_id,
+                        parseInt(result.serie_num,10) - 1,
+                        result.serie_id,
+                        parseInt(result.serie_num,10) + 1,
+                        result.serie_id,
+                        parseInt(result.serie_num,10) - 1,
+                      ]);
+                      seriesResult = seriesResult.rows[0];
+                      //merge results
+                      result = {...result, ...seriesResult};
+                    }
+                    return result;
                   }
 
-                  /*if type param received - if not (fetch for data from frontend) ignore this step*/
-                  if(typeof allBooks.rows !== 'undefined') {
+                  async fetchCollectionStories(id) {
+                    const query = `SELECT * FROM stories WHERE parent = $1;`;
+                    let res = await pg.query(query, [id]);
+                    return res.rows;
+                  }
+
+                  async markWishAsPurchased(id,store) {
+                    /*get today's date*/
+                    let date = new Date();
+                    date  = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+
+                    const query = `UPDATE wish_list
+                    SET
+                    ordered = 't',
+                    store = $1,
+                    order_date = $2
+                    WHERE id = $3;`;
+                    await pg.query(query, [store.trim().toUpperCase(), date, id]);
+                  }
+
+                  async fetchStoryById(id, filters) {
+                    const query = `SELECT
+                    my_stories_main.id AS id,
+                    my_stories_main.name AS name,
+                    my_stories_main.pages AS pages,
+                    my_stories_main.author AS story_author,
+                    my_stories_main.readed_date AS read_date,
+                    my_stories_main.read_order AS read_order,
+                    my_stories_main.completed AS read_completed,
+                    my_books_main.year AS year,
+                    my_books_main.name AS collection_name,
+                    (
+                      SELECT
+                      stories_temp_entry_nested_double.index
+                      FROM (
+                        SELECT
+                        stories_temp_entry_nested.id,
+                        ROW_NUMBER () OVER (ORDER BY stories_temp_entry_nested.id) AS index
+                        FROM stories stories_temp_entry_nested
+                        WHERE my_books_main.id = stories_temp_entry_nested.parent
+                        ORDER BY stories_temp_entry_nested.id
+                      ) stories_temp_entry_nested_double
+                      WHERE stories_temp_entry_nested_double.id = $1
+                    ) AS collection_number,
+                    my_books_main.author AS author,
+                    my_books_main.language AS language,
+                    my_books_main.listed_date AS listed_date,
+                    my_books_main.original_language AS o_language,
+                    my_books_main.id AS collection_id,
+                    my_stories_entry1.id AS next_collection_id,
+                    my_stories_entry1.name AS next_collection_name,
+                    my_stories_entry2.id AS prev_collection_id,
+                    my_stories_entry2.name AS prev_collection_name,
+                    ratings_e.rating AS rating,
+                    ratings_e.count AS rating_count
+
+                    FROM stories my_stories_main
+
+                    LEFT JOIN  my_books my_books_main
+                    ON my_stories_main.parent = my_books_main.id
+
+                    LEFT JOIN stories my_stories_entry1
+                    ON my_stories_entry1.id = (
+                      SELECT id FROM stories temp_stories
+                      WHERE temp_stories.parent = my_stories_main.parent
+                      AND
+                      temp_stories.id > my_stories_main.id
+                      ORDER BY temp_stories.id ASC
+                      LIMIT 1
+                    )
+
+                    LEFT JOIN stories my_stories_entry2
+                    ON my_stories_entry2.id = (
+                      SELECT id FROM stories temp_stories
+                      WHERE temp_stories.parent = my_stories_main.parent
+                      AND
+                      temp_stories.id < my_stories_main.id
+                      ORDER BY temp_stories.id DESC
+                      LIMIT 1
+                    )
+
+                    LEFT JOIN  ratings ratings_e
+                    ON my_stories_main.id = ratings_e.id AND ratings_e.table_name = 'stories'
+
+                    WHERE my_stories_main.id = $1
+                    GROUP BY
+                    my_stories_main.id,
+                    my_stories_main.name,
+                    my_stories_main.pages,
+                    my_stories_main.author,
+                    my_books_main.id,
+                    my_books_main.name,
+                    my_books_main.year,
+                    my_books_main.author,
+                    my_books_main.language,
+                    my_books_main.listed_date,
+                    my_stories_main.completed,
+                    my_books_main.original_language,
+                    my_books_main.read_order,
+                    my_stories_entry1.id,
+                    my_stories_entry1.name,
+                    my_stories_entry2.id,
+                    my_stories_entry2.name,
+                    ratings_e.rating,
+                    ratings_e.count;`;
+
+
+                    let result = await pg.query(query, [id]);
+                    result = result.rows[0];
+
+                    /*now get the next story id and prev. book id based on filters received*/
+                    /*fetch all stories in wanted order, then get the next and prev. id*/
+
+                    let allBooks = await this.fetchAllStories(filters);
+
+
                     /*iterate all book until we reach the one with our ID*/
                     for(let i = 0 , l = allBooks.rows.length ; i < l ; i ++ ) {
                       if (allBooks.rows[i].id == id) {/*this listing is the one we are looking for*/
@@ -1218,653 +1452,460 @@ class dbFunctions {
                         break;
                       }
                     }
-                  }
-                  /*
-                  if this is not a collection - clear stories value
-                  it will contain empty line with author's name
-                  */
-                  if(!result.is_collection) {
-                    result.stories = null;
-                  } else {//if this is a collection of stories, sort the stories by ID
-                    result.stories.sort((x,y) => x.id.localeCompare(y.id, undefined, {numeric: true}));
+                    return result;
                   }
 
-                  /*if this book is part of serie, fetch next and prev. in serie*/
-                  if(result.serie) {
-                    query = `SELECT
-                    (
-                      SELECT id FROM my_books WHERE serie = $1 AND serie_num = $2
-                    ) AS serie_next_id,
+                  async fetchSerieById(id, filters) {
+                    const query = `SELECT
+                    id,
+                    name,
+                    author,
 
                     (
-                      SELECT name FROM my_books WHERE serie = $3 AND serie_num = $4
-                    ) AS serie_next_name,
-
-                    (
-                      SELECT id FROM my_books WHERE serie = $5 AND serie_num = $6
-                    ) AS serie_prev_id,
-
-                    (
-                      SELECT name FROM my_books WHERE serie = $7 AND serie_num = $8
-                    ) AS serie_prev_name,
-
-                    (
-                      SELECT serie_num FROM my_books WHERE serie = $9 AND serie_num = $10
-                    ) AS serie_next_num,
-
-                    (
-                      SELECT serie_num FROM my_books WHERE serie = $11 AND serie_num = $12
-                    ) AS serie_prev_num;`;
-
-                    let seriesResult = await pg.query(query, [
-                      result.serie_id,
-                      parseInt(result.serie_num,10) + 1,
-                      result.serie_id,
-                      parseInt(result.serie_num,10) + 1,
-                      result.serie_id,
-                      parseInt(result.serie_num,10) - 1,
-                      result.serie_id,
-                      parseInt(result.serie_num,10) - 1,
-                      result.serie_id,
-                      parseInt(result.serie_num,10) + 1,
-                      result.serie_id,
-                      parseInt(result.serie_num,10) - 1,
-                    ]);
-                    seriesResult = seriesResult.rows[0];
-                    //merge results
-                    result = {...result, ...seriesResult};
-                  }
-                  return result;
-                }
-
-                async fetchCollectionStories(id) {
-                  const query = `SELECT * FROM stories WHERE parent = $1;`;
-                  let res = await pg.query(query, [id]);
-                  return res.rows;
-                }
-
-                async markWishAsPurchased(id,store) {
-                  /*get today's date*/
-                  let date = new Date();
-                  date  = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
-
-                  const query = `UPDATE wish_list
-                  SET
-                  ordered = 't',
-                  store = $1,
-                  order_date = $2
-                  WHERE id = $3;`;
-                  await pg.query(query, [store.trim().toUpperCase(), date, id]);
-                }
-
-                async fetchStoryById(id, filters) {
-                  const query = `SELECT
-                  my_stories_main.id AS id,
-                  my_stories_main.name AS name,
-                  my_stories_main.pages AS pages,
-                  my_stories_main.author AS story_author,
-                  my_stories_main.readed_date AS read_date,
-                  my_stories_main.read_order AS read_order,
-                  my_stories_main.completed AS read_completed,
-                  my_books_main.year AS year,
-                  my_books_main.name AS collection_name,
-                  (
-                    SELECT
-                    stories_temp_entry_nested_double.index
-                    FROM (
                       SELECT
-                      stories_temp_entry_nested.id,
-                      ROW_NUMBER () OVER (ORDER BY stories_temp_entry_nested.id) AS index
-                      FROM stories stories_temp_entry_nested
-                      WHERE my_books_main.id = stories_temp_entry_nested.parent
-                      ORDER BY stories_temp_entry_nested.id
-                    ) stories_temp_entry_nested_double
-                    WHERE stories_temp_entry_nested_double.id = $1
-                  ) AS collection_number,
-                  my_books_main.author AS author,
-                  my_books_main.language AS language,
-                  my_books_main.listed_date AS listed_date,
-                  my_books_main.original_language AS o_language,
-                  my_books_main.id AS collection_id,
-                  my_stories_entry1.id AS next_collection_id,
-                  my_stories_entry1.name AS next_collection_name,
-                  my_stories_entry2.id AS prev_collection_id,
-                  my_stories_entry2.name AS prev_collection_name,
-                  ratings_e.rating AS rating,
-                  ratings_e.count AS rating_count
+                      JSON_STRIP_NULLS(
+                        JSON_AGG(
+                          JSONB_BUILD_OBJECT(
+                            'name',
+                            name,
+                            'id',
+                            id::TEXT,
+                            'number',
+                            serie_num::TEXT
+                          )
+                          ORDER BY serie_num
+                        )
+                      ) FROM my_books
+                      WHERE serie = $1
+                    ) AS books,
 
-                  FROM stories my_stories_main
+                    (
+                      SELECT
+                      JSON_STRIP_NULLS(
+                        JSON_AGG(
+                          JSONB_BUILD_OBJECT(
+                            'name',
+                            name,
+                            'id',
+                            id::TEXT,
+                            'number',
+                            serie_num::TEXT
+                          )
+                          ORDER BY serie_num
+                        )
+                      )  FROM my_books
+                      WHERE serie = $1 AND read_order IS NOT NULL
+                    ) AS books_read,
 
-                  LEFT JOIN  my_books my_books_main
-                  ON my_stories_main.parent = my_books_main.id
+                    (
+                      SELECT
+                      JSON_STRIP_NULLS(
+                        JSON_AGG(
+                          JSONB_BUILD_OBJECT(
+                            'name',
+                            name,
+                            'id',
+                            id::TEXT,
+                            'number',
+                            serie_num::TEXT
+                          )
+                          ORDER BY serie_num
+                        )
+                      ) FROM wish_list
+                      WHERE serie = $1 AND ordered != 't'
+                    ) AS wish_books,
 
-                  LEFT JOIN stories my_stories_entry1
-                  ON my_stories_entry1.id = (
-                    SELECT id FROM stories temp_stories
-                    WHERE temp_stories.parent = my_stories_main.parent
-                    AND
-                    temp_stories.id > my_stories_main.id
-                    ORDER BY temp_stories.id ASC
-                    LIMIT 1
-                  )
+                    (
+                      SELECT
+                      JSON_STRIP_NULLS(
+                        JSON_AGG(
+                          JSONB_BUILD_OBJECT(
+                            'name',
+                            name,
+                            'id',
+                            id::TEXT,
+                            'number',
+                            serie_num::TEXT
+                          )
+                          ORDER BY serie_num
+                        )
+                      ) FROM wish_list
+                      WHERE serie = $1 AND ordered = 't'
+                    ) AS purchased_books
 
-                  LEFT JOIN stories my_stories_entry2
-                  ON my_stories_entry2.id = (
-                    SELECT id FROM stories temp_stories
-                    WHERE temp_stories.parent = my_stories_main.parent
-                    AND
-                    temp_stories.id < my_stories_main.id
-                    ORDER BY temp_stories.id DESC
-                    LIMIT 1
-                  )
+                    FROM series
 
-                  LEFT JOIN  ratings ratings_e
-                  ON my_stories_main.id = ratings_e.id AND ratings_e.table_name = 'stories'
+                    WHERE id = $1`;
 
-                  WHERE my_stories_main.id = $1
-                  GROUP BY
-                  my_stories_main.id,
-                  my_stories_main.name,
-                  my_stories_main.pages,
-                  my_stories_main.author,
-                  my_books_main.id,
-                  my_books_main.name,
-                  my_books_main.year,
-                  my_books_main.author,
-                  my_books_main.language,
-                  my_books_main.listed_date,
-                  my_stories_main.completed,
-                  my_books_main.original_language,
-                  my_books_main.read_order,
-                  my_stories_entry1.id,
-                  my_stories_entry1.name,
-                  my_stories_entry2.id,
-                  my_stories_entry2.name,
-                  ratings_e.rating,
-                  ratings_e.count;`;
+                    let result = await pg.query(query, [id]);
+                    result = result.rows[0];
 
+                    /*now get the next serie id and prev. book id based on filters received*/
+                    /*fetch all stories in wanted order, then get the next and prev. id*/
 
-                  let result = await pg.query(query, [id]);
-                  result = result.rows[0];
-
-                  /*now get the next story id and prev. book id based on filters received*/
-                  /*fetch all stories in wanted order, then get the next and prev. id*/
-
-                  let allBooks = await this.fetchAllStories(filters);
+                    let allBooks = await this.fetchAllSeries(filters);
 
 
-                  /*iterate all book until we reach the one with our ID*/
-                  for(let i = 0 , l = allBooks.rows.length ; i < l ; i ++ ) {
-                    if (allBooks.rows[i].id == id) {/*this listing is the one we are looking for*/
-                      /*
-                      first get "next id"
-                      if selected wish is the last in the list, grab the first as next, if not just grab the next one
-                      */
-                      result.nextListingId = i === allBooks.rows.length - 1 ? allBooks.rows[0].id : allBooks.rows[i + 1].id;
-                      /*
-                      get "prev. id"
-                      if selected wish is the first in the list, grab the last as prev., if not just grab the prev. one
-                      */
-                      result.prevListingId = i === 0 ? allBooks.rows[allBooks.rows.length - 1].id : allBooks.rows[i - 1].id;
+                    /*iterate all book until we reach the one with our ID*/
+                    for(let i = 0 , l = allBooks.rows.length ; i < l ; i ++ ) {
+                      if (allBooks.rows[i].id == id) {/*this listing is the one we are looking for*/
+                        /*
+                        first get "next id"
+                        if selected wish is the last in the list, grab the first as next, if not just grab the next one
+                        */
+                        result.nextListingId = i === allBooks.rows.length - 1 ? allBooks.rows[0].id : allBooks.rows[i + 1].id;
+                        /*
+                        get "prev. id"
+                        if selected wish is the first in the list, grab the last as prev., if not just grab the prev. one
+                        */
+                        result.prevListingId = i === 0 ? allBooks.rows[allBooks.rows.length - 1].id : allBooks.rows[i - 1].id;
 
-                      /*exit loop - wanted data found*/
-                      break;
+                        /*exit loop - wanted data found*/
+                        break;
+                      }
                     }
+                    return result;
                   }
-                  return result;
-                }
 
-                async fetchSerieById(id, filters) {
-                  const query = `SELECT
-                  id,
-                  name,
-                  author,
+                  async fetchReadById(id, filters, type) {
+                    /*same as "fetch book by id, just different type"*/
+                    return this.fetchBookById(...arguments);
+                  }
 
-                  (
-                    SELECT
-                    JSON_STRIP_NULLS(
-                      JSON_AGG(
-                        JSONB_BUILD_OBJECT(
-                          'name',
-                          name,
-                          'id',
-                          id::TEXT,
-                          'number',
-                          serie_num::TEXT
-                        )
-                        ORDER BY serie_num
-                      )
-                    ) FROM my_books
-                    WHERE serie = $1
-                  ) AS books,
+                  async alterBookById(id, bookJson) {
+                    /********************************************************************************************
+                    ALTER MAIN TABLE WITH NEW PARAMS
+                    *********************************************************************************************/
+                    /*general parameters*/
+                    let paramsCounter = 0;
+                    let query = `UPDATE my_books SET
+                    name = $${++paramsCounter},
+                    year = $${++paramsCounter},
+                    author = $${++paramsCounter},
+                    original_language = $${++paramsCounter},
+                    language = $${++paramsCounter},
+                    store = $${++paramsCounter},
+                    isbn = $${++paramsCounter},
+                    type = $${++paramsCounter},
+                    pages = $${++paramsCounter}
+                    `;
+                    let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages];
 
-                  (
-                    SELECT
-                    JSON_STRIP_NULLS(
-                      JSON_AGG(
-                        JSONB_BUILD_OBJECT(
-                          'name',
-                          name,
-                          'id',
-                          id::TEXT,
-                          'number',
-                          serie_num::TEXT
-                        )
-                        ORDER BY serie_num
-                      )
-                    )  FROM my_books
-                    WHERE serie = $1 AND read_order IS NOT NULL
-                  ) AS books_read,
-
-                  (
-                    SELECT
-                    JSON_STRIP_NULLS(
-                      JSON_AGG(
-                        JSONB_BUILD_OBJECT(
-                          'name',
-                          name,
-                          'id',
-                          id::TEXT,
-                          'number',
-                          serie_num::TEXT
-                        )
-                        ORDER BY serie_num
-                      )
-                    ) FROM wish_list
-                    WHERE serie = $1 AND ordered != 't'
-                  ) AS wish_books,
-
-                  (
-                    SELECT
-                    JSON_STRIP_NULLS(
-                      JSON_AGG(
-                        JSONB_BUILD_OBJECT(
-                          'name',
-                          name,
-                          'id',
-                          id::TEXT,
-                          'number',
-                          serie_num::TEXT
-                        )
-                        ORDER BY serie_num
-                      )
-                    ) FROM wish_list
-                    WHERE serie = $1 AND ordered = 't'
-                  ) AS purchased_books
-
-                  FROM series
-
-                  WHERE id = $1`;
-
-                  let result = await pg.query(query, [id]);
-                  result = result.rows[0];
-
-                  /*now get the next serie id and prev. book id based on filters received*/
-                  /*fetch all stories in wanted order, then get the next and prev. id*/
-
-                  let allBooks = await this.fetchAllSeries(filters);
-
-
-                  /*iterate all book until we reach the one with our ID*/
-                  for(let i = 0 , l = allBooks.rows.length ; i < l ; i ++ ) {
-                    if (allBooks.rows[i].id == id) {/*this listing is the one we are looking for*/
-                      /*
-                      first get "next id"
-                      if selected wish is the last in the list, grab the first as next, if not just grab the next one
-                      */
-                      result.nextListingId = i === allBooks.rows.length - 1 ? allBooks.rows[0].id : allBooks.rows[i + 1].id;
-                      /*
-                      get "prev. id"
-                      if selected wish is the first in the list, grab the last as prev., if not just grab the prev. one
-                      */
-                      result.prevListingId = i === 0 ? allBooks.rows[allBooks.rows.length - 1].id : allBooks.rows[i - 1].id;
-
-                      /*exit loop - wanted data found*/
-                      break;
+                    /*if this book is part of serie - add serie parameters*/
+                    if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
+                      query += `,serie = $${++paramsCounter},
+                      serie_num = $${++paramsCounter}
+                      `;
+                      queryArguments.push(bookJson.serie.value,bookJson.serie.number);
+                    } else {/*no serie, set null in case this is previoulsy a part of serie and this part was deleted*/
+                      query += `,serie = NULL,
+                      serie_num = NULL
+                      `;
                     }
-                  }
-                  return result;
-                }
 
-                async fetchReadById(id, filters, type) {
-                  /*same as "fetch book by id, just different type"*/
-                  return this.fetchBookById(...arguments);
-                }
+                    /*if this book if followed by another book, add the next book ID*/
+                    if(bookJson.next) {
+                      query += `,next = $${++paramsCounter}
+                      `;
+                      queryArguments.push(bookJson.next);
+                    } else {/*no next book - reset to null*/
+                      query += `,next = NULL
+                      `;
+                    }
 
-                async alterBookById(id, bookJson) {
-                  /********************************************************************************************
-                  ALTER MAIN TABLE WITH NEW PARAMS
-                  *********************************************************************************************/
-                  /*general parameters*/
-                  let paramsCounter = 0;
-                  let query = `UPDATE my_books SET
-                  name = $${++paramsCounter},
-                  year = $${++paramsCounter},
-                  author = $${++paramsCounter},
-                  original_language = $${++paramsCounter},
-                  language = $${++paramsCounter},
-                  store = $${++paramsCounter},
-                  isbn = $${++paramsCounter},
-                  type = $${++paramsCounter},
-                  pages = $${++paramsCounter}
-                  `;
-                  let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages];
+                    /*if this is a collection, set collection flag in DB as true*/
+                    if(bookJson.collection && bookJson.collection.length) {
+                      query += `,collection = 't'
+                      `;
+                    } else {/*reset to false*/
+                      query += `,collection = 'f'
+                      `;
+                    }
 
-                  /*if this book is part of serie - add serie parameters*/
-                  if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
-                    query += `,serie = $${++paramsCounter},
-                    serie_num = $${++paramsCounter}
-                    `;
-                    queryArguments.push(bookJson.serie.value,bookJson.serie.number);
-                  } else {/*no serie, set null in case this is previoulsy a part of serie and this part was deleted*/
-                    query += `,serie = NULL,
-                    serie_num = NULL
-                    `;
-                  }
+                    /*run query and update main book table*/
+                    query += `WHERE id = $${++paramsCounter}`;
+                    queryArguments.push(id);
 
-                  /*if this book if followed by another book, add the next book ID*/
-                  if(bookJson.next) {
-                    query += `,next = $${++paramsCounter}
-                    `;
-                    queryArguments.push(bookJson.next);
-                  } else {/*no next book - reset to null*/
-                    query += `,next = NULL
-                    `;
-                  }
-
-                  /*if this is a collection, set collection flag in DB as true*/
-                  if(bookJson.collection && bookJson.collection.length) {
-                    query += `,collection = 't'
-                    `;
-                  } else {/*reset to false*/
-                    query += `,collection = 'f'
-                    `;
-                  }
-
-                  /*run query and update main book table*/
-                  query += `WHERE id = $${++paramsCounter}`;
-                  queryArguments.push(id);
-
-                  /*send query*/
-                  await pg.query(query, queryArguments);
-
-                  /********************************************************************************************
-                  DELETE RATINGS FOR BOOK (AND STORIES IF COLLECTION), RELEVANT RATINGS WILL BE SAVED AGAIN
-                  *********************************************************************************************/
-
-                  /*delete stories ratings*/
-                  queryArguments.length = 0;//reset queryArguments array
-                  queryArguments.push(id);
-                  query = `DELETE FROM ratings WHERE table_name = 'stories' AND id IN (
-                    SELECT id FROM stories WHERE parent = $1
-                  );`;
-                  await pg.query(query, queryArguments);
-                  /*now delete book rating*/
-                  query = `DELETE FROM ratings WHERE table_name = 'my_books' AND id = $1;`;
-                  await pg.query(query, queryArguments);
-
-                  /********************************************************************************************
-                  UPDATE PREV. BOOK IF EXISTS
-                  *********************************************************************************************/
-                  /*
-                  first remove 'next' value to all books that were followed by this book
-                  the 'next' data will be set again if still relevant
-                  */
-                  queryArguments.length = 0;//reset queryArguments array
-                  query = `UPDATE my_books
-                  SET next = NULL
-                  WHERE next = $1`;
-                  queryArguments.push(id);
-                  await pg.query(query, queryArguments);
-
-                  /*now - if prev. exists, alter the prev. book to point to this one as follow book*/
-                  if(bookJson.prev) {
-                    queryArguments.length = 0;//reset queryArguments array
-                    query = `UPDATE my_books SET next = $1 WHERE id = $2;`;
-                    queryArguments.push(id, bookJson.prev);
+                    /*send query*/
                     await pg.query(query, queryArguments);
-                  }
 
+                    /********************************************************************************************
+                    DELETE RATINGS FOR BOOK (AND STORIES IF COLLECTION), RELEVANT RATINGS WILL BE SAVED AGAIN
+                    *********************************************************************************************/
 
-                  /********************************************************************************************
-                  ALTER STORIES IF COLLECTION
-                  *********************************************************************************************/
-                  /*if this is not a collection - remove all stories with this parent*/
-                  if(!bookJson.collection || !bookJson.collection.length) {
+                    /*delete stories ratings*/
                     queryArguments.length = 0;//reset queryArguments array
                     queryArguments.push(id);
-                    query = `DELETE FROM stories WHERE parent = $1;`;
+                    query = `DELETE FROM ratings WHERE table_name = 'stories' AND id IN (
+                      SELECT id FROM stories WHERE parent = $1
+                    );`;
+                    await pg.query(query, queryArguments);
+                    /*now delete book rating*/
+                    query = `DELETE FROM ratings WHERE table_name = 'my_books' AND id = $1;`;
                     await pg.query(query, queryArguments);
 
-                  } else {
-                    /*this is a collection - alter the existsing stories if needed, add new ones, and delete irrelevant ones*/
-
-                    /*fetch all prev. stories for this book*/
-                    let oldStories = await this.fetchCollectionStories(id);
+                    /********************************************************************************************
+                    UPDATE PREV. BOOK IF EXISTS
+                    *********************************************************************************************/
                     /*
-                    iterate stories received from alered json.
-                    stories that were modified/not changed will have an ID value (story ID)
-                    new stories will have id as false
+                    first remove 'next' value to all books that were followed by this book
+                    the 'next' data will be set again if still relevant
                     */
-                    let storyFoundFlag = false;//default value - flag indicate if a match was found for a new story
-                    for (let i = 0 , l = bookJson.collection.length ; i < l ; i ++ ) {
-                      storyFoundFlag = false;//reset
-                      if(bookJson.collection[i].id) {//have ID - story should exists in oldStories array
-                        //find story in oldStories array
-                        for (let j = 0 , s = oldStories.length ; j < s ; j ++ ) {
-                          if( bookJson.collection[i].id.toString() === oldStories[j].id.toString() ) {//match, same ID
-                            /*update story entry*/
-                            queryArguments.length = 0;//reset queryArguments array
-                            paramsCounter = 0;//reset counter
-                            query = `UPDATE stories SET name = $${++paramsCounter}, pages = $${++paramsCounter}, author=`;
-                            queryArguments.push(bookJson.collection[i].title, bookJson.collection[i].pages);
-                            if(bookJson.collection[i].author) {//story has author different from collection, add into query
-                              query += `$${++paramsCounter} `;
-                              queryArguments.push(bookJson.collection[i].author);
-                            } else {//same author as collection, set value as NULL
-                              query += `NULL `;
-                            }
-                            //complete query and run it
-                            query += ` WHERE id = $${++paramsCounter};`;
-                            queryArguments.push(bookJson.collection[i].id);
-                            //send query
-                            await pg.query(query, queryArguments);
+                    queryArguments.length = 0;//reset queryArguments array
+                    query = `UPDATE my_books
+                    SET next = NULL
+                    WHERE next = $1`;
+                    queryArguments.push(id);
+                    await pg.query(query, queryArguments);
 
-                            /*
-                            since match was found, break nested loop and change flag value
-                            */
-                            storyFoundFlag = true;
-                            break;
-                          }
-                        }
+                    /*now - if prev. exists, alter the prev. book to point to this one as follow book*/
+                    if(bookJson.prev) {
+                      queryArguments.length = 0;//reset queryArguments array
+                      query = `UPDATE my_books SET next = $1 WHERE id = $2;`;
+                      queryArguments.push(id, bookJson.prev);
+                      await pg.query(query, queryArguments);
+                    }
 
-                        if(storyFoundFlag) {/*match was found for this story, continue to the next one*/
-                          continue;
-                        } else {
-                          /*no match - should never happen because if a story from bookJson has an ID value, this means the story already exists - anyway insert it*/
-                          queryArguments.length = 0;//reset queryArguments array
-                          paramsCounter = 0;//reset counter
-                          query = `INSERT INTO stories(name, pages, parent, author) VALUES ($${++paramsCounter},$${++paramsCounter},$${++paramsCounter},`;
-                            queryArguments.push(bookJson.collection[i].title, bookJson.collection[i].pages, id);
-                            if(bookJson.collection[i].author) {//story has author different from collection, add into query
-                              query += `$${++paramsCounter} `;
-                              queryArguments.push(bookJson.collection[i].author);
-                            } else {//same author as collection, set value as NULL
-                              query += `NULL `;
-                            }
-                            /*close query and send it*/
-                            query += `);`;
-                            await pg.query(query, queryArguments);
-                          }
-                        } else {
-                          /*book has no ID - new book - should be inserted*/
-                          queryArguments.length = 0;//reset queryArguments array
-                          paramsCounter = 0;//reset counter
-                          query = `INSERT INTO stories(name, pages, parent, author) VALUES ($${++paramsCounter},$${++paramsCounter},$${++paramsCounter},`;
-                            queryArguments.push(bookJson.collection[i].title, bookJson.collection[i].pages, id);
-                            if(bookJson.collection[i].author) {//story has author different from collection, add into query
-                              query += `$${++paramsCounter} `;
-                              queryArguments.push(bookJson.collection[i].author);
-                            } else {//same author as collection, set value as NULL
-                              query += `NULL `;
-                            }
-                            /*close query and send it*/
-                            query += `);`;
-                            await pg.query(query, queryArguments);
-                          }
-                        }
 
-                        /*iterate oldStories and check if some stories were deleted (stories with id that not exists on bookJson.collection)*/
-                        let idsToDelete = [];//save here stories to delete
+                    /********************************************************************************************
+                    ALTER STORIES IF COLLECTION
+                    *********************************************************************************************/
+                    /*if this is not a collection - remove all stories with this parent*/
+                    if(!bookJson.collection || !bookJson.collection.length) {
+                      queryArguments.length = 0;//reset queryArguments array
+                      queryArguments.push(id);
+                      query = `DELETE FROM stories WHERE parent = $1;`;
+                      await pg.query(query, queryArguments);
 
-                        for(let i = 0 , l = oldStories.length ; i < l ; i ++ ) {
-                          storyFoundFlag = false;//reset flag
+                    } else {
+                      /*this is a collection - alter the existsing stories if needed, add new ones, and delete irrelevant ones*/
 
-                          for(let j = 0 , s = bookJson.collection.length ; j < s ; j ++ ) {
-                            if (oldStories[i].id.toString() === bookJson.collection[j].id.toString()) {
-                              /*match - this story exists - don't delete it*/
+                      /*fetch all prev. stories for this book*/
+                      let oldStories = await this.fetchCollectionStories(id);
+                      /*
+                      iterate stories received from alered json.
+                      stories that were modified/not changed will have an ID value (story ID)
+                      new stories will have id as false
+                      */
+                      let storyFoundFlag = false;//default value - flag indicate if a match was found for a new story
+                      for (let i = 0 , l = bookJson.collection.length ; i < l ; i ++ ) {
+                        storyFoundFlag = false;//reset
+                        if(bookJson.collection[i].id) {//have ID - story should exists in oldStories array
+                          //find story in oldStories array
+                          for (let j = 0 , s = oldStories.length ; j < s ; j ++ ) {
+                            if( bookJson.collection[i].id.toString() === oldStories[j].id.toString() ) {//match, same ID
+                              /*update story entry*/
+                              queryArguments.length = 0;//reset queryArguments array
+                              paramsCounter = 0;//reset counter
+                              query = `UPDATE stories SET name = $${++paramsCounter}, pages = $${++paramsCounter}, author=`;
+                              queryArguments.push(bookJson.collection[i].title, bookJson.collection[i].pages);
+                              if(bookJson.collection[i].author) {//story has author different from collection, add into query
+                                query += `$${++paramsCounter} `;
+                                queryArguments.push(bookJson.collection[i].author);
+                              } else {//same author as collection, set value as NULL
+                                query += `NULL `;
+                              }
+                              //complete query and run it
+                              query += ` WHERE id = $${++paramsCounter};`;
+                              queryArguments.push(bookJson.collection[i].id);
+                              //send query
+                              await pg.query(query, queryArguments);
+
+                              /*
+                              since match was found, break nested loop and change flag value
+                              */
                               storyFoundFlag = true;
                               break;
                             }
                           }
 
-                          if(!storyFoundFlag) {//not found - delete it
-                            idsToDelete.push(oldStories[i].id);
+                          if(storyFoundFlag) {/*match was found for this story, continue to the next one*/
+                            continue;
+                          } else {
+                            /*no match - should never happen because if a story from bookJson has an ID value, this means the story already exists - anyway insert it*/
+                            queryArguments.length = 0;//reset queryArguments array
+                            paramsCounter = 0;//reset counter
+                            query = `INSERT INTO stories(name, pages, parent, author) VALUES ($${++paramsCounter},$${++paramsCounter},$${++paramsCounter},`;
+                              queryArguments.push(bookJson.collection[i].title, bookJson.collection[i].pages, id);
+                              if(bookJson.collection[i].author) {//story has author different from collection, add into query
+                                query += `$${++paramsCounter} `;
+                                queryArguments.push(bookJson.collection[i].author);
+                              } else {//same author as collection, set value as NULL
+                                query += `NULL `;
+                              }
+                              /*close query and send it*/
+                              query += `);`;
+                              await pg.query(query, queryArguments);
+                            }
+                          } else {
+                            /*book has no ID - new book - should be inserted*/
+                            queryArguments.length = 0;//reset queryArguments array
+                            paramsCounter = 0;//reset counter
+                            query = `INSERT INTO stories(name, pages, parent, author) VALUES ($${++paramsCounter},$${++paramsCounter},$${++paramsCounter},`;
+                              queryArguments.push(bookJson.collection[i].title, bookJson.collection[i].pages, id);
+                              if(bookJson.collection[i].author) {//story has author different from collection, add into query
+                                query += `$${++paramsCounter} `;
+                                queryArguments.push(bookJson.collection[i].author);
+                              } else {//same author as collection, set value as NULL
+                                query += `NULL `;
+                              }
+                              /*close query and send it*/
+                              query += `);`;
+                              await pg.query(query, queryArguments);
+                            }
                           }
+
+                          /*iterate oldStories and check if some stories were deleted (stories with id that not exists on bookJson.collection)*/
+                          let idsToDelete = [];//save here stories to delete
+
+                          for(let i = 0 , l = oldStories.length ; i < l ; i ++ ) {
+                            storyFoundFlag = false;//reset flag
+
+                            for(let j = 0 , s = bookJson.collection.length ; j < s ; j ++ ) {
+                              if (oldStories[i].id.toString() === bookJson.collection[j].id.toString()) {
+                                /*match - this story exists - don't delete it*/
+                                storyFoundFlag = true;
+                                break;
+                              }
+                            }
+
+                            if(!storyFoundFlag) {//not found - delete it
+                              idsToDelete.push(oldStories[i].id);
+                            }
+                          }
+
+                          /*
+                          if idsToDelete is not empty - delete the ID's from DB
+                          the md5sum hashes should be deleted as well from cache table
+                          */
+                          if(idsToDelete.length) {
+                            //delete stories
+                            paramsCounter = 0;//reset counter
+                            query = `DELETE FROM stories WHERE id IN (${idsToDelete.map(a => `$${++paramsCounter}`).join(',')})`;
+                            await pg.query(query, idsToDelete);
+                            //delete hashes
+                            paramsCounter = 0;//reset counter
+                            query = `DELETE FROM cache WHERE folder = 'stories' AND id IN (${idsToDelete.map(a => `$${++paramsCounter}`).join(',')});`;
+                            await pg.query(query, idsToDelete);
+                          }
+
                         }
 
+                        /********************************************************************************************
+                        ALTER BOOK RATING IN DB (if not changed - it will overwrite it with the same value)
+                        *********************************************************************************************/
+                        this.saveBookRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'my_books');
+
+                        /********************************************************************************************
+                        ALTER STORIES RATING IF COLLECTION
+                        *********************************************************************************************/
+                        if(bookJson.collection && bookJson.collection.length) {
+                          await this.saveCollectionRating(id);
+                        }
+                      }
+
+                      async alterWishById(id, bookJson) {
+                        /********************************************************************************************
+                        ALTER WISH IN DB
+                        *********************************************************************************************/
+                        /*general parameters*/
+                        let paramsCounter = 0;
+                        let query = `UPDATE wish_list SET name = $${++paramsCounter}, year = $${++paramsCounter}, author = $${++paramsCounter}, isbn = $${++paramsCounter}`;
+
+                        let queryArguments = [bookJson.title, bookJson.year, bookJson.author,bookJson.isbn];
+
+                        /*if this wish is part of serie - add serie parameters*/
+                        if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
+                          query += `, serie = $${++paramsCounter}, serie_num = $${++paramsCounter}`;
+                          queryArguments.push(bookJson.serie.value,bookJson.serie.number);
+                        } else {
+                          /*no serie - reset it just in case it was part of serie before*/
+                          query += `, serie = NULL, serie_num = NULL`;
+                        }
+
+                        query += ` WHERE id = $${++paramsCounter};`;
+                        queryArguments.push(id);
+
+                        /*send query*/
+                        await pg.query(query, queryArguments);
+                        /********************************************************************************************
+                        DELETE RATINGS FOR WISH (in case the some modification will lead to different ratings) - the ratings will be fetched again in this function
+                        *********************************************************************************************/
+
+                        query = `DELETE FROM ratings WHERE table_name = 'wish_list' AND id = $1;`;
+                        await pg.query(query, [id]);
+
+                        /********************************************************************************************
+                        SAVE WISH RATING IN DB
+                        *********************************************************************************************/
+                        this.saveBookRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
+                      }
+
+
+                      async markBookAsRead(id, date, completedPages) {
                         /*
-                        if idsToDelete is not empty - delete the ID's from DB
-                        the md5sum hashes should be deleted as well from cache table
+                        STEPS:
+                        * MARK BOOK AS READ
+                        * IF THIS IS A COLLECTION, MARK IT STORIES AS READ
                         */
-                        if(idsToDelete.length) {
-                          //delete stories
-                          paramsCounter = 0;//reset counter
-                          query = `DELETE FROM stories WHERE id IN (${idsToDelete.map(a => `$${++paramsCounter}`).join(',')})`;
-                          await pg.query(query, idsToDelete);
-                          //delete hashes
-                          paramsCounter = 0;//reset counter
-                          query = `DELETE FROM cache WHERE folder = 'stories' AND id IN (${idsToDelete.map(a => `$${++paramsCounter}`).join(',')});`;
-                          await pg.query(query, idsToDelete);
+
+
+                        /********************************************************************************************
+                        MARK BOOK AS READ
+                        *********************************************************************************************/
+                        let queryParams = [];
+                        let queryCounter = 0;
+                        let query = `UPDATE my_books
+                        SET read_order = (
+                          (
+                            SELECT read_order FROM my_books WHERE read_order IS NOT NULL ORDER BY read_order DESC LIMIT 1
+                          ) + 1
+                        ),
+                        read_date = $${++queryCounter},
+                        completed = `;
+                        queryParams.push(date);
+                        if(completedPages) {
+                          /*completedPages is not null - book was not completed - save number of read pages*/
+                          query += `$${++queryCounter}`
+                          queryParams.push(completedPages);
+                        } else {
+                          /*completedPages is null - book was completed, set completed column as NULL*/
+                          query += `NULL`
                         }
+                        /*end query*/
+                        query += ` WHERE id = $${++queryCounter};`;
+                        queryParams.push(id);
+                        /*send query*/
+                        await pg.query(query, queryParams);
 
-                      }
+                        /********************************************************************************************
+                        MARK COLLECTION STORIES AS READ (IF RELEVANT)
+                        *********************************************************************************************/
 
-                      /********************************************************************************************
-                      ALTER BOOK RATING IN DB (if not changed - it will overwrite it with the same value)
-                      *********************************************************************************************/
-                      this.saveBookRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'my_books');
-
-                      /********************************************************************************************
-                      ALTER STORIES RATING IF COLLECTION
-                      *********************************************************************************************/
-                      if(bookJson.collection && bookJson.collection.length) {
-                        await this.saveCollectionRating(id);
-                      }
-                    }
-
-                    async alterWishById(id, bookJson) {
-                      /********************************************************************************************
-                      ALTER WISH IN DB
-                      *********************************************************************************************/
-                      /*general parameters*/
-                      let paramsCounter = 0;
-                      let query = `UPDATE wish_list SET name = $${++paramsCounter}, year = $${++paramsCounter}, author = $${++paramsCounter}, isbn = $${++paramsCounter}`;
-
-                      let queryArguments = [bookJson.title, bookJson.year, bookJson.author,bookJson.isbn];
-
-                      /*if this wish is part of serie - add serie parameters*/
-                      if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
-                        query += `, serie = $${++paramsCounter}, serie_num = $${++paramsCounter}`;
-                        queryArguments.push(bookJson.serie.value,bookJson.serie.number);
-                      } else {
-                        /*no serie - reset it just in case it was part of serie before*/
-                        query += `, serie = NULL, serie_num = NULL`;
-                      }
-
-                      query += ` WHERE id = $${++paramsCounter};`;
-                      queryArguments.push(id);
-
-                      /*send query*/
-                      await pg.query(query, queryArguments);
-                      /********************************************************************************************
-                      DELETE RATINGS FOR WISH (in case the some modification will lead to different ratings) - the ratings will be fetched again in this function
-                      *********************************************************************************************/
-
-                      query = `DELETE FROM ratings WHERE table_name = 'wish_list' AND id = $1;`;
-                      await pg.query(query, [id]);
-
-                      /********************************************************************************************
-                      SAVE WISH RATING IN DB
-                      *********************************************************************************************/
-                      this.saveBookRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
-                    }
-
-
-                    async markBookAsRead(id, date, completedPages) {
-                      /*
-                      STEPS:
-                      * MARK BOOK AS READ
-                      * IF THIS IS A COLLECTION, MARK IT STORIES AS READ
-                      */
-
-
-                      /********************************************************************************************
-                      MARK BOOK AS READ
-                      *********************************************************************************************/
-                      let queryParams = [];
-                      let queryCounter = 0;
-                      let query = `UPDATE my_books
-                      SET read_order = (
-                        (
-                          SELECT read_order FROM my_books WHERE read_order IS NOT NULL ORDER BY read_order DESC LIMIT 1
+                        let moreStoriesToUpdateFlag = true;/*flag to indicate if this collection have more stories without read order flag*/
+                        queryParams.length = 0;//reset
+                        query = `UPDATE stories
+                        SET readed_date = $1,
+                        read_order = (
+                          SELECT read_order FROM stories WHERE read_order IS NOT NULL ORDER BY read_order DESC LIMIT 1
                         ) + 1
-                      ),
-                      read_date = $${++queryCounter},
-                      completed = `;
-                      queryParams.push(date);
-                      if(completedPages) {
-                        /*completedPages is not null - book was not completed - save number of read pages*/
-                        query += `$${++queryCounter}`
-                        queryParams.push(completedPages);
-                      } else {
-                        /*completedPages is null - book was completed, set completed column as NULL*/
-                        query += `NULL`
+
+                        WHERE id = (
+                          SELECT id FROM stories WHERE parent = $2 AND read_order IS NULL ORDER BY id ASC LIMIT 1
+                        );`;
+
+                        queryParams.push(date, id);
+
+                        /*run until all stories are marked as read*/
+                        let tmpResultHolder = null;
+                        while(moreStoriesToUpdateFlag) {
+                          tmpResultHolder = await pg.query(query, queryParams);
+                          /*
+                          IF rowCount IS 0, NO ROWS WERE UPDATED, SO WHILE (0) WILL BREAK LOOP - NO MORE STORIES TO UPDATE
+                          */
+                          moreStoriesToUpdateFlag = tmpResultHolder.rowCount;
+                        }
                       }
-                      /*end query*/
-                      query += ` WHERE id = $${++queryCounter};`;
-                      queryParams.push(id);
-                      /*send query*/
-                      await pg.query(query, queryParams);
+                    };
 
-                      /********************************************************************************************
-                      MARK COLLECTION STORIES AS READ (IF RELEVANT)
-                      *********************************************************************************************/
-
-                      let moreStoriesToUpdateFlag = true;/*flag to indicate if this collection have more stories without read order flag*/
-                      queryParams.length = 0;//reset
-                      query = `UPDATE stories
-                      SET readed_date = $1,
-                      read_order = (
-                        SELECT read_order FROM stories WHERE read_order IS NOT NULL ORDER BY read_order DESC LIMIT 1
-                      ) + 1
-
-                      WHERE id = (
-                        SELECT id FROM stories WHERE parent = $2 AND read_order IS NULL ORDER BY id ASC LIMIT 1
-                      );`;
-
-                      queryParams.push(date, id);
-
-                      /*run until all stories are marked as read*/
-                      let tmpResultHolder = null;
-                      while(moreStoriesToUpdateFlag) {
-                        tmpResultHolder = await pg.query(query, queryParams);
-                        /*
-                        IF rowCount IS 0, NO ROWS WERE UPDATED, SO WHILE (0) WILL BREAK LOOP - NO MORE STORIES TO UPDATE
-                        */
-                        moreStoriesToUpdateFlag = tmpResultHolder.rowCount;
-                      }
-                    }
-                  };
-
-                  module.exports = new dbFunctions();
+                    module.exports = new dbFunctions();
