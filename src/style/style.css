@@ -497,7 +497,7 @@ img:hover {
 }
 
 .insert-line-serie p , .insert-line-book-select p{
-  width: 50px;
+  width: 80px;
 }
 
 .main-title-cbox {
@@ -1401,5 +1401,12 @@ img:hover {
 
 #mark-book-as-read {
   margin-left: -53px;
+}
 
+.insert-page-comment {
+  width: 100% !important;
+  color: rgba(255,255,255,0.6) !important;
+  font-size: 20px !important;
+  font-style: italic !important;
+  margin-top: 4px !important;
 }

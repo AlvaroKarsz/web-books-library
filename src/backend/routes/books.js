@@ -413,6 +413,15 @@ module.exports = (app) => {
     );
   });
 
+  app.get('/collectionList', async (req, res) => {
+    /*fetch all collections from DB and send it to user*/
+    res.send(
+      JSON.stringify(
+        await db.fetchCollectionsForHtml()
+      )
+    );
+  });
+
   app.post('/books/read/:id', async (req, res) => {
     /*change book status to "read"*/
 

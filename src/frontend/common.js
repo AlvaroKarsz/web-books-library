@@ -1108,6 +1108,7 @@ class Selector {
     this.checkBoxLabelClass = opts.checkBoxLabelClass || 'radio-button-container';
     this.titleClassName = opts.titleClassName || 'main-title-cbox';
     this.toggleBodyClass = opts.toggleBodyClass || 'hide-div';
+    this.ignoreCheckBox = opts.ignoreCheckBox || false;
     this.returns = [];
     this.buildSkeleton();
     this.activate();
@@ -1124,6 +1125,9 @@ class Selector {
     this.makeMainHolder();
     this.makeCheckbox();
     this.makeToggleBody();
+    if(this.ignoreCheckBox) {//if checkbox is ignored - toggled body should be on
+      this.showDiv();
+    }
     this.addContentToToggleBody();
     this.makeAdditionals();
   }
@@ -1154,13 +1158,15 @@ class Selector {
   }
 
   toggleElementOnChange() {
-    this.checkbox.onchange = () => {
-      if(this.checkbox.checked) {
-        this.showDiv();
-      } else {
-        this.hideDiv();
-      }
-    };
+    if(this.ignoreCheckBox) {
+      this.checkbox.onchange = () => {
+        if(this.checkbox.checked) {
+          this.showDiv();
+        } else {
+          this.hideDiv();
+        }
+      };
+    }
   }
 
   makeCheckbox() {
@@ -1179,6 +1185,9 @@ class Selector {
     label.appendChild(span);
     div.appendChild(p);
     this.mainHolder.appendChild(div);
+    if(this.ignoreCheckBox) {
+      div.style.display = 'none';
+    }
   }
 
   showDiv() {
@@ -1252,7 +1261,7 @@ class Selector {
   }
 
   get() {
-    if(!this.checkbox.checked) {//not selected
+    if(!this.checkbox.checked && !this.ignoreCheckBox) {//not selected and should not be ignored
       return null;
     }
     let output = {};
