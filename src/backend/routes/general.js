@@ -1,5 +1,5 @@
 const basic = require('../modules/basic.js');
-const config = require('../config.js');
+const settings = require('../settings.js');
 const db = require('../db/functions');
 const fs = require('fs');
 const path = require('path');
@@ -22,8 +22,8 @@ module.exports = (app) => {
     including: number of pictures per row
     */
     res.send(JSON.stringify({
-      perPage: config.IMAGES_NUM,
-      perRow: config.BOOKS_PER_ROW
+      perPage: settings.IMAGES_NUM_PER_PAGE,
+      perRow: settings.BOOKS_PER_ROW
     }));
   });
 

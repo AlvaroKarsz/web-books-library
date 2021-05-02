@@ -1,5 +1,5 @@
 const basic = require('../modules/basic.js');
-const config = require('../config.js');
+const settings = require('../settings.js');
 const db = require('../db/functions');
 const fs = require('fs');
 const path = require('path');
@@ -10,7 +10,7 @@ module.exports = (app) => {
   app.get('/books', async (req, res) =>  {
     const urlParams = basic.getUrlParams(req.url);
     let filters = basic.getFilters(urlParams);
-    filters.limit = config.IMAGES_NUM;
+    filters.limit = settings.IMAGES_NUM_PER_PAGE;
     filters.offset = 0;
     let request = await db.fetchAllBooks(filters);
     const books = request.rows;
@@ -47,12 +47,12 @@ module.exports = (app) => {
     const nextVal =  req.params.val;
     const urlParams = basic.getUrlParams(req.url);
     let filters = basic.getFilters(urlParams);
-    filters.limit = config.IMAGES_NUM;
+    filters.limit = settings.IMAGES_NUM_PER_PAGE;
     filters.offset = nextVal;
     let request = await db.fetchAllBooks(filters);
     res.send(JSON.stringify({
       books: request.rows,
-      more: request.count > basic.intSum(nextVal, config.IMAGES_NUM)
+      more: request.count > basic.intSum(nextVal, settings.IMAGES_NUM_PER_PAGE)
     }));
   });
 

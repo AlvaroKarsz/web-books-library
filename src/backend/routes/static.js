@@ -1,5 +1,5 @@
 const basic = require('../modules/basic.js');
-const config = require('../config.js');
+const settings = require('../settings.js');
 const db = require('../db/functions');
 const fs = require('fs');
 const path = require('path');
@@ -51,8 +51,8 @@ module.exports = (app) => {
     let pictureId = req.params.picId, pictureType = req.params.picType;
     pictureType = basic.convertFolderType(pictureType);
     const picFullName = basic.getPictureMime(pictureType, pictureId);
-    if(!picFullName) {//pic not exists
-      res.sendStatus(404);
+    if(!picFullName) {//pic not exists - send blank picture
+      res.sendFile(settings.BLANK_PIC_PATH);
     } else {
       res.sendFile(path.join(__dirname, '..', '..','..', pictureType, picFullName));
     }

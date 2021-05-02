@@ -3,7 +3,7 @@ const db = require('../db/functions');
 const path = require('path');
 const fs = require('fs');
 const ip = require("ip");
-const config = require('../config.js');
+const settings = require('../settings.js');
 
 class Basic {
   toInt(num, base=10) {
@@ -296,7 +296,7 @@ class Basic {
   }
 
   createMainLoaderIfBooksFound(books) {
-    if(books > config.IMAGES_NUM) {
+    if(books > settings.IMAGES_NUM_PER_PAGE) {
       return '<div class="bottom-loader" id = "main-ldr"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>';
     }
   }
@@ -405,7 +405,7 @@ class Basic {
   postPictures(folder, objects, actionScriptOnclick) {
     let str = '<div class = "line">';
     for(let i = 0 , l = objects.length; i < l ; i ++ ) {
-      if(i % config.BOOKS_PER_ROW === 0) {
+      if(i % settings.BOOKS_PER_ROW === 0) {
         str += "</div><div class = 'line'>";
       }
       str += this.buildBookObject(objects[i],folder ,actionScriptOnclick);

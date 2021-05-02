@@ -1,7 +1,5 @@
 let config = {
   PORT:'',
-  IMAGES_NUM:'',
-  BOOKS_PER_ROW:'',
   GOOD_READS_KEY:'',
   DB_ADDRESS:'',
   DB_PORT:'',
