@@ -336,23 +336,23 @@ class BookDisplayer {
       `</div>`;
     }
 
-    /*option to mark a book as read*/
-    if(actions.bookRead) {
-      /*this option is relevant for book that were not read yet*/
+    /*option to mark a book/story as read*/
+    if(actions.bookRead || actions.storyRead) {
+      /*this option is relevant for book/story that were not read yet*/
       if(!data.read_date) {
-        output += `<div title="Click if you've read this book">` +
+        output += `<div title="Click if you've read this ${actions.bookRead ? 'Book' : 'Story'}">` + //add relevant title depending on action type
         `<label for='read-book-label'>` +
         `<i class="fa fa-book"></i>` +
         `</label>` +
         `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'read-book-label'>` +
         `<p>Mark as Read</p>` +
-        `<form action="/books/read/${data.id}" method="post" id = 'mark-book-as-read'>` +
+        `<form action="/${actions.bookRead ? 'books' : 'stories'}/read/${data.id}" method="post" id = 'mark-book-as-read'>` + //add relevant API endpoint depending on action type
         `<input oneline='t' name="date" placeholder="Read Date (Jan 2020, Jan 2020 - Mar 2020)" required long='t'>` +
         `<label class="radio-button-container">` +
         `<input name='completed' type="checkbox" checked class = "book-completed-check-box" id='mark-book-as-completed'>` +
         `<span class="radio-button-checkmark"></span>` +
         `</label>` +
-        `<p oneline='f'>Book was Completed</p>` +
+        `<p oneline='f'>${actions.bookRead ? 'Book' : 'Story'} was Completed</p>` + //add relevant title depending on action type
         `<input oneline='t' name="pages" placeholder="Number of Read Pages" id='input-number-read-pages-book' type='number' long='t'>` +
         `<button type="submit" class="black-white-button" oneline='t'>Save</button>` +
         `</form>` +

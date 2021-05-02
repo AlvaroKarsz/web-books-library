@@ -2,6 +2,11 @@ const pg = require('./connection').pgClient;
 
 class dbFunctions {
 
+  async getCollectionFromStory(storyId) {
+    let res = await pg.query(`SELECT parent FROM stories WHERE id = $1;`, [storyId]);
+    return res.rows[0].parent;
+  }
+
   async getNumberOfStories(collectionId) {
     let res = await pg.query(`SELECT COUNT(1) FROM stories WHERE parent = $1;`, [collectionId]);
     return res.rows[0].count;
@@ -139,6 +144,11 @@ class dbFunctions {
   async getAuthorAndPagesById(id) {
     let res = await pg.query(`SELECT author, pages FROM my_books WHERE id = $1;`, [id]);
     return res.rows[0];
+  }
+
+  async getStoryPages(id) {
+    let res = await pg.query(`SELECT pages FROM stories WHERE id = $1;`, [id]);
+    return res.rows[0].pages;
   }
 
   async getBookPages(id) {
@@ -2129,6 +2139,53 @@ class dbFunctions {
                           SAVE WISH RATING IN DB
                           *********************************************************************************************/
                           this.saveBookRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
+                        }
+
+                        async markStoryAsRead(id, date, completedPages = null) {
+                          /*
+                          STEPS:
+                          * MARK STORY AS READ
+                          * CHECK IF COLLECTION IS COMPLETED, AND MARK AS COMPLETED IF SO
+                          */
+
+
+                          /********************************************************************************************
+                          MARK STORY AS READ
+                          *********************************************************************************************/
+                          let queryParams = [];
+                          let queryCounter = 0;
+                          let query = `UPDATE stories
+                          SET read_order = (
+                            (
+                              SELECT read_order FROM stories WHERE read_order IS NOT NULL ORDER BY read_order DESC LIMIT 1
+                            ) + 1
+                          ),
+                          read_date = $${++queryCounter},
+                          completed = `;
+                          queryParams.push(date);
+                          if(completedPages) {
+                            /*completedPages is not null - book was not completed - save number of read pages*/
+                            query += `$${++queryCounter}`
+                            queryParams.push(completedPages);
+                          } else {
+                            /*completedPages is null - book was completed, set completed column as NULL*/
+                            query += `NULL`
+                          }
+                          /*end query*/
+                          query += ` WHERE id = $${++queryCounter};`;
+                          queryParams.push(id);
+                          /*send query*/
+                          await pg.query(query, queryParams);
+
+                          /********************************************************************************************
+                          CHECK IF COLLECTION IS COMPLETED, AND MARK AS COMPLETED IF SO
+                          *********************************************************************************************/
+                          /*get collection id*/
+                          let collectionId = await this.getCollectionFromStory(id);
+
+                          if(await this.allStoriesAreRead(collectionId)) {
+                            await this.markCollectionAsRead(collectionId);
+                          }
                         }
 
 
