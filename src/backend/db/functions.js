@@ -436,7 +436,6 @@ class dbFunctions {
     ON rat.id = main.id AND rat.table_name = 'stories'
     LEFT JOIN my_books parent
     ON main.parent = parent.id `;
-
     let filters = [], params = [];
     if(authorFilter !== null) {
       filters.push('UPPER(parent.author) ~ $');
@@ -507,7 +506,7 @@ class dbFunctions {
       break;
     }
     //first get count
-    let count = await pg.query(`SELECT COUNT(1) FROM stories main ${conditions};`, params);
+    let count = await pg.query(`SELECT COUNT(1) FROM stories main LEFT JOIN my_books parent  ON main.parent = parent.id ${conditions};`, params);
     count = count.rows[0].count;
     //now get books
     query += " LIMIT $" + (filters.length + 1) + " OFFSET $" + (filters.length + 2) + ";";
