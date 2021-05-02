@@ -132,7 +132,7 @@ class BookDisplayer {
   addGeneralInformation(data) {
     /*add general info - echoDisplayLine will return empty line if param is empty*/
     let output = '<div class="general-holder-book-displayer">General Information:';
-    output += this.echoDisplayLine('Author: ' , data.author);
+    output += this.echoDisplayLine('Author: ' , data.story_author ? data.story_author : data.author);/*handle stories - (special case) if story author is present - display it*/
     output += this.echoDisplayLine('Publication Year: ' , data.year);
     output += this.echoDisplayLine('Number of Pages: ' , data.pages);
     output += this.echoDisplayLine('ISBN: ' , data.isbn);

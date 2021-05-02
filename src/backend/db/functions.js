@@ -448,7 +448,7 @@ class dbFunctions {
     ON main.parent = parent.id `;
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(parent.author) ~ $');
+      filters.push('UPPER(COALESCE(main.author , parent.author)) ~ $');
       params.push(authorFilter);
     }
 
