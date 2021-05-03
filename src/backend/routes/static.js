@@ -39,10 +39,6 @@ module.exports = (app) => {
     res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'markBookAsRead.js'));
   });
 
-  app.get('/frontend/listDisplayer', (req, res) => {
-    res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'listDisplayer.js'));
-  });
-
   app.get('/frontend/insertWish', (req, res) => {
     res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'insertWish.js'));
   });

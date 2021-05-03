@@ -19,7 +19,7 @@ class TopNav {
       },
       /*advance options (backup etc..)*/
       ADVANCE: {
-        DB_BACKUP: 'advance/db/backup'
+        DB_BACKUP: '/advance/db/backup'
       }
 
     };
@@ -47,6 +47,13 @@ class TopNav {
     `<a href="${this.ROUTES.INSERTERS.STORIES}">Insert Story</a>` +
     `</div>` +
     `</div>` +
+    `<div class = "dropmenu">` +
+    `<button>Advance</button>` +
+    `<div class = "dropmenu-list">` +
+    `<a href="${this.ROUTES.ADVANCE.DB_BACKUP}">Backup DB</a>` +
+    `</div>` +
+    `</div>` +
+
     `</div>`;
   }
 

@@ -620,5 +620,30 @@ class Basic {
   getLocalIpAddress() {
     return  ip.address();
   }
+
+  buildRefererUrl(referer, text, isError = true) {
+    const errorMessageParam = 'err-msg',
+    successMessageParam = 'suc-msg';
+
+    let url = referer;
+
+    /* no query params, add the first one */
+    if(referer.indexOf('?') === -1) {
+      url += '?';
+    } else {
+      /* query params exists - add a new one */
+      referer += '&';
+    }
+
+    /*add param name*/
+    url += isError ? errorMessageParam : successMessageParam;
+
+    /*add param value*/
+
+    url += '=' + text;
+
+    return url;
+  }
+  
 }
 module.exports = new Basic();
