@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const ip = require("ip");
 const settings = require('../settings.js');
+const topNav = require('../gui/topNav.js');
 
 class Basic {
   toInt(num, base=10) {
@@ -276,7 +277,7 @@ class Basic {
       SORT_OPTIONS: "this.getSortOptions(params.urlParams, params.route)",
       IMAGES: "this.postPictures(params.folder, params.objects, params.imageHref)",
       LOADER_IF_BOOKS: "this.createMainLoaderIfBooksFound(params.totalCount)",
-      TOP_NAV: "this.echoTopNav()",
+      TOP_NAV: "topNav.build()",
       DISPLAYER:"params.displayer",
       INSERTION_TITLE: "params.pageTitle"
     };
@@ -536,31 +537,6 @@ class Basic {
 
   isValidInt(num){
     return /^[0-9]+$/.test(num) && num > 0;
-  }
-
-  echoTopNav() {
-    return `<div class = "topnav">
-    <div class = "dropmenu">
-    <button>Display</button>
-    <div class = "dropmenu-list">
-    <a href="/books">My Books</a>
-    <a href="/wishlist">My Wishlist</a>
-    <a href="/series">My Series</a>
-    <a href="/stories">My Stories</a>
-    <a href="/reads">My Read List</a>
-    <a href="/purchased">My Purchased Books</a>
-    </div>
-    </div>
-    <div class = "dropmenu">
-    <button>Insert</button>
-    <div class = "dropmenu-list">
-    <a href="/insert/books">Insert Book</a>
-    <a href="/insert/wishlist">Insert Wish</a>
-    <a href="/insert/series">Insert Serie</a>
-    <a href="/insert/stories">Insert Story</a>
-    </div>
-    </div>
-    </div>`;
   }
 
   formDataToJson(formData) {
