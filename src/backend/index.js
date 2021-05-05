@@ -1,6 +1,6 @@
 var express = require('express');
 var app = express();
-const config = require('./config.js');
+const settings = require('./settings.js');
 const basic = require('./modules/basic.js');
 const bodyParser = require('body-parser');
 const fileupload = require("express-fileupload");
@@ -19,6 +19,6 @@ fs.readdirSync('./routes').forEach((file) => {
 
 /*listen at current local IP address*/
 app.listen(
-  config.PORT,
+  settings.APP_PORT,
   basic.getLocalIpAddress()
 );

@@ -1161,7 +1161,7 @@ class Selector {
   }
 
   toggleElementOnChange() {
-    if(this.ignoreCheckBox) {
+    if(!this.ignoreCheckBox) {
       this.checkbox.onchange = () => {
         if(this.checkbox.checked) {
           this.showDiv();

@@ -1,2 +1,5 @@
 src/backend/config.js
 *.traineddata
+
+src/backend/tokens/*
+!src/backend/tokens/*example*

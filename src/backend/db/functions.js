@@ -2,6 +2,11 @@ const pg = require('./connection').pgClient;
 
 class dbFunctions {
 
+  async getAllMD5Hashes(folders) {
+    let res = await pg.query(`SELECT folder, id, md5 FROM cache WHERE folder IN (${folders.map((a, i) => {return '$' + (i+1).toString() }).join(',')});`, folders);
+    return res.rows;
+  }
+
   async getCollectionFromStory(storyId) {
     let res = await pg.query(`SELECT parent FROM stories WHERE id = $1;`, [storyId]);
     return res.rows[0].parent;
@@ -1251,6 +1256,23 @@ class dbFunctions {
                       let result = await pg.query(query, [title, parentISBN, author, parentISBN, author]);
                       result = result.rows[0]['id'];
                       return result;
+                    }
+
+                    async deletePictureHashes(dataArr) {
+                      if(!Array.isArray(dataArr)) {/*force array*/
+                        dataArr = [dataArr];
+                      }
+
+                      let query = `DELETE FROM cache WHERE `;
+                      let paramCounter = 0, paramArr = [];
+
+                      dataArr.forEach((data) => {
+                        query += ` ( id = $${++ paramCounter} AND folder = $${++ paramCounter} ) OR`;
+                        paramArr.push(data.id,data.folder);
+                      });
+                      /*remove last OR and add ;*/
+                      query = query.replace(/OR$/,'') + ";";//remove last comma
+                      await pg.query(query, paramArr);
                     }
 
                     async savePictureHashes(dataArr) {

@@ -51,9 +51,21 @@ class TopNav {
     `<button>Advance</button>` +
     `<div class = "dropmenu-list">` +
     `<a href="${this.ROUTES.ADVANCE.DB_BACKUP}">Backup DB</a>` +
+    `<a id = 'backup-files-a'>Backup Files To Drive <i class="fa fa-caret-right"></i></a>` +
+    `<div class = "dropmenu" side='true'>` +
+    `<div class = "dropmenu-list" side='true' id = 'backup-files-menu'>` +
+    `<a onclick = "doBackUp('all')">All</a>` +
+    `<a onclick = "doBackUp('backups')">DB Backups</a>` +
+    `<a onclick = "doBackUp('books')">Book Pictures</a>` +
+    `<a onclick = "doBackUp('wishlist')">WishList Pictures</a>` +
+    `<a onclick = "doBackUp('stories')">Stories Pictures</a>` +
+    `<a onclick = "doBackUp('series')">Series Pictures</a>` +
+    `<a onclick = "doBackUp('icons')">App Icons</a>` +
+    `<a onclick = "doBackUp('generalPics')">General Pictures</a>` +
     `</div>` +
     `</div>` +
-
+    `</div>` +
+    `</div>` +
     `</div>`;
   }
 

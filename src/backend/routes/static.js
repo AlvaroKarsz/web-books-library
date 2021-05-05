@@ -35,6 +35,10 @@ module.exports = (app) => {
     res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'insertStory.js'));
   });
 
+  app.get('/frontend/websocket', (req, res) => {
+    res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'websocket.js'));
+  });
+
   app.get('/frontend/markBookAsRead', (req, res) => {
     res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'markBookAsRead.js'));
   });
