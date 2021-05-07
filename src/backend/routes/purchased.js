@@ -1,9 +1,9 @@
 const basic = require('../modules/basic.js');
 const settings = require('../settings.js');
 const db = require('../db/functions');
-const fs = require('fs');
 const path = require('path');
 const entryDisplayer = require('../gui/displayer.js');
+const htmlRender = require('../gui/htmlRenderer.js');
 
 module.exports = (app) => {
 
@@ -16,14 +16,13 @@ module.exports = (app) => {
     const books = request.rows;
     const total = request.count;
 
-    let file = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'main.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
+    res.send(await htmlRender.render({
+      html: 'main.html',
       folder: 'wishlist',
       totalCount: total,
       objects: books,
       urlParams: urlParams,
-      title: "Purchased List",
+      type: "Purchased List",
       route: 'purchased',
       imageHref: '/purchased/'
     }));
@@ -36,12 +35,9 @@ module.exports = (app) => {
 
     wishData = await db.fetchWishById(id, filters, 'purchase');
 
-    let file = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'display.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
-      title: wishData.name,
+    res.send(await htmlRender.render({
+      html: 'display.html',
       folder: 'wishlist',
-      id: id,
       displayer: entryDisplayer.build(wishData, 'wishlist', {received:true})
     }));
   });

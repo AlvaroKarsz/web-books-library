@@ -1,9 +1,9 @@
 const basic = require('../modules/basic.js');
 const settings = require('../settings.js');
 const db = require('../db/functions');
-const fs = require('fs');
 const path = require('path');
 const entryDisplayer = require('../gui/displayer.js');
+const htmlRender = require('../gui/htmlRenderer.js');
 
 module.exports = (app) => {
 
@@ -16,14 +16,13 @@ module.exports = (app) => {
     const books = request.rows;
     const total = request.count;
 
-    let file = fs.readFileSync(path.join(__dirname, '..','..', 'html', 'main.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
+    res.send(await htmlRender.render({
+      html: 'main.html',
       folder: 'series',
       totalCount: total,
       objects: books,
       urlParams: urlParams,
-      title: "Series",
+      type: "Series",
       route: 'series',
       imageHref: '/series/'
     }));
@@ -58,12 +57,10 @@ module.exports = (app) => {
     let filters = basic.getFilters(basic.getUrlParams(req.url)),
 
     serieData = await db.fetchSerieById(id, filters);
-    let file = fs.readFileSync(path.join(__dirname, '..' ,'..', 'html', 'display.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
-      title: serieData.name,
+
+    res.send(await htmlRender.render({
+      html: 'display.html',
       folder: 'series',
-      id: id,
       displayer: entryDisplayer.build(serieData, 'series', {})
     }));
   });
@@ -77,15 +74,9 @@ module.exports = (app) => {
     use this param in order to set the html page title
     */
     const id = req.params.id;
-    let file = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'insertSerie.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
-      folder: '',
-      totalCount: '',
-      objects: '',
-      urlParams: '',
-      title: '',
-      route: '',
+
+    res.send(await htmlRender.render({
+      html: 'insertSerie.html',
       pageTitle: id ? 'Edit Serie' : 'Enter New Serie' //if id exists - the page will load id's info
     }));
   });

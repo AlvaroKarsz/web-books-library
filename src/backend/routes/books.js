@@ -1,9 +1,9 @@
 const basic = require('../modules/basic.js');
 const settings = require('../settings.js');
 const db = require('../db/functions');
-const fs = require('fs');
 const path = require('path');
 const entryDisplayer = require('../gui/displayer.js');
+const htmlRender = require('../gui/htmlRenderer.js');
 
 module.exports = (app) => {
 
@@ -15,14 +15,13 @@ module.exports = (app) => {
     let request = await db.fetchAllBooks(filters);
     const books = request.rows;
     const total = request.count;
-    let file = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'main.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
+    res.send(await htmlRender.render({
+      html: 'main.html',
       folder: 'books',
       totalCount: total,
       objects: books,
       urlParams: urlParams,
-      title: "Books",
+      type: "Books",
       route: 'books',
       imageHref: '/books/'
     }));
@@ -34,10 +33,8 @@ module.exports = (app) => {
     let filters = basic.getFilters(basic.getUrlParams(req.url)),
 
     bookData = await db.fetchBookById(id, filters, 'book');
-    let file = fs.readFileSync(path.join(__dirname,'..', '..', 'html', 'display.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
-      title: bookData.name,
+    res.send(await htmlRender.render({
+      html: 'display.html',
       folder: 'books',
       displayer: entryDisplayer.build(bookData, 'books', {bookRead:true})
     }));
@@ -67,15 +64,9 @@ module.exports = (app) => {
     use this param in order to set the html page title
     */
     const id = req.params.id;
-    let file = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'insertBook.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
-      folder: '',
-      totalCount: '',
-      objects: '',
-      urlParams: '',
-      title: '',
-      route: '',
+
+    res.send(await htmlRender.render({
+      html: 'insertBook.html',
       pageTitle: id ? (basic.isValidInt(id) ? 'Edit Book' : 'Save Book From Wish' ) : 'Enter New Book' //if id exists - the page will load id's info
     }));
   });

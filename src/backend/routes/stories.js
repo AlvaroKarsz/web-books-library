@@ -1,9 +1,9 @@
 const basic = require('../modules/basic.js');
 const settings = require('../settings.js');
 const db = require('../db/functions');
-const fs = require('fs');
 const path = require('path');
 const entryDisplayer = require('../gui/displayer.js');
+const htmlRender = require('../gui/htmlRenderer.js');
 
 module.exports = (app) => {
 
@@ -16,14 +16,13 @@ module.exports = (app) => {
     const books = request.rows;
     const total = request.count;
 
-    let file = fs.readFileSync(path.join(__dirname, '..','..', 'html', 'main.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
+    res.send(await htmlRender.render({
+      html: 'main.html',
       folder: 'stories',
       totalCount: total,
       objects: books,
       urlParams: urlParams,
-      title: "Stories",
+      type: "Stories",
       route: 'stories',
       imageHref: '/stories/'
     }));
@@ -50,12 +49,9 @@ module.exports = (app) => {
 
     storyData = await db.fetchStoryById(id, filters);
 
-    let file = fs.readFileSync(path.join(__dirname, '..' ,'..', 'html', 'display.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
-      title: storyData.name,
+    res.send(await htmlRender.render({
+      html: 'display.html',
       folder: 'stories',
-      id: id,
       displayer: entryDisplayer.build(storyData, 'stories', {storyRead: true})
     }));
   });
@@ -69,15 +65,9 @@ module.exports = (app) => {
     use this param in order to set the html page title
     */
     const id = req.params.id;
-    let file = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'insertStory.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
-      folder: '',
-      totalCount: '',
-      objects: '',
-      urlParams: '',
-      title: '',
-      route: '',
+
+    res.send(await htmlRender.render({
+      html: 'insertStory.html',
       pageTitle: id ? 'Edit Story' : 'Enter New Story' //if id exists - the page will load id's info
     }));
   });

@@ -1,9 +1,10 @@
 const basic = require('../modules/basic.js');
 const settings = require('../settings.js');
 const db = require('../db/functions');
-const fs = require('fs');
 const path = require('path');
 const entryDisplayer = require('../gui/displayer.js');
+const htmlRender = require('../gui/htmlRenderer.js');
+
 
 module.exports = (app) => {
   app.get('/reads', async (req, res) =>  {
@@ -15,14 +16,13 @@ module.exports = (app) => {
     const books = request.rows;
     const total = request.count;
 
-    let file = fs.readFileSync(path.join(__dirname, '..','..', 'html', 'main.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
+    res.send(await htmlRender.render({
+      html: 'main.html',
       folder: 'books',
       totalCount: total,
       objects: books,
       urlParams: urlParams,
-      title: "Read List",
+      type: "Read List",
       route: 'reads',
       imageHref: '/reads/'
     }));
@@ -35,12 +35,9 @@ module.exports = (app) => {
 
     readData = await db.fetchReadById(id, filters, 'read');
 
-    let file = fs.readFileSync(path.join(__dirname, '..', '..', 'html', 'display.html'), 'UTF8');
-    res.send(await basic.renderHtml({
-      html: file,
-      title: readData.name,
+    res.send(await htmlRender.render({
+      html: 'display.html',
       folder: 'books',
-      id: id,
       displayer: entryDisplayer.build(readData, 'books', {})
     }));
   });

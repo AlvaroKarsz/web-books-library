@@ -3,8 +3,6 @@ const db = require('../db/functions');
 const path = require('path');
 const fs = require('fs');
 const ip = require("ip");
-const settings = require('../settings.js');
-const topNav = require('../gui/topNav.js');
 
 class Basic {
   toInt(num, base=10) {
@@ -257,164 +255,6 @@ class Basic {
     return str1.includes(str2) || str2.includes(str1);
   }
 
-  async renderHtml(params) {
-    /*
-    params object options:
-    html => html string
-    folder => folder name to fetch pictures
-    totalCount => total objects in relevant table
-    objects => the actual books/stories/wishes..
-    urlParams => url params from get request
-    title => title of object (Books, Wish List..)
-    route => request route
-    */
-
-    const keys = {
-      TYPE: "params.title",
-      TOT_COUNT: "params.totalCount",
-      FILTER_VAL_TITLE: "this.getFilterValue(params.urlParams, 'title')",
-      FILTER_VAL_AUTHOR: "this.getFilterValue(params.urlParams, 'author')",
-      SORT_OPTIONS: "this.getSortOptions(params.urlParams, params.route)",
-      IMAGES: "this.postPictures(params.folder, params.objects, params.imageHref)",
-      LOADER_IF_BOOKS: "this.createMainLoaderIfBooksFound(params.totalCount)",
-      TOP_NAV: "topNav.build()",
-      DISPLAYER:"params.displayer",
-      INSERTION_TITLE: "params.pageTitle"
-    };
-    let rgx = '';
-    for(let key in keys) {
-      rgx = new RegExp("\{\{" + key + "\}\}",'g');
-      if(rgx.test(params.html)) {
-        params.html = params.html.replace(rgx,await eval(keys[key]));
-      }
-    }
-
-    return params.html;
-  }
-
-  getFilterValue(urlParams, filterName) {
-    return urlParams[filterName] ? unescape(urlParams[filterName]) : '';
-  }
-
-  createMainLoaderIfBooksFound(books) {
-    if(books > settings.IMAGES_NUM_PER_PAGE) {
-      return '<div class="bottom-loader" id = "main-ldr"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>';
-    }
-  }
-
-  getSortOptions(urlParams, requestRoute) {
-    let str = `<option value="">-- SELECT --</option>`;//default one
-    const options = {
-      "rat-h": {
-        name:  "Rating - Higher",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased']
-      },
-      "rat-l": {
-        name: "Rating - Lower",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased']
-      },
-      "pub-h": {
-        name: "Publication Year - Newer",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased']
-      },
-      "pub-l": {
-        name: "Publication Year - Older",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased']
-      },
-      "pag-h": {
-        name: "Number of Pages - Bigger",
-        routes:['books', 'stories', 'reads']
-      },
-      "pag-l": {
-        name: "Number of Pages - Lower",
-        routes:['books', 'stories', 'reads']
-      },
-      "titl-a": {
-        name: "Title - ASC",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
-      },
-      "titl-d": {
-        name: "Title - DESC",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
-      },
-      'rd-n': {
-        name: "Read order",
-        routes:['books', 'stories', 'reads']
-      },
-      'rd-r': {
-        name: "Read order - Reversed",
-        routes:['books', 'stories', 'reads']
-      },
-      'lst-f': {
-        name: "List order - Newer",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
-      },
-      'lst-l': {
-        name: "List order - Older",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
-      },
-      'prc-f': {
-        name: "Purchase order - Newer",
-        routes:['purchased']
-      },
-      'prc-l': {
-        name: "Purchase order - Older",
-        routes:['purchased']
-      },
-      'cln-f': {
-        name: "Collection Name - ASC",
-        routes:['stories']
-      },
-      'cln-l': {
-        name: "Collection Name - DESC",
-        routes:['stories']
-      },
-      'owb-b': {
-        name: "Owned Books - Max.",
-        routes:['series']
-      },
-      'owb-s': {
-        name: "Owned Books - Min.",
-        routes:['series']
-      },
-      'rdb-b': {
-        name: "Books Read - Max.",
-        routes:['series']
-      },
-      'rdb-s': {
-        name: "Books Read - Min.",
-        routes:['series']
-      },
-      'wsb-b': {
-        name: "Books in WishList - Max.",
-        routes:['series']
-      },
-      'wsb-s': {
-        name: "Books in WishList - Min.",
-        routes:['series']
-      }
-    };
-
-    for(let opt in options) {
-      if(options[opt].routes.includes(requestRoute)) {
-        str += `<option value="${opt}" ${opt == urlParams['sort'] ? 'selected' : ''}>${options[opt].name}</option>`;
-      }
-    }
-    return str;
-  }
-
-  postPictures(folder, objects, actionScriptOnclick) {
-    let str = '<div class = "line">';
-    for(let i = 0 , l = objects.length; i < l ; i ++ ) {
-      if(i % settings.BOOKS_PER_ROW === 0) {
-        str += "</div><div class = 'line'>";
-      }
-      str += this.buildBookObject(objects[i],folder ,actionScriptOnclick);
-    }
-    str += '</div>';
-    return str;
-  }
-
   addCommasToNum(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
@@ -424,15 +264,6 @@ class Basic {
       return a === b;
     }
     return a.toLowerCase().trim() === b.toLowerCase().trim();
-  }
-
-  buildBookObject(book,type, href) {
-    return `<div class = "obj"><p>${book.name}</p><a onclick = "window.location = '${href + book.id}' + window.location.search;">${this.putPicture(type, book.id)}</a></div>`;
-  }
-
-
-  putPicture(type, id) {
-    return `<img src="/pic/${type}/${id}">`;
   }
 
   getUrlParams(url) {
@@ -644,6 +475,6 @@ class Basic {
 
     return url;
   }
-  
+
 }
 module.exports = new Basic();
