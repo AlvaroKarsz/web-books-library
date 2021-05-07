@@ -382,6 +382,8 @@ class DriveBackup {
         this.sendMessage('NOT Exist');
         this.sendMessage('Creating folder ' + this.FOLDERS_TO_BACKUP[i]);
         tmp = await this.DRIVE.createFolder(this.FOLDERS_TO_BACKUP[i]);
+        /*add empty folder to drive files*/
+        this.DRIVE_FILES[this.FOLDERS_TO_BACKUP[i]] = [];
 
         if(this.STOP) {/*stop message received - stop backup*/
           this.IS_WORKING = false;
@@ -454,6 +456,14 @@ class DriveBackup {
         name: tmp[i].name,
       });
 
+    }
+
+    /*make sure all wanted folder exists on this.DRIVE_FILES json, if not create empty arrays*/
+
+    for(let k = 0 , l = this.FOLDERS_TO_BACKUP.length ; k < l ; k ++ ) {
+      if(typeof this.DRIVE_FILES[ this.FOLDERS_TO_BACKUP[k] ] === 'undefined') {
+        this.DRIVE_FILES[ this.FOLDERS_TO_BACKUP[k] ] = [];
+      }
     }
 
     this.sendMessage('All Google Drive files fetched successfully');
@@ -616,15 +626,16 @@ class DriveBackup {
         this.sendMessage('File System File: ' + this.LOCAL_FILES[folderName][i].name + ', Folder: ' + folderName);
 
         /*iterate in DB_DATA and make sure this one exists*/
-        for(let j = 0 , s = this.DB_DATA[folderName].length ; j < s ; j ++ ) {
-          /*does exists*/
-          if(this.LOCAL_FILES[folderName][i].id === this.DB_DATA[folderName][j].id) {
-            foundFlag = true;
-            this.sendMessage('Exist in DB');
-            break;
+        if(typeof  this.DB_DATA[folderName] !== 'undefined') {
+          for(let j = 0 , s = this.DB_DATA[folderName].length ; j < s ; j ++ ) {
+            /*does exists*/
+            if(this.LOCAL_FILES[folderName][i].id === this.DB_DATA[folderName][j].id) {
+              foundFlag = true;
+              this.sendMessage('Exist in DB');
+              break;
+            }
           }
         }
-
         /*not found*/
         if(!foundFlag) {
           arrHolder.push({id: this.LOCAL_FILES[folderName][i].id,folder: folderName});
@@ -669,7 +680,7 @@ class DriveBackup {
       for(let i = 0 , l = this.DB_DATA[folderName].length ; i < l ; i ++ ) {
 
         foundFlag = false;//reset
-        this.sendMessage('DB File: ' + this.LOCAL_FILES[folderName][i].id + ', Folder: ' + folderName);
+        this.sendMessage('DB File: ' + this.DB_DATA[folderName][i].id + ', Folder: ' + folderName);
 
         /*iterate in LOCAL_FILES and make sure this one exists*/
         for(let j = 0 , s = this.LOCAL_FILES[folderName].length ; j < s ; j ++ ) {
