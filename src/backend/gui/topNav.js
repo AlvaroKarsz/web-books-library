@@ -62,6 +62,7 @@ class TopNav {
     `<a onclick = "doBackUp('series')">Series Pictures</a>` +
     `<a onclick = "doBackUp('icons')">App Icons</a>` +
     `<a onclick = "doBackUp('generalPics')">General Pictures</a>` +
+    `<a onclick = "doBackUp('e-books')">E-Books</a>` +
     `</div>` +
     `</div>` +
     `</div>` +

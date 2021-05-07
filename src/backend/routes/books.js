@@ -36,7 +36,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: 'display.html',
       folder: 'books',
-      displayer: entryDisplayer.build(bookData, 'books', {bookRead:true})
+      displayer: entryDisplayer.build(bookData, 'books', {bookRead:true, openPdf:true})
     }));
   });
 
@@ -79,9 +79,14 @@ module.exports = (app) => {
     );
   });
 
-  app.post('/save/book', async (req, res) => {
+
+  app.post('/save/book' , async (req, res) => {
     let requestBody = basic.formDataToJson(basic.trimAllFormData(req.body)); /*request body*/
+
     let covers = [];/*save here covers to save/download and save*/
+
+    /*save E-Book in different variable (if exist)*/
+    let eBook = req.files && req.files.eBook && req.files.eBook.data ? req.files.eBook.data : null;
 
     /*
     this route can be called in 3 different cases:
@@ -92,6 +97,29 @@ module.exports = (app) => {
     notes:
     in case 2), some unique checks will fail (unique ISBN for example, if wasn't modified), so pass the existing id as excluded
     */
+
+
+    /*
+    EMPTY ISBN IS ALLOWED ONLY FOR EBOOKS (SOME JUST DOESN'T HAVE ONE)
+    IN THESE CASES, CALCULATE UNIQUE ID AND SAVE AS ISBN.
+    IN ORDER TO MAKE SURE THE ISBN IS UNIQUE TO OTHER BOOKS AND EBOOKS, THE CALCULATION IS:
+    (AUTHOR NAME + BOOK TITLE -> CONVERT EVERY CHAR TO ASCII AND CONCATENATE THE INTEGERS AS STRINGS) PAD WITH ZEROS (RIGHT) IF SIZE IS SMALLER THAN 14
+    SO EVERY EBOOK SHOULD HAVE UNIQUE AUTHOR NAME + TITLE COMBINATION.
+    THE OUTPUT IS LARGER THAN 13 DIGITS, SO NO OVERLAP WITH NORMAL ISBNS
+    */
+    if(eBook && !requestBody.isbn && requestBody.type === 'E') {
+
+      (
+        requestBody.isbn = (requestBody.title + requestBody.author)
+        .split('')
+        .map(a => a.charCodeAt(0))
+        .join('')
+      ).length < 14 ?
+      requestBody.isbn += '0'
+      .repeat(14 - requestBody.isbn.length)
+      : '';
+
+    }
 
     let existingBookId = requestBody.id || null;
     let existingWishId = requestBody.idFromWish || null;
@@ -257,10 +285,17 @@ module.exports = (app) => {
     }
 
     /*validate book type*/
-    if(! ['H','P','HN'].includes(requestBody.type)) {
+    if(! ['H','P','HN', 'E'].includes(requestBody.type)) {
       res.send(JSON.stringify({status:false, message:'Invalid Book Format.'}));
       return;
     }
+
+    /*if this is a ebook, make sure a ebook file received (if a new book is been inserted)*/
+    if( requestBody.type === 'E' && !eBook && !existingBookId) {
+      res.send(JSON.stringify({status:false, message:'Upload E-Book.'}));
+      return;
+    }
+
 
     /*make sure isbn isn't taken*/
 
@@ -390,6 +425,20 @@ module.exports = (app) => {
     }
 
 
+    /*if this is a E-Book, save ebook in relevant folder and save ebook hash in cache table*/
+    if(eBook) {
+      /*get book ID*/
+      const bookID = existingBookId ? existingBookId : await db.getBookIdFromISBN(requestBody.isbn);
+      /*save E-Book*/
+      const eBookFullPath = await imagesHandler.saveImage(eBook,path.join(__dirname,'..','..','..','e-books'), bookID, {noModification:true, mime: 'pdf'});
+      /*save md5sum hash*/
+      await db.savePictureHashes([{
+        id: bookID,
+        folder: 'e-books',
+        md5: imagesHandler.calculateMD5(eBookFullPath)
+      }]);
+
+    }
 
     //return sucess message
     res.send(JSON.stringify({status:true}));

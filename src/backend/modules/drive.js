@@ -285,7 +285,8 @@ class Drive {
       'jpg': 'image/jpeg',
       'txt':'text/plain',
       'ico': 'image/vnd.microsoft.icon',
-      'sql': 'application/sql'
+      'sql': 'application/sql',
+      'pdf': 'application/pdf'
     }[extension.toLowerCase()];
   }
 

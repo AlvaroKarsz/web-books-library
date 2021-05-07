@@ -5,8 +5,8 @@ const basic = require('./modules/basic.js');
 const bodyParser = require('body-parser');
 const fileupload = require("express-fileupload");
 const fs = require("fs");
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
+//app.use(bodyParser.urlencoded({ extended: true }));
+//app.use(bodyParser.json({limit:'100000kb'}));
 app.use(fileupload());
 
 /*

@@ -11,7 +11,7 @@ class Images {
     return /^www/.test(data) || /^http/.test(data);
   }
 
-  async saveImage(raw,filePath,fileTitle) {
+  async saveImage(raw,filePath,fileTitle, ops = {}) {
     /*if url was received, download file from url*/
     let format;
     if(this.isUrl(raw)) {
@@ -23,11 +23,18 @@ class Images {
       /*downloaded as buffer - convert to base64*/
       raw = this.bufferToBase64(raw);
     } else {
-      /*raw data was received, get format from raw*/
-      format = this.getTypeFromRaw(raw);
+
+      if(ops.mime) {
+        /*received from user*/
+        format = ops.mime;
+      } else {
+        /*raw data was received, get format from raw*/
+        format = this.getTypeFromRaw(raw);
+
+      }
     }
     /*save the pic*/
-    this.imageFromRaw(raw,filePath,fileTitle, format);
+    this.imageFromRaw(raw,filePath,fileTitle, format, ops);
     /*return full path*/
     return path.join(filePath, fileTitle + '.' + format);
   }
@@ -85,18 +92,29 @@ class Images {
     fs.unlinkSync(path.join(__dirname, '..', '..','..', folderName, picFullName));
   }
 
-  imageFromRaw(raw,filePath,fileTitle, format) {
+  imageFromRaw(raw,filePath,fileTitle, format, ops) {
     /*make full path from file path and file name*/
     const fullPath = path.join(filePath, fileTitle + '.' + format);
     /*remove headers data from raw*/
-    raw = raw.replace(/^data:image\/\w+;base64,/, "");
+
+    if(!ops.noModification) {//only if noModification flag is not present
+      raw = raw.replace(/^data:(image|application)\/\w+;base64,/, "");
+    }
+
     /*write raw data*/
-    fs.writeFileSync(fullPath, Buffer.from(raw, this.BASE));
+    if(!ops.noModification) {
+      fs.writeFileSync(fullPath, Buffer.from(raw, this.BASE));
+    } else {/*write without buffers or encodings*/
+      fs.writeFileSync(fullPath, raw);
+    }
+
   }
 
   getTypeFromUrl(url) {
     if(/png$/.test(url)) {
       return 'png';
+    } else if (/pdf$/.test(raw)) {
+      return 'pdf';
     }
     //default value
     return 'jpg';
@@ -105,6 +123,8 @@ class Images {
   getTypeFromRaw(raw) {
     if(/^data\:image\/png/.test(raw)) {
       return 'png';
+    } else if (/^data\:application\/pdf/.test(raw)) {
+      return 'pdf';
     }
     //default value
     return 'jpeg';

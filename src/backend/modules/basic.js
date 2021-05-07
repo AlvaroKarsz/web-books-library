@@ -463,7 +463,7 @@ class Basic {
       url += '?';
     } else {
       /* query params exists - add a new one */
-      referer += '&';
+      url += '&';
     }
 
     /*add param name*/

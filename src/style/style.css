@@ -1507,3 +1507,56 @@ img:hover {
 .backup-dialog-close-button:hover {
   transform: scale(1.1);
 }
+
+.insert-book-upload-file {
+  height: 240px;
+  width: 800px;
+  border-radius: 20px;
+  padding: 10px;
+  color: white;
+  border: 1px solid white;
+  text-align: center;
+}
+
+.file-uploader-main-title-div {
+  font-size: 25px;
+  cursor: pointer;
+  text-align: center;
+  margin-top: 40px;
+}
+
+.file-uploader-main-title-div:hover {
+  transform: scale(1.1);
+}
+
+.file-uploader-main-error {
+  position: absolute;
+  text-align: center;
+  margin-left: 260px;
+  margin-top: 0px;
+  color: red;
+  font-size: 20px;
+}
+
+.file-uploader-main-message {
+  font-size: 18px !important;
+  width: max-content !important;
+}
+
+.file-uploader-file-view {
+  padding: 5px;
+  text-align: center;
+}
+
+.file-uploader-file-view p {
+  display: block !important;
+  text-align: center !important;
+  width: max-content !important;
+  margin: 0 auto !important;
+  font-size:14px !important;
+  margin-top: 5px !important;
+}
+
+.file-uploader-file-view i {
+  font-size: 40px;
+}

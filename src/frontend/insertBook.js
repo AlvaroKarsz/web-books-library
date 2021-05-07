@@ -1118,6 +1118,293 @@ class Story {
   }
 }
 
+class FileUploader {
+  constructor(parent, opts = {}) {
+    this.dz = parent;
+    this.isShown = true;
+
+    if(opts.autoHide) {
+      this.hideAll();
+      this.isShown = false;
+    }
+
+    this.holderClass = opts.holderClass || 'file-uploader-holder';
+    this.mainTitleClass = opts.mainTitleClass || 'file-uploader-main-title-div';
+    this.errorClass = opts.errorClass || 'file-uploader-main-error';
+    this.titleClass = opts.titleClass || 'file-uploader-main-message';
+    this.inputFileClass = opts.inputFileClass || 'hidden-file-uploader';
+    this.fileViewClass = opts.fileViewClass || 'file-uploader-file-view';
+    this.format = opts.format || '*';
+    this.maxMB = opts.maxMB || null;
+    this.errorIsShown = false;
+    this.selectedFile = null;
+    this.build();
+    this.activate();
+  }
+
+  hideAll() {
+    this.isShown = false;
+    this.dz.parentNode.style.display = 'none';
+  }
+
+  showAll() {
+    this.isShown = true;
+    this.dz.parentNode.style.display = 'block';
+  }
+
+  isSet() {
+    return this.isShown;
+  }
+
+  get() {
+    if( ! this.isSet() ) {
+      return;
+    }
+    return this.selectedFile;
+  }
+
+  build() {
+    this.makeFileUploader();
+    this.makeErrorBox();
+    this.hideError();
+    this.buildTitle();
+    this.makeFileView();
+  }
+
+  acceptFile(file) {
+    this.setFileView(file.name, file.size);
+    this.clearInputFiles();
+    this.saveFile(file);
+  }
+
+  saveFile(file) {
+    this.selectedFile = file;
+  }
+
+  clearInputFiles() {
+    this.inputFile.value = '';
+  }
+
+  listenToFileChange() {
+    this.inputFile.onchange = () => {
+      this.handleFiles(this.inputFile.files);
+    };
+  }
+
+  makeFileView() {
+    this.fileView = document.createElement('DIV');
+    this.fileView.className = this.fileViewClass;
+    let i = document.createElement('I');
+    i.className = 'fa fa-file-pdf-o';
+    this.fileName = document.createElement('P');
+    this.fileSize = document.createElement('P');
+    this.fileView.appendChild(i);
+    this.fileView.appendChild(this.fileName);
+    this.fileView.appendChild(this.fileSize);
+    this.hideFileView();
+    this.dz.appendChild(this.fileView);
+  }
+
+  hideFileView() {
+    this.fileView.style.display = 'none';
+  }
+
+  showFileView() {
+    this.fileView.style.display = 'block';
+  }
+
+  setFileView(name, size) {
+    this.fileName.innerHTML = name;
+    this.fileSize.innerHTML = this.toHumanSize(size);
+    this.showFileView();
+  }
+
+  toHumanSize(e) {
+    const KB = 1024, MB = 1048576, GB = 1073741824;
+
+    if(e < KB) {
+      return (e).toFixed(2) + 'B';
+    }
+
+    if(e >= KB && e < MB) {
+      return (e/KB).toFixed(2) + 'KB';
+    }
+
+    if(e >= MB && e < GB) {
+      return (e/MB).toFixed(2) + 'MB';
+    }
+
+    if(e >= GB) {
+      return (e/GB).toFixed(2) + 'GB';
+    }
+  }
+
+  activate() {
+    this.activateDropZone();
+    this.trigerInputOnTitleClick();
+    this.listenToFileChange();
+  }
+
+  trigerInputOnTitleClick() {
+    this.mainTitle.onclick = () => {
+      this.inputFile.click();
+    };
+  }
+
+  getAcceptedType() {
+    switch(this.format) {
+      case '*':
+      return '*';
+      case 'pdf':
+      return 'application/pdf';
+      default:
+      return '*';
+    }
+  }
+
+  handleFiles(files) {
+    if(files.length !== 1) {
+      this.setError("Please drop just 1 file");
+      return;
+    }
+
+    if(!this.validateInputFile(files[0].type)) {
+      this.setError(`Item not allowed, ${this.format.toUpperCase()} only`);
+      return;
+    }
+
+    if(this.maxMB && files[0].size > this.maxMB * 1048576) {
+      this.setError(`File is too BIG, MAX. size ${this.maxMB}MB`);
+      return;
+    }
+
+    this.acceptFile(files[0]);
+  }
+
+  validateInputFile(type) {
+    return this.format === '*' || type === this.getAcceptedType();
+  }
+
+
+  makeFileUploader() {
+    this.makeFileUploaderTitle();
+    this.makeFileUploaderInput();
+  }
+
+  makeFileUploaderInput() {
+    this.inputFile = document.createElement('INPUT');
+    this.inputFile.type = 'file';
+    this.inputFile.setAttribute('accept', this.getAcceptedType());
+    this.inputFile.className = this.inputFileClass;
+    this.dz.appendChild(this.inputFile);
+  }
+
+  makeFileUploaderTitle() {
+    this.mainTitle = document.createElement('DIV');
+    this.mainTitle.innerHTML = 'Drop File/Click here and Upload File';
+    this.mainTitle.className = this.mainTitleClass;
+    this.dz.appendChild(this.mainTitle);
+  }
+
+  buildTitle() {
+    this.titleElement = document.createElement('P');
+    this.titleElement.innerHTML = '';
+    this.titleElement.className = this.titleClass;
+    this.dz.appendChild(this.titleElement);
+  }
+
+
+  setTitle(e) {
+    this.titleElement.innerHTML = e;
+  }
+
+  showError() {
+    this.errorIsShown = true;
+    this.errorDiv.style.display = 'block';
+  }
+
+  setError(err) {
+    if(this.errorIsCurrentlyShown()) {
+      this.hideError();
+    }
+    this.errorDiv.innerHTML = err;
+    this.showError();
+    setTimeout(() => {
+      this.hideError();
+    }, 3000);
+  }
+
+
+  hideError() {
+    this.errorIsShown = false;
+    this.errorDiv.style.display = 'none';
+  }
+
+  errorIsCurrentlyShown() {
+    return this.errorIsShown;
+  }
+
+  makeErrorBox() {
+    this.errorDiv = document.createElement('DIV');
+    this.errorDiv.className = this.errorClass;
+    this.errorDiv.innerHTML = 'Error';
+    this.dz.appendChild(this.errorDiv);
+  }
+
+  activateDropZone() {
+    this.dz.ondragenter = (e) => {this.dragEnterEvent(e)};
+    this.dz.ondragleave = (e) => {this.dragLeaveEnent(e)};
+    this.dz.ondragover = (e) => {this.dragOverEnent(e)};
+    this.dz.ondrop = (e) => {this.dragDropEvent(e)};
+  }
+
+  dragEnterEvent(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.showDropZone();
+  }
+
+  showDropZone() {
+    this.setTitle("Drop it like it's hot!");
+    this.dz.style.border = '4px dashed blue';
+    this.dz.style.borderRadius = '20px';
+  }
+
+  dragOverEnent(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  hideDropZone(e, force = false) {
+    if(force || this.cursorIsOutside(e)) {
+      this.setTitle("");
+      this.dz.style.border = '';
+      this.dz.style.borderRadius = '';
+    }
+  }
+
+  cursorIsOutside(e) {
+    if(!e) {//no event passed - ignore this test
+      return false;
+    }
+    let bounderies = this.dz.getBoundingClientRect();
+    return e.clientY < bounderies.top || e.clientY >= bounderies.bottom || e.clientX < bounderies.left || e.clientX >= bounderies.right;
+  }
+
+  dragLeaveEnent(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.hideDropZone(e);
+  }
+
+  dragDropEvent(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    this.hideDropZone(e, true);//force
+    this.handleFiles(e.dataTransfer.files);
+  }
+}
+
 class CheckboxGroup {
   constructor(parent, opts = {}) {
     this.parent = parent;
@@ -1127,18 +1414,60 @@ class CheckboxGroup {
     this.titleClassName = opts.titleClassName || 'main-title-cbox';
     this.checkboxesFromInput = opts.checkboxes || [];
     this.checkboxes = {};
+    this.callbacks = {};
     this.selected = '';
+    this.prevSelected = '';
     this.build();
     this.activate();
   }
 
   build() {
     this.makeHolder();
-    this.checkboxesFromInput.forEach(a => this.makeCheckbox(a.title, a.code));
+    for(let q = 0 , l = this.checkboxesFromInput.length ; q < l ; q ++ ) {
+      this.makeCheckbox(this.checkboxesFromInput[q].title, this.checkboxesFromInput[q].code);
+    }
+    this.saveCallbacks();
   }
 
+  saveCallbacks() {
+    this.checkboxesFromInput.forEach((e) => {
+      this.callbacks[e.code] = {}; //make emmpty json
+      if(e.onSet) {//onset callback
+        this.callbacks[e.code].onSet = e.onSet;
+      }
+      if(e.onUnSet) {//onunset callback
+        this.callbacks[e.code].onUnSet = e.onUnSet;
+      }
+    });
+  }
+
+
   activate() {
-    this.allowOneCheckedAtAnyTime();
+    /*
+    when one is clicked, turn others off
+    add onset and onunset callbacks calls if defined in "checkboxesFromInput"
+    */
+    for(let i in this.checkboxes) {
+      this.checkboxes[i].onchange = (e) => {
+        for(let j in this.checkboxes) {
+          if(this.checkboxes[j] === e.target) {
+            this.prevSelected = this.selected;
+            this.selected = j;
+            this.checkboxes[j].checked = true;
+          } else {
+            this.checkboxes[j].checked = false;
+          }
+        }
+        this.runCallback('onUnSet', this.prevSelected);
+        this.runCallback('onSet', this.selected);
+      };
+    }
+  }
+
+  runCallback(type, code) {
+    if(this.callbacks[code] && this.callbacks[code][type]) {
+      this.callbacks[code][type]();
+    }
   }
 
   makeHolder() {
@@ -1183,21 +1512,6 @@ class CheckboxGroup {
   getFirstCheckBox() {
     return this.checkboxes[Object.keys(this.checkboxes)[0]];
   }
-
-  allowOneCheckedAtAnyTime() {
-    for(let i in this.checkboxes) {
-      this.checkboxes[i].onchange = (e) => {
-        for(let j in this.checkboxes) {
-          if(this.checkboxes[j] === e.target) {
-            this.selected = j;
-            this.checkboxes[j].checked = true;
-          } else {
-            this.checkboxes[j].checked = false;
-          }
-        }
-      };
-    }
-  }
 }
 
 (async () => {
@@ -1217,10 +1531,17 @@ class CheckboxGroup {
     saveBtn: document.getElementById('save'),
     bookStoreInp: document.getElementById('book-store'),
     langInp: document.getElementById('book-lang'),
-    langOrgInp: document.getElementById('book-lang-org')
+    langOrgInp: document.getElementById('book-lang-org'),
+    eBookUploaderDiv: document.getElementById('ebook-uploader')
   };
 
-  let bookTypeE = new CheckboxGroup(els.typeDiv, {
+  let eBookUploader = new FileUploader(els.eBookUploaderDiv, {
+    format: 'pdf',
+    maxMB: '30',
+    autoHide: true
+  }),
+
+  bookTypeE = new CheckboxGroup(els.typeDiv, {
     checkboxes: [
       {
         title: 'Hard Cover',
@@ -1233,6 +1554,17 @@ class CheckboxGroup {
       {
         title: 'Hard Cover no Dust Jacket',
         code: 'HN'
+      },
+      {
+        title: 'E-Book',
+        code: 'E',
+        onSet: () => {
+          eBookUploader.showAll();
+        },
+        onUnSet: () => {
+          eBookUploader.hideAll();
+
+        }
       }
     ]
   }),
@@ -1414,7 +1746,8 @@ class CheckboxGroup {
         next: nextEl.get(),
         prev: prevEl.get(),
         cover: coverEl.getSelected(),
-        collection: collectionEl.get()
+        collection: collectionEl.get(),
+        eBook: eBookUploader.isSet() ? eBookUploader.get() : null
       },
       messager: messager,
       loaderEl: loader,
@@ -1430,10 +1763,6 @@ async function saveBook(opts) {
   }
   if(!validValue(opts.values.author)) {
     opts.messager.setError("Please fill Author Input");
-    return;
-  }
-  if(!validValue(opts.values.isbn)) {
-    opts.messager.setError("Please fill ISBN Input");
     return;
   }
   if(!validValue(opts.values.year)) {
@@ -1458,6 +1787,14 @@ async function saveBook(opts) {
   }
   if(!validValue(opts.values.type)) {
     opts.messager.setError("Please select Type Format");
+    return;
+  }
+  if(opts.values.type === 'E' && ! opts.values.eBook && !opts.values.id) {
+    opts.messager.setError("Please Upload E-Book");
+    return;
+  }
+  if(!validValue(opts.values.isbn) && opts.values.type !== 'E') {/*EMPTY ISBN is allowed only for E-Books*/
+    opts.messager.setError("Please fill ISBN Input");
     return;
   }
   if(opts.values.serie) {

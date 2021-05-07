@@ -58,5 +58,9 @@ module.exports = (app) => {
     }
   });
 
+  app.get('/ebook/:id', function (req, res) {
+    let eBookId = req.params.id;
+      res.sendFile(path.join(__dirname, '..', '..','..', 'e-books', eBookId + '.pdf'));
+  });
 
 }

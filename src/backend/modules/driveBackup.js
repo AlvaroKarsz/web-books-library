@@ -10,7 +10,7 @@ const imagesHandler = require('./images.js');
 class DriveBackup {
   constructor() {
     this.DRIVE = require('./drive.js');
-    this.ALL_FOLDERS = ['series','books','stories','wishlist','icons','generalPics','backups'];
+    this.ALL_FOLDERS = ['series','books','stories','wishlist','icons','generalPics','backups', 'e-books'];
     this.ROOT_PATH = path.join(__dirname, '..', '..', '..');
     this.IGNORE_FILE = '.gitignore';
     this.WS = null; /*websocket pointer*/

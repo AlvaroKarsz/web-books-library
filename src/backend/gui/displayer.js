@@ -129,13 +129,28 @@ class BookDisplayer {
     return output;
   }
 
+  getIsbnTitle(isbn) {
+    /*
+    if this is an isbn, the number of digits will not exceed 13
+    if number is bigger, this is not an ISBN
+    this can happen in case of ebooks without ISBN
+    a unique ID is generated instead ISBN
+    */
+
+    if(isbn.replace(/\D/g,'','').length > 13) { /*count just numeric digits*/
+      return 'Unique ID: ';
+    } else {
+      return 'ISBN: ';
+    }
+  }
+
   addGeneralInformation(data) {
     /*add general info - echoDisplayLine will return empty line if param is empty*/
     let output = '<div class="general-holder-book-displayer">General Information:';
     output += this.echoDisplayLine('Author: ' , data.story_author ? data.story_author : data.author);/*handle stories - (special case) if story author is present - display it*/
     output += this.echoDisplayLine('Publication Year: ' , data.year);
     output += this.echoDisplayLine('Number of Pages: ' , data.pages);
-    output += this.echoDisplayLine('ISBN: ' , data.isbn);
+    output += this.echoDisplayLine(this.getIsbnTitle(data.isbn), data.isbn, {max:20}); /*book may have no isbn (some ebooks for example)*/
     output += this.echoDisplayLine('Book Language: ' , data.language);
     output += this.echoDisplayLine('Book Original Publication Language: ' , data.o_language);
     output += this.addFormat(data.type);
@@ -150,7 +165,8 @@ class BookDisplayer {
     const formatOptionsConverter = {
       'P': 'PaperBack',
       'H': 'HardCover',
-      'HN': 'HardCover withour Dust Jacket'
+      'HN': 'HardCover withour Dust Jacket',
+      'E': 'E-Book'
     };
 
     /*no format - or invalid one*/
@@ -361,15 +377,45 @@ class BookDisplayer {
       }
     }
 
+    /*
+    option to open the book in a new tab
+    relevant for ebooks only
+    */
+    if(actions.openPdf) {
+      if(data.type === 'E') {
+        output += `<div title="Open This Book in Browser" ` +
+        `onclick = "window.open('/ebook/${data.id}')"` +
+        `>` +
+        `<i class="fa fa-bookmark"></i>` +
+        `<p>Open This Book</p>` +
+        `</div>`;
+      }
+    }
+
     output += '</div>';
     return output;
   }
 
-  echoDisplayLine(prevLine, param) {
+  echoDisplayLine(prevLine, param, ops = {}) {
     if(!param) {//no param - return empty string
       return '';
     }
-    return `<div class="displayer-body-line">${prevLine}${param}</div>`;
+
+    /*
+    ops options:
+    max: maximun number of digits, anything above will be replaced with ...
+    add title with full value
+    */
+    let isTruncated = false, finalParam = param;
+
+    if(ops.max) {
+      if(param.length > ops.max) {
+        finalParam = param.slice(0, ops.max) + '...';
+        isTruncated = true
+      }
+    }
+
+    return `<div class="displayer-body-line" ${isTruncated ? 'title=' + param : '' }>${prevLine}${finalParam}</div>`;
   }
 
   buildJSRedirector(id) {
