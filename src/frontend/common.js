@@ -727,7 +727,8 @@ class CoverSelector {
 
   buildOptionChanger() {
     this.tabsPointer = new Tabs(this.parent, [this.uploadTitle, this.searchTitle], {
-      buttonHolderClass: this.buttonHolderTableCoverSelectorClass
+      buttonHolderClass: this.buttonHolderTableCoverSelectorClass,
+      default: this.uploadTitle
     });
     this.tabsPointer.set();
   }
@@ -951,6 +952,7 @@ class Tabs {
     this.values = values;
     this.tabs = {};
     this.buttonHolderClass = opts.buttonHolderClass || 'tabs-buttons-holder';
+    this.defaultTab = opts.default || '';
     this.selected = '';
     this.setIndexer();
   }
@@ -969,6 +971,10 @@ class Tabs {
     this.buildSkeleton();
     this.buildTabs();
     this.activate();
+    //set the default one active
+    if(this.defaultTab) {
+      this.setActive(this.tabs[this.defaultTab].tab,this.tabs[this.defaultTab].label, this.defaultTab);
+    }
   }
 
   hide() {
