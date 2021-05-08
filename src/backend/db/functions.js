@@ -681,10 +681,10 @@ class dbFunctions {
       query += " main.id DESC "
       break;
       case 'prc-f':
-      query += " main.order_date "
+      query += " main.order_date::DATE DESC "
       break;
       case 'prc-l':
-      query += " main.order_date DESC "
+      query += " main.order_date::DATE "
       break;
       default:
       query += ' main.id ';
