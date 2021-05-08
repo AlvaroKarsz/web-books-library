@@ -1,9 +1,10 @@
-const basic = require('../modules/basic.js');
 const settings = require('../settings.js');
-const db = require('../db/functions');
-const path = require('path');
-const entryDisplayer = require('../gui/displayer.js');
-const htmlRender = require('../gui/htmlRenderer.js');
+const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
+const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
+const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
+const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
+const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
+
 
 module.exports = (app) => {
 
@@ -17,8 +18,8 @@ module.exports = (app) => {
     const total = request.count;
 
     res.send(await htmlRender.render({
-      html: 'main.html',
-      folder: 'series',
+      html: settings.SOURCE_CODE_HTML_MAIN_FILE_NAME,
+      folder: settings.SERIES_FOLDER_NAME,
       totalCount: total,
       objects: books,
       urlParams: urlParams,
@@ -59,9 +60,9 @@ module.exports = (app) => {
     serieData = await db.fetchSerieById(id, filters);
 
     res.send(await htmlRender.render({
-      html: 'display.html',
-      folder: 'series',
-      displayer: entryDisplayer.build(serieData, 'series', {})
+      html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
+      folder: settings.SERIES_FOLDER_NAME,
+      displayer: entryDisplayer.build(serieData, settings.SERIES_FOLDER_NAME, {})
     }));
   });
 
@@ -76,7 +77,7 @@ module.exports = (app) => {
     const id = req.params.id;
 
     res.send(await htmlRender.render({
-      html: 'insertSerie.html',
+      html: settings.SOURCE_CODE_HTML_INSERT_SERIE_FILE_NAME,
       pageTitle: id ? 'Edit Serie' : 'Enter New Serie' //if id exists - the page will load id's info
     }));
   });
@@ -127,13 +128,12 @@ module.exports = (app) => {
     if a serie is been altered - the old picture may be overwrited
     */
     if(cover) {
-      const imagesHandler = require('../modules/images.js'),
       serieId = await db.getSerieIdFromTitleAndAuthor(requestBody.title, requestBody.author),/*get new id, received when serie saved in DB*/
-      picPath = await imagesHandler.saveImage(cover,path.join(__dirname,'..','..','..','series'), serieId);/*save picture and get the full path (in order to get picture md5)*/
+      picPath = await imagesHandler.saveImage(cover, settings.SERIES_PATH, serieId);/*save picture and get the full path (in order to get picture md5)*/
       //now save md5 in DB
       await db.savePictureHashes({
         id: serieId,
-        folder: 'series',
+        folder: settings.SERIES_FOLDER_NAME,
         md5: imagesHandler.calculateMD5(picPath)
       });
     }

@@ -1,5 +1,6 @@
-const basicFunctions = require('./basic');
-const config = require('../config');
+const settings = require('../settings.js');
+const basicFunctions = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
+const config = require(settings.SOURCE_CODE_BACKEND_CONFIG_FILE_PATH);
 
 class GoodReads {
   constructor() {

@@ -1,17 +1,29 @@
+const settings = require('../settings.js');
+const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
+const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
+const path = require('path');
+const fs = require('fs');
+
+
 /*
 THIS MODULE USES DRIVE CLASS TO BACKUP LOCAL FILES TO GOOGLE DRIVE.
 DRIVEBACKUP RECEIVES A WS POINTER, AND IT WILL SENT PROGRESS TO WS
 */
-const path = require('path');
-const fs = require('fs');
-const db = require('../db/functions');
-const imagesHandler = require('./images.js');
 
 class DriveBackup {
   constructor() {
-    this.DRIVE = require('./drive.js');
-    this.ALL_FOLDERS = ['series','books','stories','wishlist','icons','generalPics','backups', 'e-books'];
-    this.ROOT_PATH = path.join(__dirname, '..', '..', '..');
+    this.DRIVE = require(settings.SOURCE_CODE_BACKEND_DRIVE_MODULE_FILE_PATH);
+    this.ALL_FOLDERS = [
+      settings.GENERAL_PICTURES_FOLDER_NAME,
+      settings.BACKUPS_FOLDER_NAME,
+      settings.BOOKS_FOLDER_NAME,
+      settings.E_BOOKS_FOLDER_NAME,
+      settings.ICONS_FOLDER_NAME,
+      settings.SERIES_FOLDER_NAME,
+      settings.STORIES_FOLDER_NAME,
+      settings.WISH_LIST_FOLDER_NAME
+    ];
+    this.ROOT_PATH = settings.ROOT_PATH;
     this.IGNORE_FILE = '.gitignore';
     this.WS = null; /*websocket pointer*/
     this.FOLDERS_TO_BACKUP = null;

@@ -1,6 +1,6 @@
 const settings = require('../settings.js');
 const WebSocket = require('ws');
-const DriveBackup = require('./driveBackup.js');
+const DriveBackup = require(settings.SOURCE_CODE_BACKEND_BACKUP_MODULE_FILE_PATH);
 /*
 ONLY 1 WEBSOCKET CAN BE OPEN AT ANY GIVEN TIME!
 */

@@ -1,10 +1,8 @@
-const basic = require('../modules/basic.js');
 const settings = require('../settings.js');
-const db = require('../db/functions');
-const path = require('path');
-const entryDisplayer = require('../gui/displayer.js');
-const htmlRender = require('../gui/htmlRenderer.js');
-
+const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
+const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
+const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
+const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
 
 module.exports = (app) => {
   app.get('/reads', async (req, res) =>  {
@@ -17,8 +15,8 @@ module.exports = (app) => {
     const total = request.count;
 
     res.send(await htmlRender.render({
-      html: 'main.html',
-      folder: 'books',
+      html: settings.SOURCE_CODE_HTML_MAIN_FILE_NAME,
+      folder: settings.BOOKS_FOLDER_NAME,
       totalCount: total,
       objects: books,
       urlParams: urlParams,
@@ -36,9 +34,9 @@ module.exports = (app) => {
     readData = await db.fetchReadById(id, filters, 'read');
 
     res.send(await htmlRender.render({
-      html: 'display.html',
-      folder: 'books',
-      displayer: entryDisplayer.build(readData, 'books', {})
+      html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
+      folder: settings.BOOKS_FOLDER_NAME,
+      displayer: entryDisplayer.build(readData, settings.BOOKS_FOLDER_NAME, {})
     }));
   });
 

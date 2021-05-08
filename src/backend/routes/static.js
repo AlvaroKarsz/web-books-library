@@ -1,50 +1,48 @@
-const basic = require('../modules/basic.js');
 const settings = require('../settings.js');
-const db = require('../db/functions');
-const fs = require('fs');
+const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const path = require('path');
 
 module.exports = (app) => {
 
 
   app.get('/favicon.ico', function (req, res) {
-    res.sendFile(path.join(__dirname,'..', '..', '..', 'icons','logo.ico'));
+    res.sendFile(path.join(settings.ICONS_PATH ,'logo.ico'));
   });
 
   app.get('/style', function (req, res) {
-    res.sendFile(path.join(__dirname,'..', '..', 'style', 'style.css'));
+    res.sendFile(settings.SOURCE_CODE_STYLE_FILE_PATH);
   });
 
   app.get('/frontend/display', (req, res) => {
-    res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'code.js'));
+    res.sendFile(settings.SOURCE_CODE_FRONTEND_MAIN_FILE_PATH);
   });
 
   app.get('/frontend/common', (req, res) => {
-    res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'common.js'));
+    res.sendFile(settings.SOURCE_CODE_FRONTEND_COMMON_FILE_PATH);
   });
 
   app.get('/frontend/insertBook', (req, res) => {
-    res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'insertBook.js'));
+    res.sendFile(settings.SOURCE_CODE_FRONTEND_INSERT_BOOK_FILE_PATH);
   });
 
   app.get('/frontend/insertSerie', (req, res) => {
-    res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'insertSerie.js'));
+    res.sendFile(settings.SOURCE_CODE_FRONTEND_INSERT_SERIE_FILE_PATH);
   });
 
   app.get('/frontend/insertStory', (req, res) => {
-    res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'insertStory.js'));
+    res.sendFile(settings.SOURCE_CODE_FRONTEND_INSERT_STORY_FILE_PATH);
   });
 
   app.get('/frontend/websocket', (req, res) => {
-    res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'websocket.js'));
+    res.sendFile(settings.SOURCE_CODE_FRONTEND_WEBSOCKET_FILE_PATH);
   });
 
   app.get('/frontend/markBookAsRead', (req, res) => {
-    res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'markBookAsRead.js'));
+    res.sendFile(settings.SOURCE_CODE_FRONTEND_MARK_BOOK_READ_FILE_PATH);
   });
 
   app.get('/frontend/insertWish', (req, res) => {
-    res.sendFile(path.join(__dirname,'..', '..', 'frontend', 'insertWish.js'));
+    res.sendFile(settings.SOURCE_CODE_FRONTEND_INSERT_WISH_FILE_PATH);
   });
 
   app.get('/pic/:picType/:picId', function (req, res) {
@@ -54,13 +52,13 @@ module.exports = (app) => {
     if(!picFullName) {//pic not exists - send blank picture
       res.sendFile(settings.BLANK_PIC_PATH);
     } else {
-      res.sendFile(path.join(__dirname, '..', '..','..', pictureType, picFullName));
+      res.sendFile(path.join(settings.ROOT_PATH, pictureType, picFullName));
     }
   });
 
   app.get('/ebook/:id', function (req, res) {
     let eBookId = req.params.id;
-      res.sendFile(path.join(__dirname, '..', '..','..', 'e-books', eBookId + '.pdf'));
+      res.sendFile(path.join(settings.E_BOOKS_PATH , eBookId + '.pdf'));
   });
 
 }

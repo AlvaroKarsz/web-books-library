@@ -1,4 +1,5 @@
-const pg = require('./connection').pgClient;
+const settings = require('../settings.js');
+const pg = require(settings.SOURCE_CODE_BACKEND_CONNECTION_DATABASE_FILE_PATH);
 
 class dbFunctions {
 
@@ -881,8 +882,8 @@ class dbFunctions {
     }
 
     async saveCollectionRating(bookId) {
-      const googleApi = require('../modules/googleApi');
-      const goodreads = require('../modules/goodReads');
+      const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
+      const goodreads = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
 
       let query, bookAuthor, stories, ratings, queryParamsArr = [], paramsCount = 0;
       /*
@@ -996,7 +997,7 @@ class dbFunctions {
     let rating = null, additionalIsbn = null;
 
     /*try to fetch rating from goodreads api*/
-    const goodreads = require('../modules/goodReads');
+    const goodreads = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
 
     /*may be empty for stories*/
     if(isbn) {
@@ -1006,7 +1007,7 @@ class dbFunctions {
 
     if(!rating) {
       /*rating not found by this isbn, try to fetch another isbn from google api based on book title and author*/
-      const googleApi = require('../modules/googleApi');
+      const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
       additionalIsbn = await googleApi.fetchIsbnByTitleAndAuthor(title,author);
       if(!additionalIsbn) {
         /*no luck - no isbn found*/

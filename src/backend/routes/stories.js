@@ -1,9 +1,9 @@
-const basic = require('../modules/basic.js');
 const settings = require('../settings.js');
-const db = require('../db/functions');
-const path = require('path');
-const entryDisplayer = require('../gui/displayer.js');
-const htmlRender = require('../gui/htmlRenderer.js');
+const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
+const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
+const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
+const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
+const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
 
 module.exports = (app) => {
 
@@ -17,8 +17,8 @@ module.exports = (app) => {
     const total = request.count;
 
     res.send(await htmlRender.render({
-      html: 'main.html',
-      folder: 'stories',
+      html: settings.SOURCE_CODE_HTML_MAIN_FILE_NAME,
+      folder: settings.STORIES_FOLDER_NAME,
       totalCount: total,
       objects: books,
       urlParams: urlParams,
@@ -50,9 +50,9 @@ module.exports = (app) => {
     storyData = await db.fetchStoryById(id, filters);
 
     res.send(await htmlRender.render({
-      html: 'display.html',
-      folder: 'stories',
-      displayer: entryDisplayer.build(storyData, 'stories', {storyRead: true})
+      html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
+      folder: settings.STORIES_FOLDER_NAME,
+      displayer: entryDisplayer.build(storyData, settings.STORIES_FOLDER_NAME, {storyRead: true})
     }));
   });
 
@@ -67,7 +67,7 @@ module.exports = (app) => {
     const id = req.params.id;
 
     res.send(await htmlRender.render({
-      html: 'insertStory.html',
+      html: settings.SOURCE_CODE_HTML_INSERT_STORY_FILE_NAME,
       pageTitle: id ? 'Edit Story' : 'Enter New Story' //if id exists - the page will load id's info
     }));
   });
@@ -179,13 +179,12 @@ module.exports = (app) => {
     if a wish is been altered - the old picture may be overwrited
     */
     if(cover) {
-      const imagesHandler = require('../modules/images.js'),
       storyId = await db.getStoryIdFromDetails(requestBody),/*get new id, received when story saved in DB*/
-      picPath = await imagesHandler.saveImage(cover,path.join(__dirname,'..','..','..','stories'), storyId);/*save picture and get the full path (in order to get picture md5)*/
+      picPath = await imagesHandler.saveImage(cover,settings.STORIES_PATH, storyId);/*save picture and get the full path (in order to get picture md5)*/
       //now save md5 in DB
       await db.savePictureHashes({
         id: storyId,
-        folder: 'stories',
+        folder: settings.STORIES_FOLDER_NAME,
         md5: imagesHandler.calculateMD5(picPath)
       });
     }

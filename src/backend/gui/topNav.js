@@ -1,3 +1,5 @@
+const settings = require('../settings.js');
+
 class TopNav {
   constructor() {
     this.ROUTES = {
@@ -55,21 +57,20 @@ class TopNav {
     `<div class = "dropmenu" side='true'>` +
     `<div class = "dropmenu-list" side='true' id = 'backup-files-menu'>` +
     `<a onclick = "doBackUp('all')">All</a>` +
-    `<a onclick = "doBackUp('backups')">DB Backups</a>` +
-    `<a onclick = "doBackUp('books')">Book Pictures</a>` +
-    `<a onclick = "doBackUp('wishlist')">WishList Pictures</a>` +
-    `<a onclick = "doBackUp('stories')">Stories Pictures</a>` +
-    `<a onclick = "doBackUp('series')">Series Pictures</a>` +
-    `<a onclick = "doBackUp('icons')">App Icons</a>` +
-    `<a onclick = "doBackUp('generalPics')">General Pictures</a>` +
-    `<a onclick = "doBackUp('e-books')">E-Books</a>` +
+    `<a onclick = "doBackUp('${settings.BACKUPS_FOLDER_NAME}')">DB Backups</a>` +
+    `<a onclick = "doBackUp('${settings.BOOKS_FOLDER_NAME}')">Book Pictures</a>` +
+    `<a onclick = "doBackUp('${settings.WISH_LIST_FOLDER_NAME}')">WishList Pictures</a>` +
+    `<a onclick = "doBackUp('${settings.STORIES_FOLDER_NAME}')">Stories Pictures</a>` +
+    `<a onclick = "doBackUp('${settings.SERIES_FOLDER_NAME}')">Series Pictures</a>` +
+    `<a onclick = "doBackUp('${settings.ICONS_FOLDER_NAME}')">App Icons</a>` +
+    `<a onclick = "doBackUp('${settings.GENERAL_PICTURES_FOLDER_NAME}')">General Pictures</a>` +
+    `<a onclick = "doBackUp('${settings.E_BOOKS_FOLDER_NAME}')">E-Books</a>` +
     `</div>` +
     `</div>` +
     `</div>` +
     `</div>` +
     `</div>`;
   }
-
 };
 
 module.exports = new TopNav();

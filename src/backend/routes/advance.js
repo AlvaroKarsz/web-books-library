@@ -1,10 +1,9 @@
 const settings = require('../settings.js');
-const config = require('../config.js');
-const path = require('path');
-const db = require('../db/functions');
+const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
+const config = require(settings.SOURCE_CODE_BACKEND_CONFIG_FILE_PATH);
+const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
+const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
 const exec = require("child_process").execSync;
-const basic = require('../modules/basic.js');
-const imagesHandler = require('../modules/images.js');
 
 module.exports = (app) => {
 
@@ -52,10 +51,10 @@ module.exports = (app) => {
     /*save new md5sum hash in DB*/
     /*save md5hash*/
     await db.savePictureHashes({
-      id: 'db_bkp',
-      folder: 'backups',
+      id: settings.BACKUP_DB_FILE_NAME.split('.').slice(0,-1).join('.'), /*get file name without extension*/
+      folder: settings.BACKUPS_FOLDER_NAME,
       md5: imagesHandler.calculateMD5(
-        imagesHandler.getFullPath('backups', 'db_bkp')
+        imagesHandler.getFullPath(settings.BACKUPS_FOLDER_NAME, settings.BACKUP_DB_FILE_NAME.split('.').slice(0,-1).join('.')) /*get file name without extension*/
       )
     });
 

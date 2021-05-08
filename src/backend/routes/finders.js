@@ -1,13 +1,14 @@
-const basic = require('../modules/basic.js');
-const config = require('../config.js');
-const db = require('../db/functions');
+const settings = require('../settings.js');
+const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
+const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
+const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
+const openLibraryApi = require(settings.SOURCE_CODE_BACKEND_OPEN_LIBRARY_MODULE_FILE_PATH);
+const picDecoder = require(settings.SOURCE_CODE_BACKEND_PICTURE_DECODER_MODULE_FILE_PATH);
+const wikiApi = require(settings.SOURCE_CODE_BACKEND_WIKI_MODULE_FILE_PATH);
+const goodReadsAPI = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
 const fs = require('fs');
-const path = require('path');
-const googleApi = require('../modules/googleApi.js');
-const openLibraryApi = require('../modules/openLibrary.js');
-const goodReadsAPI = require('../modules/goodReads.js');
-const wikiApi = require('../modules/wikiApi.js');
-const picDecoder = require('../modules/pictureDecoder.js');
+
+
 
 module.exports = (app) => {
 

@@ -1,15 +1,16 @@
+const settings = require('../settings.js');
+const config = require(settings.SOURCE_CODE_BACKEND_CONFIG_FILE_PATH);
 const fs = require('fs');
 const path = require('path');
-const readline = require('readline');
 const {google} = require('googleapis');
-const config = require('../config.js');
+
 
 class Drive {
   constructor() {
     this.SCOPES = ['https://www.googleapis.com/auth/drive'];
     this.ACCESS_TYPE = 'offline';
-    this.CREDENTIALS_PATH = path.join(__dirname, '..', 'tokens' , 'driveCredentials.json');
-    this.TOKEN_PATH = path.join(__dirname, '..', 'tokens' ,'driveToken.json');
+    this.CREDENTIALS_PATH = settings.SOURCE_CODE_BACKEND_GOOGLE_DRIVE_CREDENTIALS_FILE_PATH;
+    this.TOKEN_PATH = settings.SOURCE_CODE_BACKEND_GOOGLE_DRIVE_TOKEN_FILE_PATH;
     this.MAIN_FOLDER_ID = config.DRIVE_MAIN_FOLDER_ID;
     this.TIME_OUT_EVENT = 'timeout';
     this.oAuth2Client = null;

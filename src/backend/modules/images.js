@@ -1,4 +1,5 @@
-const basicFunctions = require('./basic');
+const settings = require('../settings.js');
+const basicFunctions = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const fs = require('fs');
 const path = require('path');
 
@@ -63,7 +64,7 @@ class Images {
     let fileExtension = picFullName.split('.').pop();
 
     /*move the file*/
-    fs.renameSync( path.join(__dirname, '..', '..','..', from.folder, picFullName)  , path.join(__dirname, '..', '..','..', to.folder, to.id + '.' + fileExtension ) );
+    fs.renameSync( path.join(settings.ROOT_PATH , from.folder, picFullName)  , path.join(settings.ROOT_PATH , to.folder, to.id + '.' + fileExtension ) );
   }
 
   getFullPath(folder, fileName) {
@@ -77,7 +78,7 @@ class Images {
       return;
     }
 
-    return path.join(__dirname, '..', '..','..', folder, picFullName);
+    return path.join(settings.ROOT_PATH , folder, picFullName);
   }
 
   deleteImage(folderName,fileTitle) {
@@ -89,7 +90,7 @@ class Images {
       return;
     }
     /*delete the picture*/
-    fs.unlinkSync(path.join(__dirname, '..', '..','..', folderName, picFullName));
+    fs.unlinkSync(path.join(settings.ROOT_PATH , folderName, picFullName));
   }
 
   imageFromRaw(raw,filePath,fileTitle, format, ops) {
@@ -113,7 +114,7 @@ class Images {
   getTypeFromUrl(url) {
     if(/png$/.test(url)) {
       return 'png';
-    } else if (/pdf$/.test(raw)) {
+    } else if (/pdf$/.test(url)) {
       return 'pdf';
     }
     //default value

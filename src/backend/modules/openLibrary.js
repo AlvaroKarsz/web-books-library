@@ -1,6 +1,5 @@
-const basicFunctions = require('./basic');
-const fs = require('fs');
-
+const settings = require('../settings.js');
+const basicFunctions = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 
 class OpenLibrary {
   constructor() {

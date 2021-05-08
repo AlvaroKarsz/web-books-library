@@ -1,5 +1,5 @@
 const settings = require('../settings.js');
-const topNav = require('./topNav.js');
+const topNav = require(settings.SOURCE_CODE_BACKEND_TOP_NAV_GUI_FILE_PATH);
 const fs = require('fs');
 const path = require('path');
 
@@ -23,7 +23,7 @@ FILTER_VAL_AUTHOR: adds current author filder value to filter input
 
 class HtmlRender {
   constructor() {
-    this.PATH_TO_HTML_FOLDER = path.join(__dirname, '..', '..', 'html');
+    this.PATH_TO_HTML_FOLDER = settings.SOURCE_CODE_HTML_PATH;
   }
 
   async render(params = {}) {

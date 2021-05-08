@@ -1,9 +1,11 @@
-const basic = require('../modules/basic.js');
 const settings = require('../settings.js');
-const db = require('../db/functions');
+const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
+const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
+const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
+const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
+const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
 const path = require('path');
-const entryDisplayer = require('../gui/displayer.js');
-const htmlRender = require('../gui/htmlRenderer.js');
+
 
 module.exports = (app) => {
 
@@ -16,8 +18,8 @@ module.exports = (app) => {
     const books = request.rows;
     const total = request.count;
     res.send(await htmlRender.render({
-      html: 'main.html',
-      folder: 'books',
+      html: settings.SOURCE_CODE_HTML_MAIN_FILE_NAME,
+      folder: settings.BOOKS_FOLDER_NAME,
       totalCount: total,
       objects: books,
       urlParams: urlParams,
@@ -34,9 +36,9 @@ module.exports = (app) => {
 
     bookData = await db.fetchBookById(id, filters, 'book');
     res.send(await htmlRender.render({
-      html: 'display.html',
-      folder: 'books',
-      displayer: entryDisplayer.build(bookData, 'books', {bookRead:true, openPdf:true})
+      html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
+      folder: settings.BOOKS_FOLDER_NAME,
+      displayer: entryDisplayer.build(bookData, settings.BOOKS_FOLDER_NAME, {bookRead:true, openPdf:true})
     }));
   });
 
@@ -66,7 +68,7 @@ module.exports = (app) => {
     const id = req.params.id;
 
     res.send(await htmlRender.render({
-      html: 'insertBook.html',
+      html: settings.SOURCE_CODE_HTML_INSERT_BOOK_FILE_NAME,
       pageTitle: id ? (basic.isValidInt(id) ? 'Edit Book' : 'Save Book From Wish' ) : 'Enter New Book' //if id exists - the page will load id's info
     }));
   });
@@ -124,9 +126,6 @@ module.exports = (app) => {
     let existingBookId = requestBody.id || null;
     let existingWishId = requestBody.idFromWish || null;
 
-    /*module to hanlde images*/
-    const imagesHandler = require('../modules/images.js');
-
     /*
     flag indicates that user passed a cover picture
     this flag is useful for cases when existingWishId exists.
@@ -139,7 +138,7 @@ module.exports = (app) => {
     if(requestBody.cover) {
       covers.push( {
         cover: requestBody.cover,
-        folder: 'books',
+        folder: settings.BOOKS_FOLDER_NAME,
         type: 'book',
         isbn: requestBody.isbn
       } );
@@ -154,7 +153,7 @@ module.exports = (app) => {
         if(requestBody.collection[g].cover) {
           covers.push( {
             cover: requestBody.collection[g].cover,
-            folder: 'stories',
+            folder: settings.STORIES_FOLDER_NAME,
             type: 'story',
             title: requestBody.collection[g].title,
             /*is story has different author take it, else use book author*/
@@ -341,30 +340,30 @@ module.exports = (app) => {
       /*delete ratings table*/
       await db.deleteRatings('wish_list', existingWishId);
       /*delete md5sum hash from cache table*/
-      await db.deleteMD5('wishlist', existingWishId);
+      await db.deleteMD5(settings.WISH_LIST_FOLDER_NAME, existingWishId);
 
       /*user used another cover, delete this one*/
       if (mainCoverReceivedFromUser) {
-        imagesHandler.deleteImage('wishlist', existingWishId);
+        imagesHandler.deleteImage(settings.WISH_LIST_FOLDER_NAME, existingWishId);
       } else { /*user is using wish cover as book cover, move the picture and save the md5sum in DB*/
         /*get inserted book ID*/
         let newInsertedBookId = await db.getBookIdFromISBN(requestBody.isbn);
 
         /*move picture*/
         imagesHandler.moveImage({
-          folder: 'wishlist',
+          folder: settings.WISH_LIST_FOLDER_NAME,
           id: existingWishId
         }, {
-          folder: 'books',
+          folder: settings.BOOKS_FOLDER_NAME,
           id: newInsertedBookId
         });
 
         /*save md5hash*/
         await db.savePictureHashes({
           id: newInsertedBookId,
-          folder: 'books',
+          folder: settings.BOOKS_FOLDER_NAME,
           md5: imagesHandler.calculateMD5(
-            imagesHandler.getFullPath('books', newInsertedBookId)
+            imagesHandler.getFullPath(settings.BOOKS_FOLDER_NAME, newInsertedBookId)
           )
         });
 
@@ -383,7 +382,7 @@ module.exports = (app) => {
         } else { //cover for story
           cvr.id = await db.getStoryIdFromAuthorAndTitleAndParentISBN(cvr.title, cvr.author, requestBody.isbn);
         }
-        cvr.path = await imagesHandler.saveImage(cvr.cover,path.join(__dirname,'..','..','..',cvr.folder), cvr.id);
+        cvr.path = await imagesHandler.saveImage(cvr.cover,path.join(settings.ROOT_PATH ,cvr.folder), cvr.id);
         return cvr;
       }));
 
@@ -418,7 +417,7 @@ module.exports = (app) => {
             }
           }
           if(!storyFoundFlag) {//story has beed deleted - delete the picture (if any)
-            imagesHandler.deleteImage('stories', oldStoriesList[i].id);
+            imagesHandler.deleteImage(settings.STORIES_FOLDER_NAME, oldStoriesList[i].id);
           }
         }
       }
@@ -430,11 +429,11 @@ module.exports = (app) => {
       /*get book ID*/
       const bookID = existingBookId ? existingBookId : await db.getBookIdFromISBN(requestBody.isbn);
       /*save E-Book*/
-      const eBookFullPath = await imagesHandler.saveImage(eBook,path.join(__dirname,'..','..','..','e-books'), bookID, {noModification:true, mime: 'pdf'});
+      const eBookFullPath = await imagesHandler.saveImage(eBook,settings.E_BOOKS_PATH , bookID, {noModification:true, mime: 'pdf'});
       /*save md5sum hash*/
       await db.savePictureHashes([{
         id: bookID,
-        folder: 'e-books',
+        folder: settings.E_BOOKS_FOLDER_NAME,
         md5: imagesHandler.calculateMD5(eBookFullPath)
       }]);
 

@@ -1,5 +1,5 @@
+const settings = require('../settings.js');
 const fetch = require('node-fetch');
-const db = require('../db/functions');
 const path = require('path');
 const fs = require('fs');
 const ip = require("ip");
@@ -175,7 +175,7 @@ class Basic {
 
   getPictureMime(folderName, pictureId) {
     let result = null;
-    fs.readdirSync(path.join(__dirname, '..' ,'..','..', folderName)).forEach((pic) => {
+    fs.readdirSync(path.join(settings.ROOT_PATH , folderName)).forEach((pic) => {
       if(new RegExp("^" + pictureId + "[.]").test(pic)) {
         result = pic;
         return;
@@ -297,13 +297,13 @@ class Basic {
 
   convertFolderType(type) {
     return {
-      books: 'books',
-      wishlist: 'wishlist',
-      series: 'series',
-      stories: 'stories',
-      reads: 'books',
-      purchased: 'wishlist',
-      icon: 'icons'
+      books: settings.BOOKS_FOLDER_NAME,
+      wishlist: settings.WISH_LIST_FOLDER_NAME,
+      series: settings.SERIES_FOLDER_NAME,
+      stories: settings.STORIES_FOLDER_NAME,
+      reads: settings.BOOKS_FOLDER_NAME,
+      purchased: settings.WISH_LIST_FOLDER_NAME,
+      icon: settings.ICONS_FOLDER_NAME
     }[type];
   }
 

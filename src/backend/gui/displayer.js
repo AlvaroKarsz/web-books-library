@@ -1,4 +1,6 @@
-const basic = require('../modules/basic.js');
+const settings = require('../settings.js');
+const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
+const webStoreSearcher = require(settings.SOURCE_CODE_BACKEND_WEB_STORE_SEARCHER_MODULE_FILE_PATH);
 
 class BookDisplayer {
 
@@ -334,7 +336,6 @@ class BookDisplayer {
     /*option to search book in web stores*/
     if(actions.search) {
       /*local module to find books on web stores*/
-      const webStoreSearcher = require('../modules/webStoreSearcher.js');
       output += `<div title="Search book online">` +
       `<label for='search-book'>` +
       `<i class="fa fa-search"></i>` +

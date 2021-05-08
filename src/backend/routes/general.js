@@ -1,8 +1,4 @@
-const basic = require('../modules/basic.js');
 const settings = require('../settings.js');
-const db = require('../db/functions');
-const fs = require('fs');
-const path = require('path');
 
 module.exports = (app) => {
 

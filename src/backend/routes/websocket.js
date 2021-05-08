@@ -1,3 +1,6 @@
+const settings = require('../settings.js');
+const Ws = require(settings.SOURCE_CODE_BACKEND_WEBSOCKET_MODULE_FILE_PATH);
+
 /*
 THIS IS NOT THE ACTUAL WEBSOCKET
 THIS ROUTE WILL CREATE A WEBSOCKET SERVER.
@@ -12,7 +15,6 @@ WHEN WEBSOCKET SERVER FINISHED THE WANTED ACTION (UPLOAD FILES TO GOOGLE DRIVE),
 CLIENT WILL LISTEN TO CLOSE EVENT, AND CLIENT WILL KNOW THAT THE ACTION ENDED
 
 */
-const Ws = require('../modules/websocket.js');
 
 module.exports = (app) => {
 
