@@ -138,11 +138,14 @@ class BookDisplayer {
     this can happen in case of ebooks without ISBN
     a unique ID is generated instead ISBN
     */
-
-    if(isbn.replace(/\D/g,'','').length > 13) { /*count just numeric digits*/
-      return 'Unique ID: ';
-    } else {
-      return 'ISBN: ';
+    if(isbn) {
+      if(isbn.replace(/\D/g,'','').length > 13) { /*count just numeric digits*/
+        return 'Unique ID: ';
+      } else {
+        return 'ISBN: ';
+      }
+    } else { //no isbn - return empty string
+      return '';
     }
   }
 
@@ -389,6 +392,26 @@ class BookDisplayer {
         `>` +
         `<i class="fa fa-bookmark"></i>` +
         `<p>Open This Book</p>` +
+        `</div>`;
+      }
+    }
+
+    /*
+    option to cancel purchase mark from wishlist
+    relevant only if it was purchased in first place
+    */
+    if(actions.cancelPurchase) {
+      if(data.store && data.order_date) {
+        output += `<div title="Cancel purchase mark">` +
+        `<label for='cancel-purchase-label'>` +
+        `<i class="fa fa-eraser"></i>` +
+        `</label>` +
+        `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'cancel-purchase-label'>` +
+        `<p>Cancel Purchase Mark</p>` +
+        `<form action="/purchased/read/cancel/${data.id}" method="get" style='margin-left:45px'>` +
+        `<p oneline='t'>Are you sure?</p>` +
+        `<button type="submit" class="black-white-button" oneline='t'>I'm sure</button>` +
+        `</form>` +
         `</div>`;
       }
     }

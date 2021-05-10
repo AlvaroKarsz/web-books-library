@@ -471,7 +471,9 @@ class DriveBackup {
     }
 
     /*make sure all wanted folder exists on this.DRIVE_FILES json, if not create empty arrays*/
-
+    if(this.STOP || !this.FOLDERS_TO_BACKUP) {/*stop received*/
+      return null;
+    }
     for(let k = 0 , l = this.FOLDERS_TO_BACKUP.length ; k < l ; k ++ ) {
       if(typeof this.DRIVE_FILES[ this.FOLDERS_TO_BACKUP[k] ] === 'undefined') {
         this.DRIVE_FILES[ this.FOLDERS_TO_BACKUP[k] ] = [];
@@ -484,7 +486,7 @@ class DriveBackup {
   }
 
   getArrayOfWantedFolderIDs() {
-    if(this.STOP) {/*stop received*/
+    if(this.STOP || !this.FOLDERS_TO_BACKUP) {/*stop received*/
       return null;
     }
     let ids = [];
@@ -500,7 +502,7 @@ class DriveBackup {
   }
 
   getFolderIdFromName(folderName) {
-    if(this.STOP) {/*stop received*/
+    if(this.STOP || !this.DRIVE_FOLDERS) {/*stop received*/
       return null;
     }
     for(let j = 0 , s = this.DRIVE_FOLDERS.length ; j <  s ; j ++ ) {

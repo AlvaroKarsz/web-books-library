@@ -38,7 +38,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.WISH_LIST_FOLDER_NAME,
-      displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {received:true})
+      displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {received:true, cancelPurchase: true})
     }));
   });
 
@@ -54,6 +54,13 @@ module.exports = (app) => {
       books: request.rows,
       more: request.count > basic.intSum(nextVal, settings.IMAGES_NUM_PER_PAGE)
     }));
+  });
+
+  /*route to cancel wish purchased mark*/
+  app.get('/purchased/read/cancel/:id', async (req, res) =>  {
+    const id =  req.params.id;
+    await db.cancelPurchaseMark(id);
+    res.redirect('/wishlist/' + id);
   });
 
 }

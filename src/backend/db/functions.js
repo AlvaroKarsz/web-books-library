@@ -3,6 +3,15 @@ const pg = require(settings.SOURCE_CODE_BACKEND_CONNECTION_DATABASE_FILE_PATH);
 
 class dbFunctions {
 
+  async cancelPurchaseMark(id) {
+    let query = `UPDATE wish_list
+    SET store = NULL,
+    order_date = NULL,
+    ordered = 'f'
+    WHERE id = $1;`;
+    await pg.query(query, [id]);
+  }
+
   async getAllMD5Hashes(folders) {
     let res = await pg.query(`SELECT folder, id, md5 FROM cache WHERE folder IN (${folders.map((a, i) => {return '$' + (i+1).toString() }).join(',')});`, folders);
     return res.rows;
