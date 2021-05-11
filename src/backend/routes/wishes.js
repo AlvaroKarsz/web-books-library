@@ -42,7 +42,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.WISH_LIST_FOLDER_NAME,
-      displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {buy:true, search:true})
+      displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {buy:true, search:true, deleteWish: true})
     }));
   });
 
@@ -191,6 +191,22 @@ module.exports = (app) => {
     res.send(
       await db.fetchWishById(id)
     );
+  });
+
+  app.get('/wishlist/delete/:id', async (req, res) =>  {
+    const id =  req.params.id;
+
+    /*delete md5sum from cache*/
+    await db.deleteMD5(settings.WISH_LIST_FOLDER_NAME,id);
+    /*delete ratings*/
+    await db.deleteRatings('wish_list',id);
+    /*delete wish*/
+    await db.deleteWish(id);
+    /*delete picture*/
+    await imagesHandler.deleteImage(settings.WISH_LIST_FOLDER_NAME,id);
+
+    /*redirect*/
+    res.redirect('/wishlist');
   });
 
 }
