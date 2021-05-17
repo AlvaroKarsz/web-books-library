@@ -153,6 +153,15 @@ class Basic {
     return `${uglyDate.getDate()}/${this.monthNameFromIndex(uglyDate.getMonth())}/${uglyDate.getFullYear()}`;
   }
 
+  getYYYYMMDDcurrentDate(delimiter = '-') {
+    let date = new Date();
+    return `${date.getFullYear()}${delimiter}${date.getMonth() + 1 /*starts from 0*/}${delimiter}${date.getDate()}`;
+  }
+
+  getTodaysEpoch() {
+    return + new Date(this.getYYYYMMDDcurrentDate());
+  }
+
   intSum(a, b) {
     return this.toInt(a) + this.toInt(b);
   }
@@ -205,9 +214,9 @@ class Basic {
     return output;
   }
 
-  async doFetch(url, settings = null, options = {}) {
-    let response = [fetch(url, settings)];
-
+  async doFetch(url, settings=null, options = {}) {
+    settings = settings ? settings : {method:'GET'};
+    let response = [fetch(url, settings )];
     if(options.timeout && this.isNumber(options.timeout)) {
       response.push(
         new Promise((resolve, reject) => {
@@ -219,7 +228,6 @@ class Basic {
     }
     try {
       response = await Promise.race(response);
-
       if(response === null) {//timeout
         throw '';
       }

@@ -1110,14 +1110,19 @@ class Selector {
     this.withFilter = opts.withFilter;
     this.title = opts.title;
     this.selectName = opts.selectName;
-    this.actionScript = opts.actionScript;
-    this.options = this.fetchOptions();
+    this.actionScript = opts.actionScript || null;
+    this.options = this.actionScript ? this.fetchOptions() : null;
     this.mainHolderClass = opts.mainHolderClass || 'insert-line-book-select';
     this.checkBoxSpanClass = opts.checkBoxSpanClass || 'radio-button-checkmark';
     this.checkBoxLabelClass = opts.checkBoxLabelClass || 'radio-button-container';
     this.titleClassName = opts.titleClassName || 'main-title-cbox';
     this.toggleBodyClass = opts.toggleBodyClass || 'hide-div';
     this.ignoreCheckBox = opts.ignoreCheckBox || false;
+    this.inputElement = opts.inputElement || 'select';
+    this.inputType = opts.inputType || null;
+    this.reverseCheckBox = opts.reverseCheckBox || false;
+    this.defaultChecked = opts.defaultChecked || false;
+    this.returnOnlyValue = opts.returnOnlyValue || false;
     this.returns = [];
     this.buildSkeleton();
     this.activate();
@@ -1136,6 +1141,9 @@ class Selector {
     this.makeToggleBody();
     if(this.ignoreCheckBox) {//if checkbox is ignored - toggled body should be on
       this.showDiv();
+    }
+    if(this.defaultChecked) {
+      this.checkbox.checked = true;
     }
     this.addContentToToggleBody();
     this.makeAdditionals();
@@ -1170,9 +1178,17 @@ class Selector {
     if(!this.ignoreCheckBox) {
       this.checkbox.onchange = () => {
         if(this.checkbox.checked) {
-          this.showDiv();
+          if(this.reverseCheckBox) {
+            this.hideDiv();
+          } else {
+            this.showDiv();
+          }
         } else {
-          this.hideDiv();
+          if(this.reverseCheckBox) {
+            this.showDiv();
+          } else {
+            this.hideDiv();
+          }
         }
       };
     }
@@ -1214,7 +1230,7 @@ class Selector {
   }
 
   addContentToToggleBody() {
-    if(this.withFilter) {
+    if(this.withFilter && this.inputElement.toLowerCase() === 'select') {
       this.makeFilter();
     }
     this.makeSelect();
@@ -1247,7 +1263,11 @@ class Selector {
 
   makeSelect() {
     let p = document.createElement('P');
-    this.select = document.createElement('SELECT');
+    this.select = document.createElement(this.inputElement);
+    if(this.inputType) {
+      this.select.setAttribute('type', this.inputType);
+    }
+    this.select.setAttribute('main','t');
     p.innerHTML = this.selectName;
     this.toggleBody.appendChild(p);
     this.toggleBody.appendChild(this.select);
@@ -1259,20 +1279,30 @@ class Selector {
   }
 
   set(data) {
-    Promise.resolve(this.options).then((opts) => {
-      this.checkbox.click();
-      for(let i = 0 , l = this.returns.length ; i < l ; i ++ ) {
-        if(typeof data[this.returns[i].name] !== 'undefined') {
-          this.returns[i].inp.value = data[this.returns[i].name];
+    if(this.options) {
+      Promise.resolve(this.options).then((opts) => {
+        this.checkbox.click();
+        for(let i = 0 , l = this.returns.length ; i < l ; i ++ ) {
+          if(typeof data[this.returns[i].name] !== 'undefined') {
+            this.returns[i].inp.value = data[this.returns[i].name];
+          }
         }
-      }
-    });
+      });
+    } else {
+      this.checkbox.click();
+      this.select.value = data;
+    }
   }
 
   get() {
-    if(!this.checkbox.checked && !this.ignoreCheckBox) {//not selected and should not be ignored
+    if(( !this.checkbox.checked && !this.reverseCheckBox || this.checkbox.checked && this.reverseCheckBox) && !this.ignoreCheckBox) {//not selected and should not be ignored
       return null;
     }
+
+    if(this.returnOnlyValue) {
+      return this.select.value;
+    }
+
     let output = {};
     this.returns.forEach((a) => {
       output[a.name] = a.inp.value;
@@ -1285,13 +1315,15 @@ class Selector {
   }
 
   addSelectOptions() {
-    let optionsStr = '<option value="">-- SELECT --</option>';
-    Promise.resolve(this.options).then((opts) => {
-      opts.forEach((opt) => {
-        optionsStr += `<option value="${opt.id}">${opt.text}</option>`;
-        this.select.innerHTML = optionsStr;
+    if(this.options) {
+      let optionsStr = '<option value="">-- SELECT --</option>';
+      Promise.resolve(this.options).then((opts) => {
+        opts.forEach((opt) => {
+          optionsStr += `<option value="${opt.id}">${opt.text}</option>`;
+          this.select.innerHTML = optionsStr;
+        });
       });
-    });
+    }
   }
 
   async fetchOptions() {

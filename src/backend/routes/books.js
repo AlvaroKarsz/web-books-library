@@ -84,7 +84,6 @@ module.exports = (app) => {
 
   app.post('/save/book' , async (req, res) => {
     let requestBody = basic.formDataToJson(basic.trimAllFormData(req.body)); /*request body*/
-
     let covers = [];/*save here covers to save/download and save*/
 
     /*save E-Book in different variable (if exist)*/
@@ -163,6 +162,17 @@ module.exports = (app) => {
           requestBody.collection[g].cover = '';
         }
       }
+    }
+
+    /*check arrival date validity, if empty, set the default one - today's date*/
+    if(requestBody.arrivalDate) {
+      /*compart epoch time with today - should be equal or smaller*/
+      if( +new Date(requestBody.arrivalDate) > basic.getTodaysEpoch() )  {
+        res.send(JSON.stringify({status:false, message:'Invalid Arrival Time'}));
+        return;
+      }
+    } else {
+      requestBody.arrivalDate = basic.getYYYYMMDDcurrentDate();
     }
 
     /*check year validity*/

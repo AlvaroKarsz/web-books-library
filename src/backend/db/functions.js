@@ -818,8 +818,8 @@ class dbFunctions {
     INSERT BOOK INTO DB
     *********************************************************************************************/
     /*general parameters*/
-    let queryParams = ['name','year','author','original_language','language','store','isbn','type','pages'];
-    let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages];
+    let queryParams = ['name','year','author','original_language','language','store','isbn','type','pages', 'listed_date'];
+    let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages, bookJson.arrivalDate];
 
     /*if this book is part of serie - add serie parameters*/
     if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
@@ -1419,7 +1419,7 @@ class dbFunctions {
                       my_books_main.pages AS pages,
                       my_books_main.read_order AS read_order,
                       my_books_main.read_date AS read_date,
-                      my_books_main.listed_date AS listed_date,
+                      my_books_main.listed_date::TEXT AS listed_date,
                       my_books_main.completed AS read_completed,
                       my_books_main.collection AS is_collection,
                       my_books_main.serie AS serie_id,
@@ -1858,9 +1858,10 @@ class dbFunctions {
                       store = $${++paramsCounter},
                       isbn = $${++paramsCounter},
                       type = $${++paramsCounter},
-                      pages = $${++paramsCounter}
+                      pages = $${++paramsCounter},
+                      listed_date = $${++paramsCounter}
                       `;
-                      let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages];
+                      let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages, bookJson.arrivalDate];
 
                       /*if this book is part of serie - add serie parameters*/
                       if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {

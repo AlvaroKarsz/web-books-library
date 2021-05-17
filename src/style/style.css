@@ -470,7 +470,7 @@ img:hover {
   width: 80% !important;
 }
 
-.insert-line-serie select, .insert-line-book-select select {
+.insert-line-serie select, .insert-line-book-select select, .insert-line-book-select input[main='t'] {
   outline: none;
   background: white;
   border: none;
@@ -485,7 +485,7 @@ img:hover {
   width: 800px;
 }
 
-.insert-line-serie input , .insert-line-book-select input{
+.insert-line-serie input:not([main='t']), .insert-line-book-select input:not([main='t']){
   outline: none;
   background: white;
   border: none;

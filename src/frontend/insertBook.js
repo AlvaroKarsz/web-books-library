@@ -1532,7 +1532,8 @@ class CheckboxGroup {
     bookStoreInp: document.getElementById('book-store'),
     langInp: document.getElementById('book-lang'),
     langOrgInp: document.getElementById('book-lang-org'),
-    eBookUploaderDiv: document.getElementById('ebook-uploader')
+    eBookUploaderDiv: document.getElementById('ebook-uploader'),
+    arrivalTimeDiv: document.getElementById('book-arrival-time')
   };
 
   let eBookUploader = new FileUploader(els.eBookUploaderDiv, {
@@ -1579,6 +1580,17 @@ class CheckboxGroup {
     title: 'Part of Serie:',
     selectName: 'Serie',
     actionScript: '/serieList'
+  }),
+
+  arrivalEl = new Selector(els.arrivalTimeDiv, {
+    title: 'Today',
+    withFilter: false,
+    selectName: 'Date',
+    inputElement: 'input',
+    inputType: 'date',
+    reverseCheckBox: true,
+    defaultChecked: true,
+    returnOnlyValue: true
   }),
 
   nextEl = new Selector(els.nextBookHolder, {
@@ -1668,6 +1680,8 @@ class CheckboxGroup {
       addValueToInput(currentData.store, els.bookStoreInp);
       //add book format
       bookTypeE.set(currentData.type);
+      //add arrival date
+      arrivalEl.set(currentData.listed_date.split('T')[0]);
       //add prev. book if exists
       if(currentData.prev_id) {
         prevEl.set({
@@ -1747,6 +1761,7 @@ class CheckboxGroup {
         prev: prevEl.get(),
         cover: coverEl.getSelected(),
         collection: collectionEl.get(),
+        arrivalDate: arrivalEl.get(),
         eBook: eBookUploader.isSet() ? eBookUploader.get() : null
       },
       messager: messager,
