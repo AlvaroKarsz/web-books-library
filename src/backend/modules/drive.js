@@ -144,7 +144,7 @@ class Drive {
       }).catch((error) => {
         /*resolve with error*/
         resolve({
-          error: error.errors[0].message
+          error: error.errors && error.errors[0] ? error.errors[0].message : 'Timeout'
         });
         return;
       });
