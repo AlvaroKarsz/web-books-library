@@ -1521,6 +1521,7 @@ class CheckboxGroup {
     authorInp: document.getElementById('book-author'),
     isbnInp: document.getElementById('book-isbn'),
     yearInp: document.getElementById('book-year'),
+    descriptionInp: document.getElementById('book-description'),
     coverHolder: document.getElementById('cover-element-holder'),
     collectionHolder: document.getElementById('collection-holder'),
     bookPagesInput: document.getElementById('book-pages'),
@@ -1641,7 +1642,8 @@ class CheckboxGroup {
       title: els.titleInp,
       author: els.authorInp,
       pages: els.bookPagesInput,
-      year: els.yearInp
+      year: els.yearInp,
+      description: els.descriptionInp
     }
   }),
 
@@ -1678,6 +1680,7 @@ class CheckboxGroup {
       addValueToInput(currentData.pages, els.bookPagesInput);
       addValueToInput(currentData.year, els.yearInp);
       addValueToInput(currentData.store, els.bookStoreInp);
+      addValueToInput(currentData.description, els.descriptionInp);
       //add book format
       bookTypeE.set(currentData.type);
       //add arrival date
@@ -1729,6 +1732,8 @@ class CheckboxGroup {
       addValueToInput(currentData.isbn, els.isbnInp);
       addValueToInput(currentData.year, els.yearInp);
       addValueToInput(currentData.store, els.bookStoreInp);
+      addValueToInput(currentData.description, els.descriptionInp);
+
 
       //add serie if exists
       if(currentData.serie_id) {
@@ -1752,6 +1757,7 @@ class CheckboxGroup {
         isbn: els.isbnInp.value,
         year: els.yearInp.value,
         pages: els.bookPagesInput.value,
+        description: els.descriptionInp.value.trim(),
         store: els.bookStoreInp.value,
         lang: els.langInp.value,
         langOrg: els.langOrgInp.value,

@@ -1,14 +1,177 @@
 const settings = require('../settings.js');
 const basicFunctions = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const config = require(settings.SOURCE_CODE_BACKEND_CONFIG_FILE_PATH);
+const xml2js = require('xml2js');
 
 class GoodReads {
   constructor() {
     this.KEY = config.GOOD_READS_KEY;
     this.RATINGS_URL = 'https://www.goodreads.com/book/review_counts.json';
-    this.ISBN_BY_TITLE_AND_AUTHOR_URL = 'https://www.goodreads.com/book/title.json';
+    this.INFO_BY_TITLE_AND_AUTHOR_URL = 'https://www.goodreads.com/book/title.xml';
     this.MAX_ISBNS_IN_HTTP_PAYLOAD = 500;
+    this.XML_PARSER = new xml2js.Parser();
   }
+
+
+  async fetchBookInfo(vars = {}) {
+    /*
+    vars options
+    title: book's title
+    author: book's author
+    isbn: book's isbn
+
+    at least isbn/title are needed
+    priority:
+    isbn
+    title + author
+    title
+    */
+
+    let isbn = vars.isbn || null,
+    title = vars.title || null,
+    author = vars.author || null;
+
+    /*not enough to search*/
+    if(!isbn && !title) {
+      return null;
+    }
+
+    const requestSettings = {
+      headers: {
+        'Content-Type': 'text/xml, application/xml'
+      }
+    };
+
+    /*fetch xml*/
+    let url = `${this.INFO_BY_TITLE_AND_AUTHOR_URL}?key=${this.KEY}&format=xml&title=`;
+    if(isbn) {
+      url += isbn;
+    } else {/*title (+author ?)*/
+      url += title;
+      if(author) {
+        url += ' ' + author;
+      }
+    }
+
+    /*ask format as text*/
+    let response = await basicFunctions.doFetch(url , requestSettings, {timeout:5000, text:true});
+
+    if(!response) {
+      /*error from http request*/
+      return null;
+    }
+    /*render json from xml - on error return null*/
+    try {
+      response = await this.XML_PARSER.parseStringPromise(response);
+      if(!response) {/*error from parser*/
+        throw '';
+      }
+
+      if(typeof response !== 'object') {
+        throw '';/*unexpected response - should be json*/
+      }
+
+      if(!response.GoodreadsResponse) {
+        throw '';/*must include this key*/
+      }
+
+      response = response.GoodreadsResponse;
+      if(!basicFunctions.isArray(response.book)) {
+        throw '';/*must include this key, and must be an array*/
+      }
+      response = response.book[0];
+      return response;
+
+    } catch(err) {
+      return null;
+    }
+  }
+
+  async fetchIsbnFromTitleAndAuthor(title, author) {
+    /*use fetchBookInfo to fetch all info, then search for isbn13/isbn*/
+    let info = await this.fetchBookInfo({
+      title: title,
+      author: author
+    });
+    /*error from API*/
+    if(!info) {
+      return null;
+    }
+
+    /*priority: ISBN13, ISBN, error*/
+    if(basicFunctions.isArray(info.isbn13)) {
+      return info.isbn13[0];
+    }
+
+    if(basicFunctions.isArray(info.isbn)) {
+      return info.isbn[0];
+    }
+
+    return null;/*no isbn*/
+  }
+
+  async fetchDescription(vars = {}) {
+    /*use fetchBookInfo to fetch all info, then search for description*/
+
+
+    /*
+    vars options
+    title: book's title
+    author: book's author
+    isbn: book's isbn
+
+    at least isbn/title are needed
+    priority:
+    isbn
+    title + author
+    title
+    */
+
+    let isbn = vars.isbn || null,
+    title = vars.title || null,
+    author = vars.author || null;
+
+    /*not enough to search*/
+    if(!isbn && !title) {
+      return null;
+    }
+    let info;
+    /*if isbn exists try to fetch data based on ISBN*/
+    if(isbn) {
+      info = await this.fetchBookInfo({
+        isbn: isbn
+      });
+
+      /*error from API / response without description  from isbn based search - try author and title if received*/
+      if(!info || !basicFunctions.isArray(info.description)) {
+        if(title) {
+          info = await this.fetchBookInfo({
+            title: title,
+            author: author
+          });
+        }
+      }
+
+    } else {
+      /*fetch data based on author + title*/
+      info = await this.fetchBookInfo({
+        title: title,
+        author: author
+      });
+    }
+
+
+    /*error from API / response without description */
+    if(!info || !basicFunctions.isArray(info.description)) {
+      return null;
+    }
+
+    info = info.description[0];
+    /*replace all html line breakers with \n*/
+    info = info.replace(/\<br\s\/\>/g,"\n");
+    return info;
+  }
+
 
   async fetchRating(isbn) {
     /*
@@ -94,41 +257,6 @@ class GoodReads {
       output.push(arr.slice(i, i + this.MAX_ISBNS_IN_HTTP_PAYLOAD));
     }
     return output;
-  }
-
-  async fetchIsbnFromTitleAndAuthor(title, author) {
-    /*use API to retive isbn from title and autho*/
-
-    const requestSettings = {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    };
-
-    /*
-    response from this endpoint is a mess
-    for example:
-
-    {"reviews_widget":"<style>\n  #goodreads-widget {\n    font-family: georgia, serif;\n    padding: 18px 0;\n    width:565px;\n  }\n  #goodreads-widget h1 {\n    font-weight:normal;\n    font-size: 16px;\n    border-bottom: 1px solid #BBB596;\n    margin-bottom: 0;\n  }\n  #goodreads-widget a {\n    text-decoration: none;\n    color:#660;\n  }\n  iframe{\n    background-color: #fff;\n  }\n  #goodreads-widget a:hover { text-decoration: underline; }\n  #goodreads-widget a:active {\n    color:#660;\n  }\n  #gr_footer {\n    width: 100%;\n    border-top: 1px solid #BBB596;\n    text-align: right;\n  }\n  #goodreads-widget .gr_branding{\n    color: #382110;\n    font-size: 11px;\n    text-decoration: none;\n    font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;\n  }\n</style>\n<div id=\"goodreads-widget\">\n  <div id=\"gr_header\"><h1><a rel=\"nofollow\" href=\"https://www.goodreads.com/book/show/149267.The_Stand\">The Stand Reviews</a></h1></div>\n  <iframe id=\"the_iframe\" src=\"https://www.goodreads.com/api/reviews_widget_iframe?did=DEVELOPER_ID&amp;format=html&amp;isbn=0385199570&amp;links=660&amp;review_back=fff&amp;stars=000&amp;text=000\" width=\"565\" height=\"400\" frameborder=\"0\"></iframe>\n  <div id=\"gr_footer\">\n    <a class=\"gr_branding\" target=\"_blank\" rel=\"nofollow noopener noreferrer\" href=\"https://www.goodreads.com/book/show/149267.The_Stand?utm_medium=api&amp;utm_source=reviews_widget\">Reviews from Goodreads.com</a>\n  </div>\n</div>\n"}
-
-    so convert to text and find the isbn with regexp
-    */
-    const url = `${this.ISBN_BY_TITLE_AND_AUTHOR_URL}?key=${this.KEY}&title=${title} ${author}&format=json`;
-    let response = await basicFunctions.doFetch(url , requestSettings, {timeout:5000, text:true});
-    if(!response) {
-      /*error from http request*/
-      return null;
-    }
-
-    response = response.match(/isbn\=[0-9]+/);
-
-    if(!response) {
-      /*no isbn in html*/
-      return null;
-    }
-
-    /*first match is the isbn*/
-    return response[0].replace('isbn=','');
   }
 
 };

@@ -359,6 +359,10 @@ class Basic {
     return /^[0-9]+$/.test(a);
   }
 
+  sleep(t) {
+    return new Promise(res => setTimeout(res, t));
+  }
+  
   doTrim(a) {
     return !this.isBool(a) && !this.isNumber(a) && !this.isNull(a) && this.exists(a) ? a.trim() : a;
   }

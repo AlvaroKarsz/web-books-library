@@ -769,8 +769,8 @@ class dbFunctions {
     INSERT WISH INTO DB
     *********************************************************************************************/
     /*general parameters*/
-    let queryParams = ['name','year','author','isbn'];
-    let queryArguments = [bookJson.title, bookJson.year, bookJson.author,bookJson.isbn];
+    let queryParams = ['name','year','author','isbn', 'description'];
+    let queryArguments = [bookJson.title, bookJson.year, bookJson.author,bookJson.isbn, bookJson.description];
 
     /*if this wish is part of serie - add serie parameters*/
     if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
@@ -818,8 +818,8 @@ class dbFunctions {
     INSERT BOOK INTO DB
     *********************************************************************************************/
     /*general parameters*/
-    let queryParams = ['name','year','author','original_language','language','store','isbn','type','pages', 'listed_date'];
-    let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages, bookJson.arrivalDate];
+    let queryParams = ['name','year','author','original_language','language','store','isbn','type','pages', 'listed_date', 'description'];
+    let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages, bookJson.arrivalDate, bookJson.description];
 
     /*if this book is part of serie - add serie parameters*/
     if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
@@ -1304,6 +1304,7 @@ class dbFunctions {
                       main.name AS name,
                       main.isbn AS isbn,
                       main.year AS year,
+                      main.description AS description,
                       main.author AS author,
                       main.store AS store,
                       main.order_date AS order_date,
@@ -1330,6 +1331,7 @@ class dbFunctions {
                       main.author,
                       main.store,
                       main.ordered,
+                      main.description,
                       main.serie_num,
                       main.serie,
                       series.name,
@@ -1413,6 +1415,7 @@ class dbFunctions {
                       my_books_main.year AS year,
                       my_books_main.author AS author,
                       my_books_main.store AS store,
+                      my_books_main.description AS description,
                       my_books_main.language AS language,
                       my_books_main.original_language AS o_language,
                       my_books_main.type AS type,
@@ -1484,6 +1487,7 @@ class dbFunctions {
                       my_books_main.serie_num,
                       my_books_main.completed,
                       my_books_main.collection,
+                      my_books_main.description,
                       series_table.name,
                       my_books_main.listed_date,
                       my_books_entry1.id,
@@ -1859,9 +1863,11 @@ class dbFunctions {
                       isbn = $${++paramsCounter},
                       type = $${++paramsCounter},
                       pages = $${++paramsCounter},
-                      listed_date = $${++paramsCounter}
+                      listed_date = $${++paramsCounter},
+                      description = $${++paramsCounter}
                       `;
-                      let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages, bookJson.arrivalDate];
+                      let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages, bookJson.arrivalDate, bookJson.description];
+
 
                       /*if this book is part of serie - add serie parameters*/
                       if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
@@ -2145,9 +2151,9 @@ class dbFunctions {
                           *********************************************************************************************/
                           /*general parameters*/
                           let paramsCounter = 0;
-                          let query = `UPDATE wish_list SET name = $${++paramsCounter}, year = $${++paramsCounter}, author = $${++paramsCounter}, isbn = $${++paramsCounter}`;
+                          let query = `UPDATE wish_list SET name = $${++paramsCounter}, year = $${++paramsCounter}, author = $${++paramsCounter}, isbn = $${++paramsCounter}, description = $${++paramsCounter}`;
 
-                          let queryArguments = [bookJson.title, bookJson.year, bookJson.author,bookJson.isbn];
+                          let queryArguments = [bookJson.title, bookJson.year, bookJson.author,bookJson.isbn, bookJson.description];
 
                           /*if this wish is part of serie - add serie parameters*/
                           if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {

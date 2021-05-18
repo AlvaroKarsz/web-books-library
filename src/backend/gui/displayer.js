@@ -32,6 +32,9 @@ class BookDisplayer {
     /*add ratings*/
     output += this.buildRating(data);
 
+    /*add description if relevant*/
+    output += this.addDescription(data.description);
+
     /*add general info*/
     output += this.addGeneralInformation(data);
 
@@ -159,6 +162,19 @@ class BookDisplayer {
     output += this.echoDisplayLine('Book Language: ' , data.language);
     output += this.echoDisplayLine('Book Original Publication Language: ' , data.o_language);
     output += this.addFormat(data.type);
+    output += '</div>';
+    return output;
+  }
+
+  addDescription(desc) {
+    /*if no description return empty string*/
+    if(!desc) {
+      return '';
+    }
+
+    let output = '<div class="general-holder-book-displayer">Description:</div>';
+    output += '<div class = "description-holder">';
+    output += desc.replace(/[\n]/g,'<br>');//add html line breakers
     output += '</div>';
     return output;
   }

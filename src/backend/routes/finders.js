@@ -103,14 +103,27 @@ module.exports = (app) => {
       }
     }
 
-    /*get data by isbn from openlibrary API*/
-    const output = await openLibraryApi.getDataByISBN(isbn);
-    if(!output) {
-      /*
-      data not found - or error
-      */
-      res.send(JSON.stringify({}));
-      return;
+    /*get data by isbn from openlibrary API + description from goodreads*/
+    let output = await Promise.all([
+      openLibraryApi.getDataByISBN(isbn),
+      goodReadsAPI.fetchDescription({
+        isbn: isbn,
+        title: title,
+        author: author
+      })
+    ]);
+
+    let openLibraryOutput = output[0],
+    goodReadsOutput = output[1];
+
+    output = {};
+
+    if(openLibraryOutput) {
+      output = { ...output, ...openLibraryOutput }  ;
+    }
+
+    if(goodReadsOutput) {
+      output.description = goodReadsOutput;
     }
 
     /*send data to frontend*/
@@ -119,7 +132,7 @@ module.exports = (app) => {
 
 
   /*
-    route to decode text from received picture
+  route to decode text from received picture
   */
   app.post('/decodePicture', async (req, res) => {
     let output = [];
@@ -150,7 +163,7 @@ module.exports = (app) => {
       output = [];
     }
     /*
-      picDecoder will create files while decoding pictures, delete these files (if exists)
+    picDecoder will create files while decoding pictures, delete these files (if exists)
     */
     picDecoder.clear();
     res.send(JSON.stringify(output));

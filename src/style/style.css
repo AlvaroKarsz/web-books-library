@@ -390,6 +390,19 @@ img:hover {
   height: 34px;
 }
 
+.description-text-area {
+  resize: none;
+  width: 1000px;
+  height: 250px;
+  outline: none;
+  background: white;
+  border: none;
+  border-radius: 5px;
+  padding: 3px;
+  font-size: 17px;
+  margin-left: 20px;
+}
+
 .checkbox-group div{
   display: inline-block;
   width: max-content;
@@ -1550,4 +1563,13 @@ img:hover {
 
 .file-uploader-file-view i {
   font-size: 40px;
+}
+
+.description-holder {
+  color: white;
+  width: 80%;
+  text-align: left;
+  margin-left: 25px;
+  font-size: 20px;
+  margin-bottom: 25px;
 }
