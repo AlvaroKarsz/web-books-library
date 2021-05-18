@@ -289,16 +289,28 @@ class Basic {
     return out;
   }
 
+  escapeHtmlString(s) {
+    if(!s) {
+      return '';
+    }
+    return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+  }
+
   getFilters(urlParams) {
     let filters = {};
     if('author' in urlParams) {
-      filters.authorFilter = urlParams['author'];
+      filters.authorFilter = decodeURIComponent(urlParams['author']);
     }
     if('title' in urlParams) {
-      filters.titleFilter = urlParams['title'];
+      filters.titleFilter = decodeURIComponent(urlParams['title']);
     }
     if('sort' in urlParams) {
-      filters.sort = urlParams['sort'];
+      filters.sort = decodeURIComponent(urlParams['sort']);
     }
     return filters;
   }

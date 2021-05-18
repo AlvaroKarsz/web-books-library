@@ -1,5 +1,6 @@
 const settings = require('../settings.js');
 const topNav = require(settings.SOURCE_CODE_BACKEND_TOP_NAV_GUI_FILE_PATH);
+const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const fs = require('fs');
 const path = require('path');
 
@@ -102,7 +103,7 @@ class HtmlRender {
   }
 
   getFilterValue(urlParams, filterName) {
-    return urlParams[filterName] ? unescape(urlParams[filterName]) : '';
+    return urlParams[filterName] ? basic.escapeHtmlString(decodeURIComponent(urlParams[filterName])) : '';
   }
 
   createMainLoaderIfBooksFound(books) {
