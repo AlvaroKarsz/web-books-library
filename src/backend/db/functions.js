@@ -183,10 +183,6 @@ class dbFunctions {
     await pg.query(`DELETE FROM wish_list WHERE id = $1;`, [id]);
   }
 
-  async deleteRatings(tableName, id) {
-    await pg.query(`DELETE FROM ratings WHERE id = $1 AND table_name = $2;`, [id, tableName]);
-  }
-
   async deleteMD5(folderName, id) {
     await pg.query(`DELETE FROM cache WHERE id = $1 AND folder = $2;`, [id, folderName]);
   }
@@ -197,21 +193,19 @@ class dbFunctions {
     const authorFilter = typeof ops.authorFilter !== 'undefined' ? unescape(ops.authorFilter.toUpperCase()) : null;
     const titleFilter = typeof ops.titleFilter !== 'undefined' ? unescape(ops.titleFilter.toUpperCase()) : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
-    let query = `SELECT main.id,
-    main.name,
-    COALESCE(rat.rating,'0') AS rating
-    FROM my_books main
-    LEFT JOIN ratings rat
-    ON rat.id = main.id AND rat.table_name = 'my_books' `;
+    let query = `SELECT id,
+    name,
+    COALESCE(goodreads_rating,'0') AS rating
+    FROM my_books `;
 
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(main.author) ~ $');
+      filters.push('UPPER(author) ~ $');
       params.push(authorFilter);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(main.name) ~ $');
+      filters.push('UPPER(name) ~ $');
       params.push(titleFilter);
     }
 
@@ -231,43 +225,43 @@ class dbFunctions {
     query += " ORDER BY ";
     switch(sortType) {
       case 'titl-a':
-      query += " main.name "
+      query += " name "
       break;
       case "titl-d":
-      query += " main.name DESC "
+      query += " name DESC "
       break;
       case 'pag-h':
-      query += " main.pages DESC "
+      query += " pages DESC "
       break;
       case "pag-l":
-      query += " main.pages "
+      query += " pages "
       break;
       case 'pub-h':
-      query += " main.year DESC "
+      query += " year DESC "
       break;
       case "pub-l":
-      query += " main.year "
+      query += " year "
       break;
       case 'rat-h':
-      query += " rat.rating DESC "
+      query += " COALESCE(goodreads_rating,'0') DESC "
       break;
       case "rat-l":
-      query += " rat.rating "
+      query += " COALESCE(goodreads_rating,'0') "
       break;
       case 'rd-r':
-      query += " main.read_order DESC "
+      query += " read_order DESC "
       break;
       case 'rd-n':
-      query += " main.read_order "
+      query += " read_order "
       break;
       case 'lst-l':
-      query += " main.id "
+      query += " id "
       break;
       case 'lst-f':
-      query += " main.id DESC "
+      query += " id DESC "
       break;
       default:
-      query += ' main.id ';
+      query += ' id ';
       break;
     }
     //first get count
@@ -287,24 +281,22 @@ class dbFunctions {
     const authorFilter = typeof ops.authorFilter !== 'undefined' ? unescape(ops.authorFilter.toUpperCase()) : null;
     const titleFilter = typeof ops.titleFilter !== 'undefined' ? unescape(ops.titleFilter.toUpperCase()) : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
-    let query = `SELECT main.id,
-    main.name,
-    COALESCE(rat.rating,'0') AS rating
-    FROM wish_list main
-    LEFT JOIN ratings rat
-    ON rat.id = main.id AND rat.table_name = 'wish_list' `;
+    let query = `SELECT id,
+    name,
+    COALESCE(goodreads_rating,'0') AS rating
+    FROM wish_list `;
 
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(main.author) ~ $');
+      filters.push('UPPER(author) ~ $');
       params.push(authorFilter);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(main.name) ~ $');
+      filters.push('UPPER(name) ~ $');
       params.push(titleFilter);
     }
-    let conditions = " WHERE main.ordered = 'f' ";
+    let conditions = " WHERE ordered = 'f' ";
 
     if(filters.length) {//we have filters
       conditions += " AND ";
@@ -319,31 +311,31 @@ class dbFunctions {
     query += " ORDER BY ";
     switch(sortType) {
       case 'titl-a':
-      query += " main.name "
+      query += " name "
       break;
       case "titl-d":
-      query += " main.name DESC "
+      query += " name DESC "
       break;
       case 'pub-h':
-      query += " main.year DESC "
+      query += " year DESC "
       break;
       case "pub-l":
-      query += " main.year "
+      query += " year "
       break;
       case 'rat-h':
-      query += " rat.rating DESC "
+      query += " COALESCE(goodreads_rating,'0') DESC "
       break;
       case "rat-l":
-      query += " rat.rating "
+      query += " COALESCE(goodreads_rating,'0') "
       break;
       case 'lst-l':
-      query += " main.id "
+      query += " id "
       break;
       case 'lst-f':
-      query += " main.id DESC "
+      query += " id DESC "
       break;
       default:
-      query += ' main.id ';
+      query += ' id ';
       break;
     }
 
@@ -463,10 +455,9 @@ class dbFunctions {
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
     let query = `SELECT main.id,
     main.name,
-    COALESCE(rat.rating,'0') AS rating
+    COALESCE(main.goodreads_rating,'0') AS rating
     FROM stories main
-    LEFT JOIN ratings rat
-    ON rat.id = main.id AND rat.table_name = 'stories'
+
     LEFT JOIN my_books parent
     ON main.parent = parent.id `;
     let filters = [], params = [];
@@ -511,10 +502,10 @@ class dbFunctions {
       query += " parent.year "
       break;
       case 'rat-h':
-      query += " rat.rating DESC "
+      query += " COALESCE(main.goodreads_rating,'0') DESC "
       break;
       case "rat-l":
-      query += " rat.rating "
+      query += " COALESCE(main.goodreads_rating,'0') "
       break;
       case 'rd-r':
       query += " main.read_order DESC "
@@ -555,24 +546,22 @@ class dbFunctions {
     const authorFilter = typeof ops.authorFilter !== 'undefined' ? unescape(ops.authorFilter.toUpperCase()) : null;
     const titleFilter = typeof ops.titleFilter !== 'undefined' ? unescape(ops.titleFilter.toUpperCase()) : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
-    let query = `SELECT main.id,
-    main.name,
-    COALESCE(rat.rating,'0') AS rating
-    FROM my_books main
-    LEFT JOIN ratings rat
-    ON rat.id = main.id AND rat.table_name = 'my_books' `;
+    let query = `SELECT id,
+    name,
+    COALESCE(goodreads_rating,'0') AS rating
+    FROM my_books `;
 
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(main.author) ~ $');
+      filters.push('UPPER(author) ~ $');
       params.push(authorFilter);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(main.name) ~ $');
+      filters.push('UPPER(name) ~ $');
       params.push(titleFilter);
     }
-    let condition = " WHERE main.read_order IS NOT NULL ";
+    let condition = " WHERE read_order IS NOT NULL ";
     if(filters.length) {//we have filters
       condition += " AND ";
       for(let i = 1 , l = filters.length + 1; i < l ; i ++ ) {
@@ -586,43 +575,43 @@ class dbFunctions {
     query += " ORDER BY ";
     switch(sortType) {
       case 'titl-a':
-      query += " main.name "
+      query += " name "
       break;
       case "titl-d":
-      query += " main.name DESC "
+      query += " name DESC "
       break;
       case 'pag-h':
-      query += " main.pages DESC "
+      query += " pages DESC "
       break;
       case "pag-l":
-      query += " main.pages "
+      query += " pages "
       break;
       case 'pub-h':
-      query += " main.year DESC "
+      query += " year DESC "
       break;
       case "pub-l":
-      query += " main.year "
+      query += " year "
       break;
       case 'rat-h':
-      query += " rat.rating DESC "
+      query += " COALESCE(goodreads_rating,'0') DESC "
       break;
       case "rat-l":
-      query += " rat.rating "
+      query += " COALESCE(goodreads_rating,'0') "
       break;
       case 'rd-r':
-      query += " main.read_order DESC "
+      query += " read_order DESC "
       break;
       case 'rd-n':
-      query += " main.read_order "
+      query += " read_order "
       break;
       case 'lst-l':
-      query += " main.id "
+      query += " id "
       break;
       case 'lst-f':
-      query += " main.id DESC "
+      query += " id DESC "
       break;
       default:
-      query += ' main.id ';
+      query += ' id ';
       break;
     }
     //first get count
@@ -642,24 +631,22 @@ class dbFunctions {
     const authorFilter = typeof ops.authorFilter !== 'undefined' ? unescape(ops.authorFilter.toUpperCase()) : null;
     const titleFilter = typeof ops.titleFilter !== 'undefined' ? unescape(ops.titleFilter.toUpperCase()) : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
-    let query = `SELECT main.id,
-    main.name,
-    COALESCE(rat.rating,'0') AS rating
-    FROM wish_list main
-    LEFT JOIN ratings rat
-    ON rat.id = main.id AND rat.table_name = 'wish_list' `;
+    let query = `SELECT id,
+    name,
+    COALESCE(goodreads_rating ,'0') AS rating
+    FROM wish_list `;
 
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(main.author) ~ $');
+      filters.push('UPPER(author) ~ $');
       params.push(authorFilter);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(main.name) ~ $');
+      filters.push('UPPER(name) ~ $');
       params.push(titleFilter);
     }
-    let conditions = " WHERE main.ordered = 't' ";
+    let conditions = " WHERE ordered = 't' ";
     if(filters.length) {//we have filters
       conditions += " AND ";
       for(let i = 1 , l = filters.length + 1; i < l ; i ++ ) {
@@ -674,37 +661,37 @@ class dbFunctions {
     query += " ORDER BY ";
     switch(sortType) {
       case 'titl-a':
-      query += " main.name "
+      query += " name "
       break;
       case "titl-d":
-      query += " main.name DESC "
+      query += " name DESC "
       break;
       case 'pub-h':
-      query += " main.year DESC "
+      query += " year DESC "
       break;
       case "pub-l":
-      query += " main.year "
+      query += " year "
       break;
       case 'rat-h':
-      query += " rat.rating DESC "
+      query += " COALESCE(goodreads_rating,'0') DESC "
       break;
       case "rat-l":
-      query += " rat.rating "
+      query += " COALESCE(goodreads_rating,'0') "
       break;
       case 'lst-l':
-      query += " main.id "
+      query += " id "
       break;
       case 'lst-f':
-      query += " main.id DESC "
+      query += " id DESC "
       break;
       case 'prc-f':
-      query += " main.order_date::DATE DESC "
+      query += " order_date::DATE DESC "
       break;
       case 'prc-l':
-      query += " main.order_date::DATE "
+      query += " order_date::DATE "
       break;
       default:
-      query += ' main.id ';
+      query += ' id ';
       break;
     }
     //first get count
@@ -737,7 +724,7 @@ class dbFunctions {
     /*
     Needed actions:
     1) Insert story to DB.
-    2) Save the story rating in ratings table.
+    2) Save the story rating
     */
 
     /********************************************************************************************
@@ -763,14 +750,14 @@ class dbFunctions {
     /********************************************************************************************
     SAVE STORY RATING IN DB
     *********************************************************************************************/
-    this.saveBookRating(storyId, '', storyJson.title, storyJson.actualAuthor, 'stories');
+    this.saveRating(storyId, '', storyJson.title, storyJson.actualAuthor, 'stories');
   }
 
   async saveWish(bookJson) {
     /*
     Needed actions:
     1) Insert wish to DB.
-    2) Save the wish rating in ratings table.
+    2) Save the wish rating
     */
 
     /********************************************************************************************
@@ -796,7 +783,7 @@ class dbFunctions {
     /********************************************************************************************
     SAVE WISH RATING IN DB
     *********************************************************************************************/
-    this.saveBookRating(wishId, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
+    this.saveRating(wishId, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
   }
 
   async saveSerie(serieJson) {
@@ -818,8 +805,8 @@ class dbFunctions {
     1) Insert book to DB.
     2) Insert stories to stories table if this is a collection
     3) If this book is preceded by another book, change the "next" coulumn of the preceded book to pointer to this newly inserted bookID.
-    4) Save the book rating in ratings table.
-    5) Save stories rating in ratings table if this is a collection.
+    4) Save the book rating
+    5) Save stories rating if this is a collection.
     */
 
     /********************************************************************************************
@@ -888,7 +875,7 @@ class dbFunctions {
       /********************************************************************************************
       SAVE BOOK RATING IN DB
       *********************************************************************************************/
-      this.saveBookRating(bookId, bookJson.isbn, bookJson.title, bookJson.author, 'my_books');
+      this.saveRating(bookId, bookJson.isbn, bookJson.title, bookJson.author, 'my_books');
 
       /********************************************************************************************
       SAVE STORIES RATING IF COLLECTION
@@ -902,11 +889,11 @@ class dbFunctions {
       const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
       const goodreads = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
 
-      let query, bookAuthor, stories, ratings, queryParamsArr = [], paramsCount = 0;
+      let query, bookAuthor, stories, rating, queryParamsArr = [], paramsCount = 0;
       /*
-      stories are saved without ISBN, and ISBN is needed in order to fetch ratings.
+      stories are saved without ISBN, and ISBN is needed in order to fetch rating.
       the workaround is fetching story title and author, and look for if ISBN exist for this title.
-      if ISBN exist, use it in order to fetch the ratings.
+      if ISBN exist, use it in order to fetch the rating.
       If ISBN doesn't exists, rating can't be fetched for this story.
       */
 
@@ -943,9 +930,9 @@ class dbFunctions {
       stories = await googleApi.fetchIsbnByTitleAndAuthorBulk(stories.map((a) => {return {title: a.name, author: a.author, id: a.id}}));
 
       /*
-      fetch ratings for found isbns - remove nulls from isbn arrays
+      fetch rating for found isbns - remove nulls from isbn arrays
       */
-      ratings = await goodreads.fetchRatings(stories.map(a => a.isbn).filter(a => a));
+      rating = await goodreads.fetchRatings(stories.map(a => a.isbn).filter(a => a));
 
       /*
       add rating to stories element
@@ -971,92 +958,129 @@ class dbFunctions {
       if(!stories[i].isbn) {//no isbn for this story, continue to next one
         continue;
       }
-      for(let j = 0, s = ratings.length ; j < s ; j ++ ) {
-        if(stories[i].isbn === ratings[j].isbn || stories[i].isbn === ratings[j].isbn13) {
-          stories[i].rating = ratings[j].average_rating;
-          stories[i].count = ratings[j].work_ratings_count;
+      for(let j = 0, s = rating.length ; j < s ; j ++ ) {
+        if(stories[i].isbn === rating[j].isbn || stories[i].isbn === rating[j].isbn13) {
+          stories[i].rating = rating[j].average_rating;
+          stories[i].count = rating[j].work_ratings_count;
           break;//next story
         }
       }
     }
 
     /*
-    save data in ratings table.
+    save data in DB table.
     the ISBN used to find data shoud be saved in additional_isbn column.
     SPECIAL CASE:
     if rating not found for a story:
     set rating = null, count = null, additional_isbn = false
-    So when running an alogrithm to refetch the rating (updated data), the alogrithm will not try again to fetch ratings for these stories.
+    So when running an alogrithm to refetch the rating (updated data), the alogrithm will not try again to fetch rating for these stories.
     When the alogrithm sees additional_isbn = false, this entry will be ignored
     */
 
-    query = "INSERT INTO  ratings(table_name, id, count, rating, additional_isbn) VALUES ";
-
     for(let i = 0, l = stories.length ; i < l ; i ++ ) {
-      /*table name is stories for all stories, id should be posted anyway in order to identify the story*/
-      query += `('stories',$${ ++ paramsCount},`;
-      queryParamsArr.push(stories[i].id);
-
-      if(typeof stories[i].rating !== 'undefined') {//story has rating, save it + count + additional ISBN
-        query += `$${ ++ paramsCount},$${ ++ paramsCount},$${ ++ paramsCount}),`;
-        queryParamsArr.push(stories[i].count, stories[i].rating, stories[i].isbn);
-      } else {//no ISBN for this story, insert false
-        query += `NULL,NULL,'false'),`;
+      await this.insertRatingIntoDB(
+        typeof stories[i].rating === 'undefined' ? null : stories[i].rating,
+        typeof stories[i].rating === 'undefined' ? null : stories[i].count,
+        typeof stories[i].rating === 'undefined' ? 'false' : stories[i].isbn,
+        stories[i].id,
+        'stories');
       }
     }
 
-    query = query.replace(/[,]$/,'') + "  ON CONFLICT (id,table_name) DO UPDATE SET count = EXCLUDED.count , rating = EXCLUDED.rating, additional_isbn = EXCLUDED.additional_isbn;";//remove last comma
-    await pg.query(query, queryParamsArr);
-  }
+    async saveRating(id, isbn, title, author, tableName) {
+      /*fetch rating and save it in DB table*/
+      let rating = null, additionalIsbn = null;
 
-  async saveBookRating(id, isbn, title, author, tableName) {
-    /*fetch rating and save it in ratings cache table*/
-    let rating = null, additionalIsbn = null;
+      /*try to fetch rating from goodreads api*/
+      const goodreads = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
 
-    /*try to fetch rating from goodreads api*/
-    const goodreads = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
-
-    /*may be empty for stories*/
-    if(isbn) {
-      rating = await goodreads.fetchRating(isbn);
-    }
-
-
-    if(!rating) {
-      /*rating not found by this isbn, try to fetch another isbn from google api based on book title and author*/
-      const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
-      additionalIsbn = await googleApi.fetchIsbnByTitleAndAuthor(title,author);
-      if(!additionalIsbn) {
-        /*no luck - no isbn found*/
-        return;
+      /*may be empty for stories*/
+      if(isbn) {
+        rating = await goodreads.fetchRating(isbn);
       }
-      if(isbn === additionalIsbn) {
-        /*isbn found in google api is the same one inserted by user, nothing found in goodreads for this isbn*/
-        return;
-      }
-      /*try to fetch ratings with new isbn from google*/
-      rating = await goodreads.fetchRating(additionalIsbn);
+
+
       if(!rating) {
-        /*nothing found for this isbn as well*/
-        return;
+        /*rating not found by this isbn, try to fetch another isbn from google api based on book title and author*/
+        const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
+        additionalIsbn = await googleApi.fetchIsbnByTitleAndAuthor(title,author);
+        if(!additionalIsbn) {
+          /*no luck - no isbn found*/
+          return;
+        }
+        if(isbn === additionalIsbn) {
+          /*isbn found in google api is the same one inserted by user, nothing found in goodreads for this isbn*/
+          return;
+        }
+        /*try to fetch rating with new isbn from google*/
+        rating = await goodreads.fetchRating(additionalIsbn);
+        if(!rating) {
+          /*nothing found for this isbn as well*/
+          return;
+        }
       }
+
+      await this.insertRatingIntoDB(rating.rating, rating.count, additionalIsbn, id, tableName);
     }
 
-    let queryArguments = [tableName, id, rating.count, rating.rating],
-    query = `INSERT INTO ratings(table_name, id, count, rating, additional_isbn) VALUES($1,$2,$3,$4,`;
+    async insertRatingIntoDB(rating, count, additionalISBN, id, table) {
+      let query = 'UPDATE ', paramCounter = 0, queryArguments = [];
 
-      if(additionalIsbn) {
+      /*get table from tableName param*/
+      switch(table) {
+        case 'my_books':
+        query += ' my_books ';
+        break;
+
+        case 'wish_list':
+        query += ' wish_list ';
+        break;
+
+        case 'stories':
+        query += ' stories ';
+        break;
+
+        default: /*unknown param*/
+        return null;
+      }
+
+      query += `SET
+      goodreads_rating = `;
+
+      if(rating) {//rating exist
+        query += ` $${++paramCounter} `;
+        queryArguments.push(rating);
+      } else {//no rating - use NULL
+        query += ` NULL `
+      }
+
+      query += ` , goodreads_rating_count = `;
+
+      if(count) {//count exist
+        query += ` $${++paramCounter} `;
+        queryArguments.push(count);
+      } else {//no count - use NULL
+        query += ` NULL `
+      }
+
+      query += ` , goodreads_rating_additional_isbn = `;
+
+
+      if(additionalISBN) {
         /*
         google api was used to fetch rating, not the isbn received from user
         save this isbn in additional_isbn column
         */
-        queryArguments.push(additionalIsbn);
-        query += '$5';
+        queryArguments.push(additionalISBN);
+        query += `  $${++paramCounter} `;
       } else {
         /*isbn from user was used to fetch rating, no additional_isbn for this book*/
-        query += 'NULL'
+        query += ' NULL ';
       }
-      query += ') ON CONFLICT (id,table_name) DO UPDATE SET count = EXCLUDED.count , rating = EXCLUDED.rating, additional_isbn = EXCLUDED.additional_isbn;';
+
+      queryArguments.push(id);
+      query += ` WHERE id = $${++paramCounter};`;
+
       await pg.query(query, queryArguments);
     }
 
@@ -1319,16 +1343,13 @@ class dbFunctions {
                       main.serie AS serie_id,
                       main.serie_num AS serie_num,
                       series.name AS serie,
-                      ratings_e.rating AS rating,
-                      ratings_e.count AS rating_count
+                      main.goodreads_rating AS rating,
+                      main.goodreads_rating_count AS rating_count
 
                       FROM wish_list main
 
                       LEFT JOIN  series series
                       ON main.serie = series.id
-
-                      LEFT JOIN  ratings ratings_e
-                      ON main.id = ratings_e.id AND ratings_e.table_name = 'wish_list'
 
                       WHERE main.id = $1
                       GROUP BY
@@ -1343,8 +1364,8 @@ class dbFunctions {
                       main.serie_num,
                       main.serie,
                       series.name,
-                      ratings_e.rating,
-                      ratings_e.count;`;
+                      main.goodreads_rating_count,
+                      main.goodreads_rating;`;
                       let result = await pg.query(query, [id]);
                       result = result.rows[0];
 
@@ -1436,8 +1457,8 @@ class dbFunctions {
                       my_books_main.serie AS serie_id,
                       my_books_main.serie_num AS serie_num,
                       series_table.name AS serie,
-                      ratings_entry.rating AS rating,
-                      ratings_entry.count AS rating_count,
+                      my_books_main.goodreads_rating AS rating,
+                      my_books_main.goodreads_rating_count AS rating_count,
                       JSON_STRIP_NULLS(
                         JSON_AGG(
                           JSONB_BUILD_OBJECT(
@@ -1467,9 +1488,6 @@ class dbFunctions {
 
                       LEFT JOIN my_books my_books_entry2
                       ON my_books_main.id = my_books_entry2.next
-
-                      LEFT JOIN ratings ratings_entry
-                      ON my_books_main.id = ratings_entry.id AND ratings_entry.table_name = 'my_books'
 
                       LEFT JOIN series series_table
                       ON my_books_main.serie = series_table.id
@@ -1502,8 +1520,8 @@ class dbFunctions {
                       my_books_entry1.name,
                       my_books_entry2.id,
                       my_books_entry2.name,
-                      ratings_entry.rating,
-                      ratings_entry.count;`;
+                      my_books_main.goodreads_rating_count,
+                      my_books_main.goodreads_rating;`;
 
 
                       let result = await pg.query(query, [id]);
@@ -1650,8 +1668,8 @@ class dbFunctions {
                       my_stories_entry1.name AS next_collection_name,
                       my_stories_entry2.id AS prev_collection_id,
                       my_stories_entry2.name AS prev_collection_name,
-                      ratings_e.rating AS rating,
-                      ratings_e.count AS rating_count
+                      my_stories_main.goodreads_rating_count AS rating_count,
+                      my_stories_main.goodreads_rating AS rating
 
                       FROM stories my_stories_main
 
@@ -1678,9 +1696,6 @@ class dbFunctions {
                         LIMIT 1
                       )
 
-                      LEFT JOIN  ratings ratings_e
-                      ON my_stories_main.id = ratings_e.id AND ratings_e.table_name = 'stories'
-
                       WHERE my_stories_main.id = $1
                       GROUP BY
                       my_stories_main.id,
@@ -1700,8 +1715,8 @@ class dbFunctions {
                       my_stories_entry1.name,
                       my_stories_entry2.id,
                       my_stories_entry2.name,
-                      ratings_e.rating,
-                      ratings_e.count;`;
+                      my_stories_main.goodreads_rating_count,
+                      my_stories_main.goodreads_rating;`;
 
 
                       let result = await pg.query(query, [id]);
@@ -1916,21 +1931,6 @@ class dbFunctions {
                       await pg.query(query, queryArguments);
 
                       /********************************************************************************************
-                      DELETE RATINGS FOR BOOK (AND STORIES IF COLLECTION), RELEVANT RATINGS WILL BE SAVED AGAIN
-                      *********************************************************************************************/
-
-                      /*delete stories ratings*/
-                      queryArguments.length = 0;//reset queryArguments array
-                      queryArguments.push(id);
-                      query = `DELETE FROM ratings WHERE table_name = 'stories' AND id IN (
-                        SELECT id FROM stories WHERE parent = $1
-                      );`;
-                      await pg.query(query, queryArguments);
-                      /*now delete book rating*/
-
-                      await this.deleteRatings('my_books', id);
-
-                      /********************************************************************************************
                       UPDATE PREV. BOOK IF EXISTS
                       *********************************************************************************************/
                       /*
@@ -2078,9 +2078,9 @@ class dbFunctions {
                           }
 
                           /********************************************************************************************
-                          ALTER BOOK RATING IN DB (if not changed - it will overwrite it with the same value)
+                          ALTER BOOK RATING IN DB , CHANGES IN ISBN/AUTHOR/TITLE MAY LEAD TO A DIFFERENT RATING
                           *********************************************************************************************/
-                          this.saveBookRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'my_books');
+                          this.saveRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'my_books');
 
                           /********************************************************************************************
                           ALTER STORIES RATING IF COLLECTION
@@ -2114,10 +2114,9 @@ class dbFunctions {
                           await pg.query(query, queryArguments);
 
                           /********************************************************************************************
-                          CHANGE RATINGS ID FB
+                          CHANGE RATING IN DB
                           *********************************************************************************************/
-                          await this.deleteRatings('stories', id);
-                          await this.saveBookRating(id, '', storyJson.title, storyJson.actualAuthor, 'stories');
+                          await this.saveRating(id, '', storyJson.title, storyJson.actualAuthor, 'stories');
 
                           /********************************************************************************************
                           IF COLLECTION WAS CHANGED - MAKE NEEDED CHANGES
@@ -2177,15 +2176,11 @@ class dbFunctions {
 
                           /*send query*/
                           await pg.query(query, queryArguments);
-                          /********************************************************************************************
-                          DELETE RATINGS FOR WISH (in case the some modification will lead to different ratings) - the ratings will be fetched again in this function
-                          *********************************************************************************************/
-                          await this.deleteRatings('wish_list', id);
 
                           /********************************************************************************************
-                          SAVE WISH RATING IN DB
+                          SAVE WISH RATING IN DB - IN CASE THAT THE NEW MODIFICATION IS A CHANGE IN ISBN/TITLE/AUTHOR -> THIS MAY LEAD TO A DIFFERENT RATING
                           *********************************************************************************************/
-                          this.saveBookRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
+                          this.saveRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
                         }
 
                         async markStoryAsRead(id, date, completedPages = null) {
