@@ -52,7 +52,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.STORIES_FOLDER_NAME,
-      displayer: entryDisplayer.build(storyData, settings.STORIES_FOLDER_NAME, {storyRead: true})
+      displayer: entryDisplayer.build(storyData, settings.STORIES_FOLDER_NAME, {storyRead: true, fetchRating: true})
     }));
   });
 
@@ -262,6 +262,34 @@ module.exports = (app) => {
     /*valid data - update DB*/
     await db.markStoryAsRead(id, date, pages);
     res.redirect(referer);
+  });
+
+  /*route to change rating*/
+  app.get('/stories/rating/change/:id', async (req, res) => {
+    const id =  req.params.id;
+
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    message = '';
+
+    if(!id) {
+      /*send error*/
+      message += 'Could not fetch Rating, Invalid Book ID';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+    /*fetch new rating and save in DB*/
+    if(! await db.saveStoryRating(id) ) {
+      /*error finding new rating*/
+      message += 'Could not fetch Rating, Generic Error';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    } else {
+      /*success*/
+      message += 'New Rating was saved';//add message
+      res.redirect(basic.buildRefererUrl(referer, message, false));
+    }
   });
 
 }

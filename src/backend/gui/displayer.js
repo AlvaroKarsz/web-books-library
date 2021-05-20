@@ -454,6 +454,15 @@ class BookDisplayer {
       `<p>New Description</p>` +
       `</div>`;
     }
+    /*option to reload ratings*/
+    if(actions.fetchRating) {
+      output += `<div title="Click to reload Rating">` +
+      `<a href = "/${type}/rating/change/${data.id}">` +
+      `<i class="fa fa-star"></i>` +
+      `<p>New Rating</p>` +
+      `</a>` +
+      `</div>`;
+    }
 
     output += '</div>';
     return output;

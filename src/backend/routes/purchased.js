@@ -38,7 +38,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.WISH_LIST_FOLDER_NAME,
-      displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {received:true, cancelPurchase: true})
+      displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {received:true, cancelPurchase: true, fetchRating: true})
     }));
   });
 

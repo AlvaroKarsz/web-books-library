@@ -3,6 +3,58 @@ const pg = require(settings.SOURCE_CODE_BACKEND_CONNECTION_DATABASE_FILE_PATH);
 
 class dbFunctions {
 
+  async saveBookRating(id) {
+    /*fetch needed data from DB*/
+    let neededData = await pg.query(`SELECT isbn, name, author, goodreads_rating_additional_isbn FROM my_books WHERE id = $1;`, [id]);
+    if(neededData.rows.length === 0) {//no id
+      return null;
+    }
+    neededData = neededData.rows[0];
+    /*
+    return saveRating
+    It will return true only in case of success
+    */
+    return await this.saveRating(id, neededData.isbn, neededData.name, neededData.author, 'my_books');
+  }
+
+  async saveWishRating(id) {
+    /*fetch needed data from DB*/
+    let neededData = await pg.query(`SELECT isbn, name, author FROM wish_list WHERE id = $1;`, [id]);
+    if(neededData.rows.length === 0) {//no id
+      return null;
+    }
+    neededData = neededData.rows[0];
+    /*
+    return saveRating
+    It will return true only in case of success
+    */
+    return await this.saveRating(id, neededData.isbn, neededData.name, neededData.author, 'wish_list');
+  }
+
+  async saveStoryRating(id) {
+    /*fetch needed data from DB*/
+    let neededData = await pg.query(`SELECT name, author, parent FROM stories WHERE id = $1;`, [id]);
+    if(neededData.rows.length === 0) {//no id
+      return null;
+    }
+    neededData = neededData.rows[0];
+
+    /*if no author, fetch author from parent*/
+
+    if(! neededData.author ) {
+      let parentAuthor = await pg.query(`SELECT author FROM my_books WHERE id = $1;`, [neededData.parent]);
+      if(parentAuthor.rows.length === 0) {//no id
+        return null;
+      }
+      neededData.author = parentAuthor.rows[0].author;
+    }
+    /*
+    return saveRating
+    It will return true only in case of success
+    */
+    return await this.saveRating(id, '', neededData.name, neededData.author, 'stories');
+  }
+
   async changeBookDescription(id, description) {
     await pg.query('UPDATE my_books SET description=$1 WHERE id = $2;', [description, id]);
   }
@@ -1001,26 +1053,60 @@ class dbFunctions {
 
 
       if(!rating) {
-        /*rating not found by this isbn, try to fetch another isbn from google api based on book title and author*/
+        /*rating not found by this isbn, try to fetch another isbn from goodreads api based on book title and author*/
         const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
-        additionalIsbn = await googleApi.fetchIsbnByTitleAndAuthor(title,author);
+        additionalIsbn = await goodreads.fetchIsbnFromTitleAndAuthor(title,author);
+
+        if(!additionalIsbn) {/*could not find, try to find using google api*/
+          additionalIsbn = await googleApi.fetchIsbnByTitleAndAuthor(title,author);
+        }
+
         if(!additionalIsbn) {
           /*no luck - no isbn found*/
-          return;
+          /*clear rating and return clearRating "exit code"*/
+          return await this.clearRating(id, tableName);
         }
         if(isbn === additionalIsbn) {
-          /*isbn found in google api is the same one inserted by user, nothing found in goodreads for this isbn*/
-          return;
+          /*isbn found in one of the apis is the same one inserted by user, nothing found in goodreads for this isbn*/
+          /*clear rating and return clearRating "exit code"*/
+          return await this.clearRating(id, tableName);
         }
         /*try to fetch rating with new isbn from google*/
         rating = await goodreads.fetchRating(additionalIsbn);
         if(!rating) {
           /*nothing found for this isbn as well*/
-          return;
+          /*clear rating and return clearRating "exit code"*/
+          return await this.clearRating(id, tableName);
         }
       }
 
       await this.insertRatingIntoDB(rating.rating, rating.count, additionalIsbn, id, tableName);
+      return true;
+    }
+
+    async clearRating(id, table) {
+      let query = 'UPDATE ';
+      /*get table from tableName param*/
+      switch(table) {
+        case 'my_books':
+        query += ' my_books ';
+        break;
+
+        case 'wish_list':
+        query += ' wish_list ';
+        break;
+
+        case 'stories':
+        query += ' stories ';
+        break;
+
+        default: /*unknown param*/
+        return null;
+      }
+
+      query += ` SET goodreads_rating = NULL, goodreads_rating_count = NULL, goodreads_rating_additional_isbn = NULL WHERE id = $1;`;
+      await pg.query(query, [id]);
+      return true;/*success*/
     }
 
     async insertRatingIntoDB(rating, count, additionalISBN, id, table) {

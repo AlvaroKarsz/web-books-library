@@ -46,7 +46,8 @@ module.exports = (app) => {
         buy:true,
         search:true,
         deleteWish: true,
-        fetchDescription: true
+        fetchDescription: true,
+        fetchRating: true
       })
     }));
   });
@@ -236,6 +237,35 @@ module.exports = (app) => {
     /*send success message*/
     res.send(JSON.stringify(true));
     return;
+  });
+
+
+  /*route to change rating*/
+  app.get('/wishlist/rating/change/:id', async (req, res) => {
+    const id =  req.params.id;
+
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    message = '';
+
+    if(!id) {
+      /*send error*/
+      message += 'Could not fetch Rating, Invalid Book ID';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+    /*fetch new rating and save in DB*/
+    if(! await db.saveWishRating(id) ) {
+      /*error finding new rating*/
+      message += 'Could not fetch Rating, Generic Error';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    } else {
+      /*success*/
+      message += 'New Rating was saved';//add message
+      res.redirect(basic.buildRefererUrl(referer, message, false));
+    }
   });
 
 }

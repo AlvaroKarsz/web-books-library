@@ -36,7 +36,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.BOOKS_FOLDER_NAME,
-      displayer: entryDisplayer.build(readData, settings.BOOKS_FOLDER_NAME, {})
+      displayer: entryDisplayer.build(readData, settings.BOOKS_FOLDER_NAME, {fetchRating: true})
     }));
   });
 
