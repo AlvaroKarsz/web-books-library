@@ -21,6 +21,10 @@ module.exports = (app) => {
     res.sendFile(settings.SOURCE_CODE_FRONTEND_COMMON_FILE_PATH);
   });
 
+  app.get('/frontend/automatic', (req, res) => {
+    res.sendFile(settings.SOURCE_CODE_FRONTEND_AUTOMATIC_FILE_PATH);
+  });
+
   app.get('/frontend/insertBook', (req, res) => {
     res.sendFile(settings.SOURCE_CODE_FRONTEND_INSERT_BOOK_FILE_PATH);
   });
@@ -31,10 +35,6 @@ module.exports = (app) => {
 
   app.get('/frontend/insertStory', (req, res) => {
     res.sendFile(settings.SOURCE_CODE_FRONTEND_INSERT_STORY_FILE_PATH);
-  });
-
-  app.get('/frontend/websocket', (req, res) => {
-    res.sendFile(settings.SOURCE_CODE_FRONTEND_WEBSOCKET_FILE_PATH);
   });
 
   app.get('/frontend/markBookAsRead', (req, res) => {
