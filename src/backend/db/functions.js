@@ -1054,13 +1054,28 @@ class dbFunctions {
 
       if(!rating) {
         /*rating not found by this isbn, try to fetch another isbn from goodreads api based on book title and author*/
-        const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
         additionalIsbn = await goodreads.fetchIsbnFromTitleAndAuthor(title,author);
 
         if(!additionalIsbn) {/*could not find, try to find using google api*/
+          const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
           additionalIsbn = await googleApi.fetchIsbnByTitleAndAuthor(title,author);
         }
 
+        /*
+        in some cases, there is no ISBN, but rating exist in goodreads
+        for example a e-book without ISBN
+        for this cases, use fetchRatingFromTitleAndAuthor function to search for ratings without isbn at all
+        */
+        if(!additionalIsbn) {
+          let ratingWithoutISBN = await goodreads.fetchRatingFromTitleAndAuthor(title,author);
+          if(ratingWithoutISBN) {
+            /*rating found, save rating & rating count in table, additionalIsbn should be empty in this case since no additional ISBN was used*/
+            await this.insertRatingIntoDB(ratingWithoutISBN.rating, ratingWithoutISBN.count, null, id, tableName);
+            return true;
+          }
+        }
+
+        
         if(!additionalIsbn) {
           /*no luck - no isbn found*/
           /*clear rating and return clearRating "exit code"*/

@@ -87,6 +87,28 @@ class GoodReads {
     }
   }
 
+  async fetchRatingFromTitleAndAuthor(title, author) {
+    /*use fetchBookInfo to fetch all info, then search for isbn13/isbn*/
+    let info = await this.fetchBookInfo({
+      title: title,
+      author: author
+    });
+    /*error from API*/
+    if(!info) {
+      return null;
+    }
+
+    /*rating found*/
+    if(basicFunctions.isArray(info.average_rating) && basicFunctions.isArray(info.ratings_count)) {
+      return {
+        rating: info.average_rating[0],
+        count: info.ratings_count[0]
+      }
+    }
+    /*nothing found*/
+    return null;
+  }
+
   async fetchIsbnFromTitleAndAuthor(title, author) {
     /*use fetchBookInfo to fetch all info, then search for isbn13/isbn*/
     let info = await this.fetchBookInfo({
