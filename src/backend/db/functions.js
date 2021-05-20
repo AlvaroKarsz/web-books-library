@@ -3,6 +3,14 @@ const pg = require(settings.SOURCE_CODE_BACKEND_CONNECTION_DATABASE_FILE_PATH);
 
 class dbFunctions {
 
+  async changeBookDescription(id, description) {
+    await pg.query('UPDATE my_books SET description=$1 WHERE id = $2;', [description, id]);
+  }
+
+  async changeWishDescription(id, description) {
+    await pg.query('UPDATE wish_list SET description=$1 WHERE id = $2;', [description, id]);
+  }
+
   async cancelPurchaseMark(id) {
     let query = `UPDATE wish_list
     SET store = NULL,

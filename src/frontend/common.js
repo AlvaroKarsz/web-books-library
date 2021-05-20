@@ -1476,6 +1476,122 @@ class AutoFill {
   }
 }
 
+class Confirm {
+  constructor(opts = {}) {
+    this.parent = opts.parent || document.body;
+    this.mainClass = opts.mainClass || 'my-confirm';
+    this.subjectClass = opts.subjectClass || 'my-confirm-subject';
+    this.bodyClass = opts.bodyClass || 'my-confirm-body';
+    this.buttonHolderClass = opts.buttonHolderClass || 'my-confirm-button-holder';
+    this.OKbuttonClass = opts.OKbuttonClass || 'black-white-button';
+    this.CancelButtonClass = opts.CancelButtonClass || 'black-white-button';
+    this.make();
+    this.hide();
+  }
+
+  hide() {
+    this.popup.style.display = 'none';
+  }
+
+  show() {
+    this.popup.style.display = 'block';
+  }
+
+  ask(params = {}) {
+    let subject = params.subject || 'Subject',
+    content = params.content || 'Content',
+    ok = params.ok || 'OK',
+    cancel = params.cancel || 'Cancel';
+
+    //set buttons text
+    this.okBtn.innerHTML = ok;
+    this.cancelBtn.innerHTML = cancel;
+
+    //set subject
+    this.subjectHolder.innerHTML = subject;
+
+    //set content
+    this.bodyHolder.innerHTML = content;
+
+    //show
+    this.show();
+
+    //return promise
+    return new Promise((resolve) => {
+      this.okBtn.onclick = () => {
+        this.killPromiseListeners();
+        this.hide();
+        resolve(true);
+        return;
+      };
+      this.cancelBtn.onclick = () => {
+        this.killPromiseListeners();
+        this.hide();
+        resolve(false);
+        return;
+      };
+
+      //if body was clicked outside popup - return false
+      document.body.onclick = (clkEvt) => {
+        if(clkEvt.target !== this.popup && !this.popup.contains(clkEvt.target)) {
+          this.killPromiseListeners();
+          this.hide();
+          resolve(false);
+          return;
+        }
+      };
+
+    });
+  }
+
+  killPromiseListeners() {
+    this.okBtn.onclick = null;
+    this.cancelBtn.onclick = null;
+    document.body.onclick = null;
+  }
+
+  make() {
+    this.makeSkeleton();
+    this.makeSubject();
+    this.makeBody();
+    this.makeButtons();
+  }
+
+  makeButtons() {
+    let buttonHolder = document.createElement('DIV');
+    buttonHolder.className = this.buttonHolderClass;
+    this.popup.appendChild(buttonHolder);
+
+    //make buttons
+    this.okBtn = document.createElement('BUTTON');
+    this.okBtn.className = this.OKbuttonClass;
+    buttonHolder.appendChild(this.okBtn);
+
+    this.cancelBtn = document.createElement('BUTTON');
+    this.cancelBtn.className = this.CancelButtonClass;
+    buttonHolder.appendChild(this.cancelBtn);
+  }
+
+  makeBody() {
+    this.bodyHolder = document.createElement('DIV');
+    this.bodyHolder.className = this.bodyClass;
+    this.popup.appendChild(this.bodyHolder);
+  }
+
+  makeSubject() {
+    this.subjectHolder = document.createElement('DIV');
+    this.subjectHolder.className = this.subjectClass;
+    this.popup.appendChild(this.subjectHolder);
+  }
+
+  makeSkeleton() {
+    this.popup = document.createElement('DIV');
+    this.popup.className = this.mainClass;
+    this.parent.appendChild(this.popup);
+  }
+
+}
+
 class Messager {
   constructor(opts = {}) {
     this.parent = opts.parent || document.body;

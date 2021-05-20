@@ -169,4 +169,63 @@ module.exports = (app) => {
     res.send(JSON.stringify(output));
   });
 
+
+
+  /*route to search for a description*/
+  app.post('/search/description/', async (req, res) => {
+    /*
+    get request body
+    should include id and type (book/wish/etc..)
+    */
+    const requestBody = basic.trimAllFormData(req.body);
+
+    const id = requestBody.id,
+    type = requestBody.type;
+    /*if not present return empty response*/
+    if(!id || !type) {
+      res.send(JSON.stringify(''));
+      return;
+    }
+
+    /*
+    needed data to get description:
+    ISBN
+    TITLE
+    AUTHOR
+
+    fetch data from DB based on type and ID
+    */
+
+    let dbInfo = '';
+
+    switch(type) {
+      case 'books':
+
+      dbInfo = await db.fetchBookById(id);
+
+      break;
+      case 'wishlist':
+
+      dbInfo = await db.fetchWishById(id);
+
+      break;
+
+      default:
+      /*unexpected - return empty string*/
+      res.send(JSON.stringify(''));
+      return;
+    }
+
+    /*use goodreads module to fetch description*/
+
+    res.send(JSON.stringify(
+      await goodReadsAPI.fetchDescription({
+        title: dbInfo.name,
+        author: dbInfo.author,
+        isbn: dbInfo.isbn
+      })
+    ));
+
+  });
+
 }

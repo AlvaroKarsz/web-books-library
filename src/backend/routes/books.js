@@ -38,7 +38,11 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.BOOKS_FOLDER_NAME,
-      displayer: entryDisplayer.build(bookData, settings.BOOKS_FOLDER_NAME, {bookRead:true, openPdf:true})
+      displayer: entryDisplayer.build(bookData, settings.BOOKS_FOLDER_NAME, {
+        bookRead:true,
+        openPdf:true,
+        fetchDescription: true
+      })
     }));
   });
 
@@ -543,4 +547,31 @@ module.exports = (app) => {
     await db.markBookAsRead(id, date, pages);
     res.redirect(referer);
   });
+
+
+
+  /*route to change description*/
+  app.post('/books/description/change', async (req, res) => {
+    /*
+    get request body
+    should include id and description
+    */
+    const requestBody = basic.trimAllFormData(req.body);
+
+    const id = requestBody.id,
+    desc = requestBody.desc;
+    /*if not present return error*/
+    if(!id || !desc) {
+      res.send(JSON.stringify(false));
+      return;
+    }
+
+    /*update DB*/
+    await db.changeBookDescription(id, desc);
+
+    /*send success message*/
+    res.send(JSON.stringify(true));
+    return;
+  });
+
 }

@@ -27,7 +27,7 @@ class BookDisplayer {
     output += this.addRedirectorArrow('right', data.nextListingId);
 
     /*add actions*/
-    output += this.addActions(data, actions);
+    output += this.addActions(data,type ,actions);
 
     /*add ratings*/
     output += this.buildRating(data);
@@ -321,7 +321,7 @@ class BookDisplayer {
     return output;
   }
 
-  addActions(data, actions) {
+  addActions(data, type , actions) {
     /*no actions - return empty string*/
     if(!actions || basic.isEmptyObject(actions)) {
       return '';
@@ -444,6 +444,14 @@ class BookDisplayer {
       `<p oneline='t'>Are you sure?</p>` +
       `<button type="submit" class="black-white-button" oneline='t'>I'm sure</button>` +
       `</form>` +
+      `</div>`;
+    }
+
+    /*option to search for a new description and save it in DB*/
+    if(actions.fetchDescription) {
+      output += `<div id='refresh-description' title="Search for a new Description" param-id="${data.id}" param-type="${type}">` +
+      `<i class="fa fa-asterisk"></i>` +
+      `<p>New Description</p>` +
       `</div>`;
     }
 

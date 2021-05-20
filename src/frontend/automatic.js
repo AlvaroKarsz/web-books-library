@@ -1,9 +1,105 @@
-(async () => {
+(() => {
   /*general frontend functions that should be used in every page*/
   showOverlayOnexit();
   showUrlMessage();
   listenToAdvancedBackupMenu();
+  listenToDescriptionReFetchAction();
 })()
+
+
+function listenToDescriptionReFetchAction() {
+  /*if page has refresh-description element, listen to clicks*/
+  let div = document.getElementById('refresh-description');
+  if(!div) {
+    return;
+  }
+
+  //get ID and type
+  let id = div.getAttribute('param-id'),
+  type = div.getAttribute('param-type');
+
+  if(!id || !type) {
+    return;
+  }
+
+  //build messager class & loader class & confirm class to show error messages and ask questions and show loading status
+
+  let loder = new Loader(document.body, {
+    autoPost: true,
+    withOverlay: true,
+    overlayClass: 'main-overlay',
+    cssForceLoader: {
+      margin: '0',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%) scale(1.8)'
+    }
+  }),
+
+  messager =  new Messager(),
+
+  confirmer = new Confirm();
+
+
+  div.onclick = async () => {
+    //show loader
+    loder.show();
+    //make http request to server with type and book
+    let req = await doHttpRequest('/search/description/', {
+      method:'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id:id,
+        type:type
+      })
+    });
+    //remove loader
+    loder.hide();
+    //error/nothing found - show msg and return
+    if(!req) {
+      messager.setError('Nothing Found...');
+      return;
+    }
+
+    //ask user if the new description should be saved
+    if( await confirmer.ask({
+      ok: 'Yes',
+      cancel: 'No',
+      content: req,
+      subject: 'Would you like to save this description?'
+    }) ) {
+      //save
+
+      //show loader
+      loder.show();
+
+      //make http request to server - change description
+      req = await doHttpRequest(`/${type}/description/change`, {
+        method:'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id:id,
+          desc: req
+        })
+      });
+
+      loder.hide();
+      //error - show msg and return
+      if(!req) {
+        messager.setError('Could not save new Description');
+        return;
+      }
+
+      //reload - shoulf load new description
+      this.location.reload();
+    }
+  };
+}
+
 
 function listenToAdvancedBackupMenu() {
   let a = document.getElementById('backup-files-a'),
