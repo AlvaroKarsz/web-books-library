@@ -313,7 +313,7 @@ class dbFunctions {
       query += " id DESC "
       break;
       default:
-      query += ' id ';
+      query += ' id DESC ';
       break;
     }
     //first get count
@@ -387,7 +387,7 @@ class dbFunctions {
       query += " id DESC "
       break;
       default:
-      query += ' id ';
+      query += ' id DESC ';
       break;
     }
 
@@ -578,7 +578,7 @@ class dbFunctions {
       query += " parent.name DESC "
       break;
       default:
-      query += ' main.id ';
+      query += ' main.id DESC ';
       break;
     }
     //first get count
@@ -663,7 +663,7 @@ class dbFunctions {
       query += " id DESC "
       break;
       default:
-      query += ' id ';
+      query += ' id DESC ';
       break;
     }
     //first get count
@@ -743,7 +743,7 @@ class dbFunctions {
       query += " order_date::DATE "
       break;
       default:
-      query += ' id ';
+      query += ' order_date::DATE ';
       break;
     }
     //first get count
@@ -1075,7 +1075,7 @@ class dbFunctions {
           }
         }
 
-        
+
         if(!additionalIsbn) {
           /*no luck - no isbn found*/
           /*clear rating and return clearRating "exit code"*/
