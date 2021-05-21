@@ -204,8 +204,6 @@ module.exports = (app) => {
 
     /*delete md5sum from cache*/
     await db.deleteMD5(settings.WISH_LIST_FOLDER_NAME,id);
-    /*delete ratings*/
-    await db.deleteRatings('wish_list',id);
     /*delete wish*/
     await db.deleteWish(id);
     /*delete picture*/

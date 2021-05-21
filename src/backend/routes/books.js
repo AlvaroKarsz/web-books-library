@@ -352,8 +352,6 @@ module.exports = (app) => {
     if(existingWishId) {
       /*delete entry from wish_list*/
       await db.deleteWish(existingWishId);
-      /*delete ratings table*/
-      await db.deleteRatings('wish_list', existingWishId);
       /*delete md5sum hash from cache table*/
       await db.deleteMD5(settings.WISH_LIST_FOLDER_NAME, existingWishId);
 
