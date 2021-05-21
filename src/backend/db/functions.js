@@ -667,7 +667,7 @@ class dbFunctions {
       query += " id DESC "
       break;
       default:
-      query += ' id DESC ';
+      query += ' read_order DESC ';
       break;
     }
     //first get count
