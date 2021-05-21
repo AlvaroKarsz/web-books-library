@@ -5,6 +5,7 @@
     pagesInp: document.getElementById('story-pages'),
     coverHolder: document.getElementById('cover-element-holder'),
     collectionHolder: document.getElementById('collection-holder'),
+    descriptionInp: document.getElementById('story-description'),
     autoFillHolder: document.getElementById('auto-fill'),
     saveBtn: document.getElementById('save')
   };
@@ -15,6 +16,24 @@
     selectName: 'Collection',
     actionScript: '/collectionList'
   }),
+
+  /*autoFill = new AutoFill(els.autoFillHolder, {
+    checkParamsCallback: () => {
+      return els.titleInp.value && (els.authorInp.value || collectionE.get().value)
+    },
+    getParamsCallback: () => {
+      return {
+        title: els.titleInp.value,
+        author: els.authorInp.value,
+        collection: collectionE.get().value
+      };
+    },
+    actionScript: '/search/story/',
+    checkParamsErrorMessage: 'Please fiil Title and Author or Collection',
+    inputsToFill: {
+      description: els.descriptionInp
+    }
+  }),*/
 
   coverEl = new CoverSelector(els.coverHolder, {
     getSearchCoverParamsCallback: () => {
@@ -43,6 +62,7 @@
     if(currentData) {//enter current data into relevant inputs
       //start with standard data (normal inputs)
       addValueToInput(currentData.name, els.titleInp);
+      addValueToInput(currentData.description, els.descriptionInp);
       addValueToInput(currentData.story_author ? currentData.story_author : currentData.author , els.authorInp);
       addValueToInput(currentData.pages, els.pagesInp);
       //add collection
@@ -58,12 +78,13 @@
 
 
   els.saveBtn.onclick = () => {
-    saveWish({
+    saveStory({
       values: {
         id: currentId,
         title: els.titleInp.value,
         author: els.authorInp.value,
         pages: els.pagesInp.value,
+        description: els.descriptionInp.value,
         collectionId: collectionE.get(),
         cover: coverEl.getSelected()
       },
@@ -74,7 +95,7 @@
   };
 })()
 
-async function saveWish(opts) {
+async function saveStory(opts) {
   if(!validValue(opts.values.title)) {
     opts.messager.setError("Please fill Title Input");
     return;

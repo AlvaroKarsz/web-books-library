@@ -193,6 +193,7 @@ module.exports = (app) => {
     TITLE
     AUTHOR
 
+    (TITLE AND AUTHOR FOR STORIES)
     fetch data from DB based on type and ID
     */
 
@@ -210,12 +211,18 @@ module.exports = (app) => {
 
       break;
 
+      case 'stories':
+
+      dbInfo = await db.fetchStoryById(id);
+      dbInfo.author = dbInfo.story_author ? dbInfo.story_author : dbInfo.author;/*use story author if exist*/
+
+      break;
+
       default:
       /*unexpected - return empty string*/
       res.send(JSON.stringify(''));
       return;
     }
-
     /*use goodreads module to fetch description*/
 
     res.send(JSON.stringify(

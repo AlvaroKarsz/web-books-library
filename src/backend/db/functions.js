@@ -59,6 +59,10 @@ class dbFunctions {
     await pg.query('UPDATE my_books SET description=$1 WHERE id = $2;', [description, id]);
   }
 
+  async changeStoryDescription(id, description) {
+    await pg.query('UPDATE stories SET description=$1 WHERE id = $2;', [description, id]);
+  }
+
   async changeWishDescription(id, description) {
     await pg.query('UPDATE wish_list SET description=$1 WHERE id = $2;', [description, id]);
   }
@@ -787,10 +791,11 @@ class dbFunctions {
       name,
       pages,
       parent,
+      description,
       author
-    ) VALUES ($1, $2, $3, ${storyJson.author ? '$4' : 'NULL' })
+    ) VALUES ($1, $2, $3, $4, ${storyJson.author ? '$5' : 'NULL' })
     RETURNING id;`;//if author is empty, insert NULL insted - indicated to use collection's author
-    let queryArguments = [storyJson.title, storyJson.pages, storyJson.collectionId.value];
+    let queryArguments = [storyJson.title, storyJson.pages, storyJson.collectionId.value, storyJson.description];
     if(storyJson.author) {
       queryArguments.push(storyJson.author);
     }
@@ -1097,6 +1102,11 @@ class dbFunctions {
 
       await this.insertRatingIntoDB(rating.rating, rating.count, additionalIsbn, id, tableName);
       return true;
+    }
+
+    async getStoryAuthorFromStoryId(id) {
+      let res = await pg.query(`SELECT mn.author FROM my_books mn WHERE mn.id = (SELECT strs.parent FROM stories strs WHERE strs.id = $1);`, [id]);
+      return res.rows[0].author;
     }
 
     async clearRating(id, table) {
@@ -1757,6 +1767,7 @@ class dbFunctions {
                       my_stories_main.read_date AS read_date,
                       my_stories_main.read_order AS read_order,
                       my_stories_main.completed AS read_completed,
+                      my_stories_main.description AS description,
                       my_books_main.year AS year,
                       my_books_main.name AS collection_name,
                       (
@@ -1815,6 +1826,7 @@ class dbFunctions {
                       my_stories_main.name,
                       my_stories_main.pages,
                       my_stories_main.author,
+                      my_stories_main.description,
                       my_books_main.id,
                       my_books_main.name,
                       my_books_main.year,
@@ -2212,8 +2224,8 @@ class dbFunctions {
                           ALTER STORY IN DB
                           *********************************************************************************************/
                           let paramsCounter = 0;
-                          let query = `UPDATE stories SET name = $${++paramsCounter}, pages = $${++paramsCounter}, parent = $${++paramsCounter}, author `;
-                          let queryArguments = [storyJson.title, storyJson.pages, storyJson.collectionId.value];
+                          let query = `UPDATE stories SET description=$${++paramsCounter}, name = $${++paramsCounter}, pages = $${++paramsCounter}, parent = $${++paramsCounter}, author `;
+                          let queryArguments = [storyJson.description, storyJson.title, storyJson.pages, storyJson.collectionId.value];
 
                           if(storyJson.author) {/*different author than collection*/
                             query += `=$${++paramsCounter} `;
