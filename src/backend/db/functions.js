@@ -1517,7 +1517,15 @@ class dbFunctions {
 
                         (
                           SELECT name FROM wish_list WHERE serie = $7 AND serie_num = $8
-                        ) AS serie_prev_name
+                        ) AS serie_prev_name,
+
+                        (
+                          SELECT serie_num FROM wish_list WHERE serie = $9 AND serie_num = $10
+                        ) AS serie_next_num,
+
+                        (
+                          SELECT serie_num FROM wish_list WHERE serie = $11 AND serie_num = $12
+                        ) AS serie_prev_num
                         ;`;
 
                         let seriesResult = await pg.query(query, [
@@ -1529,6 +1537,10 @@ class dbFunctions {
                           parseInt(result.serie_num,10) - 1,
                           result.serie_id,
                           parseInt(result.serie_num,10) - 1,
+                          result.serie_id,
+                          parseInt(result.serie_num,10) + 1,
+                          result.serie_id,
+                          parseInt(result.serie_num,10) - 1
                         ]);
                         seriesResult = seriesResult.rows[0];
                         //merge results
