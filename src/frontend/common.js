@@ -614,7 +614,7 @@ class CoverUploader {
   }
 
   getSelected() {
-    return this.image.src;
+    return this.image.getAttribute('src');
   }
 
   addImage(img) {
@@ -672,6 +672,7 @@ class CoverSelector {
     this.defaultPictureClass = opts.selectedImageClassForUploder || 'uploaded-picture-img';
     this.uploadTitle = 'Upload';
     this.searchTitle = 'Search';
+    this.urlTitle = 'Link';
     this.errorIsShown = false;
     this.defaultCover = null;
     this.build();
@@ -726,7 +727,7 @@ class CoverSelector {
   }
 
   buildOptionChanger() {
-    this.tabsPointer = new Tabs(this.parent, [this.uploadTitle, this.searchTitle], {
+    this.tabsPointer = new Tabs(this.parent, [this.uploadTitle, this.searchTitle, this.urlTitle], {
       buttonHolderClass: this.buttonHolderTableCoverSelectorClass,
       default: this.uploadTitle
     });
@@ -847,6 +848,7 @@ class CoverSelector {
   makeFeatures() {
     this.makeUploader();
     this.makeSearcher();
+    this.makeLinkFetcher();
   }
 
   getSelected() {
@@ -859,6 +861,9 @@ class CoverSelector {
     }
     if(activeFeature === this.searchTitle) {
       return this.coverSearcher.getSelected();
+    }
+    if(activeFeature === this.urlTitle) {
+      return this.linkFetcher.getSelected();
     }
     return '';//nothing
   }
@@ -895,6 +900,12 @@ class CoverSelector {
       coverSelector: this,
       coverSelectorSelectMessageClassForce: this.coverSelectorSelectMessageClassForce,
       selectedPictureClass : this.selectedImageClassForUploder
+    });
+  }
+
+  makeLinkFetcher() {
+    this.linkFetcher = new LinkFetcher(this.tabsPointer.getTab(this.urlTitle), {
+      imageClass: this.selectedImageClassForUploder
     });
   }
 
@@ -942,6 +953,79 @@ class CoverSelector {
     this.titleElement.innerHTML = this.title;
     this.titleElement.className = this.titleClass;
     this.parent.appendChild(this.titleElement);
+  }
+}
+
+class LinkFetcher {
+  constructor(parent, opts = {}) {
+    this.parent = parent;
+    this.src = '';
+    this.holderClass = opts.holderClass || 'link-fetcher-main-class';
+    this.buttonText = opts.buttonText || 'Fetch';
+    this.buttonClass = opts.buttonClass || 'black-white-button';
+    this.inputPlaceholder = opts.inputPlaceholder || 'Enter Picture Link';
+    this.imageClass = opts.imageClass || 'link-fetcher-main-class-img';
+    this.build();
+    this.activate();
+  }
+
+  activate() {
+    this.button.onclick = () => {
+      this.getImg();
+      this.setImg();
+    };
+
+    this.input.onkeyup = (k) => {
+      if(k.keyCode === 13) {//enter
+        this.getImg();
+        this.setImg();
+      }
+    };
+  }
+
+  getSelected() {
+    return this.src;
+  }
+
+  getImg() {
+    let src = this.input.value;
+    if(!src) {
+      return;
+    }
+    this.src = src;
+  }
+
+  setImg() {
+    if(this.src) {
+      this.img.src = this.src;
+      this.showImg();
+    }
+  }
+
+  build() {
+    this.body = document.createElement('DIV');
+    this.input = document.createElement('INPUT');
+    this.button = document.createElement('BUTTON');
+    this.img = document.createElement('IMG');
+
+    this.img.className = this.imageClass;
+    this.body.className = this.holderClass;
+    this.button.className = this.buttonClass;
+    this.button.innerHTML = this.buttonText;
+    this.input.placeholder = this.inputPlaceholder;
+    this.body.appendChild(this.input);
+    this.body.appendChild(this.button);
+    this.body.appendChild(this.img);
+    this.parent.appendChild(this.body);
+    this.hideImg();
+  }
+
+  hideImg() {
+    this.img.style.display = 'none';
+  }
+
+  showImg() {
+    this.img.style.display = 'block';
   }
 }
 

@@ -652,7 +652,7 @@ img:hover {
   margin-top: 20px;
 }
 
-.auto-search-selected-img, .uploaded-picture-img {
+.auto-search-selected-img, .uploaded-picture-img, .link-fetcher-main-class-img {
   width: 240px !important;
   height: 315px !important;
 }
@@ -933,7 +933,8 @@ img:hover {
   position: relative;
   height: 50px;
   left: 50%;
-  transform: translateX(-40%);
+  width: 100%;
+  transform: translateX(-50%);
 }
 
 .tab {
@@ -951,12 +952,12 @@ img:hover {
   display: block;
   float: left;
   font-family: "open sans";
-  font-size: 16px;
+  font-size: 14px;
   height: 40px;
   line-height: 35px;
   margin-right: 1px;
   text-align: center;
-  width: 30%;
+  width: 24%;
   max-width: 130px;
   opacity: 0.8;
   transition: all 0.4s;
@@ -1626,4 +1627,20 @@ img:hover {
 
 #move-ebook-bookmark input {
   width:110px;
+}
+
+.link-fetcher-main-class input{
+  visibility: visible;
+  display: inline-block;
+  opacity: 1;
+  padding: 5px;
+  margin-bottom: 10px;
+  font-size: 15px;
+  width: 280px;
+  margin-right: 10px;
+  max-width: 100%;
+}
+
+.link-fetcher-main-class button {
+  display: inline-block;
 }
