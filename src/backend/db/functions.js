@@ -2373,7 +2373,7 @@ class dbFunctions {
 
 
                           /********************************************************************************************
-                          MARK BOOK AS READ
+                          MARK BOOK AS READ (RESET BOOKMARK (page_tracker_ebook) JUST IN CASE THIS IS AN EBOOK WITH BOOKMARK)
                           *********************************************************************************************/
                           let queryParams = [];
                           let queryCounter = 0;
@@ -2383,6 +2383,7 @@ class dbFunctions {
                               SELECT read_order FROM my_books WHERE read_order IS NOT NULL ORDER BY read_order DESC LIMIT 1
                             ) + 1
                           ),
+                          page_tracker_ebook = NULL,
                           read_date = $${++queryCounter},
                           completed = `;
                           queryParams.push(date);
