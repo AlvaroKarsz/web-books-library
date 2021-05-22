@@ -256,13 +256,13 @@ class dbFunctions {
 
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(author) ~ $');
-      params.push(authorFilter);
+      filters.push('UPPER(author) LIKE $');
+      params.push(`%${authorFilter}%`);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(name) ~ $');
-      params.push(titleFilter);
+      filters.push('UPPER(name) LIKE $');
+      params.push(`%${titleFilter}%`);
     }
 
     let conditions = "";
@@ -344,13 +344,13 @@ class dbFunctions {
 
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(author) ~ $');
-      params.push(authorFilter);
+      filters.push('UPPER(author) LIKE $');
+      params.push(`%${authorFilter}%`);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(name) ~ $');
-      params.push(titleFilter);
+      filters.push('UPPER(name) LIKE $');
+      params.push(`%${titleFilter}%`);
     }
     let conditions = " WHERE ordered = 'f' ";
 
@@ -437,13 +437,13 @@ class dbFunctions {
 
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(main.author) ~ $');
-      params.push(authorFilter);
+      filters.push('UPPER(main.author) LIKE $');
+      params.push(`%${authorFilter}%`);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(main.name) ~ $');
-      params.push(titleFilter);
+      filters.push('UPPER(main.name) LIKE $');
+      params.push(`%${titleFilter}%`);
     }
     let conditions = '';
     if(filters.length) {//we have filters
@@ -518,13 +518,13 @@ class dbFunctions {
     ON main.parent = parent.id `;
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(COALESCE(main.author , parent.author)) ~ $');
-      params.push(authorFilter);
+      filters.push('UPPER(COALESCE(main.author , parent.author)) LIKE $');
+      params.push(`%${authorFilter}%`);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(main.name) ~ $');
-      params.push(titleFilter);
+      filters.push('UPPER(main.name) LIKE $');
+      params.push(`%${titleFilter}%`);
     }
     let conditions = '';
     if(filters.length) {//we have filters
@@ -609,13 +609,13 @@ class dbFunctions {
 
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(author) ~ $');
-      params.push(authorFilter);
+      filters.push('UPPER(author) LIKE $');
+      params.push(`%${authorFilter}%`);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(name) ~ $');
-      params.push(titleFilter);
+      filters.push('UPPER(name) LIKE $');
+      params.push(`%${titleFilter}%`);
     }
     let condition = " WHERE read_order IS NOT NULL ";
     if(filters.length) {//we have filters
@@ -694,13 +694,13 @@ class dbFunctions {
 
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(author) ~ $');
-      params.push(authorFilter);
+      filters.push('UPPER(author) LIKE $');
+      params.push(`%${authorFilter}%`);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(name) ~ $');
-      params.push(titleFilter);
+      filters.push('UPPER(name) LIKE $');
+      params.push(`%${titleFilter}%`);
     }
     let conditions = " WHERE ordered = 't' ";
     if(filters.length) {//we have filters
