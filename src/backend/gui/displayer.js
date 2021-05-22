@@ -233,12 +233,12 @@ class BookDisplayer {
 
     /*add previous book in series if exists*/
     if(data.prev.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Story: ${data.prev.name}</p><p>Number: ${basic.toInt(data.collection_number) - 1}</p><img src="/pic/stories/${data.prev.id}" onclick = "${this.buildJSRedirector(data.prev.id)}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Story: ${data.prev.name}</p><p>Number: ${basic.toInt(data.collection_number) - 1}</p><img src="/pic/stories/${data.prev.id}" onclick = "window.location = '${data.prev.id}'"></div>`;
     }
 
     /*add next book in series if exists*/
     if(data.next.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Story: ${data.next.name}</p><p>Number: ${basic.toInt(data.collection_number) + 1}</p><img src="/pic/stories/${data.next.id}" onclick = "${this.buildJSRedirector(data.next.id)}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Story: ${data.next.name}</p><p>Number: ${basic.toInt(data.collection_number) + 1}</p><img src="/pic/stories/${data.next.id}" onclick = "window.location = '${data.next.id}'"></div>`;
     }
 
     /*close main divs*/
@@ -270,12 +270,12 @@ class BookDisplayer {
 
     /*add previous book in series if exists*/
     if(data.prev.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Book: ${data.prev.name}</p><p>Number: ${data.prev.num}</p><img src="/pic/${type}/${data.prev.id}" onclick = "${this.buildJSRedirector(data.prev.id)}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Book: ${data.prev.name}</p><p>Number: ${data.prev.num}</p><img src="/pic/${type}/${data.prev.id}" onclick = "window.location = '${data.prev.id}'"></div>`;
     }
 
     /*add next book in series if exists*/
     if(data.next.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Book: ${data.next.name}</p><p>Number: ${data.next.num}</p><img src="/pic/${type}/${data.next.id}" onclick = "${this.buildJSRedirector(data.next.id)}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Book: ${data.next.name}</p><p>Number: ${data.next.num}</p><img src="/pic/${type}/${data.next.id}" onclick = "window.location='${data.next.id}'"></div>`;
     }
 
     /*close main divs*/
