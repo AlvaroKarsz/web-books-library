@@ -13,6 +13,24 @@ class Basic {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
+  setGlobalParam(name, value) {
+    global[name] = value;
+  }
+
+  getGlobalParam(name) {
+    return global[name];
+  }
+
+  /*random number between -1 and 1*/
+  generateSeedForPostgreSql() {
+    return Math.random() *
+    (
+      Math.round(
+        Math.random()
+      ) * 2 - 1
+    );
+  }
+
   readDateForDB(date) {
     /*
     Examples for valid dates:
@@ -362,7 +380,7 @@ class Basic {
   sleep(t) {
     return new Promise(res => setTimeout(res, t));
   }
-  
+
   doTrim(a) {
     return !this.isBool(a) && !this.isNumber(a) && !this.isNull(a) && this.exists(a) ? a.trim() : a;
   }

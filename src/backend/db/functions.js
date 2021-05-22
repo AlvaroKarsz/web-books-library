@@ -316,7 +316,7 @@ class dbFunctions {
       query += " id DESC "
       break;
       default:
-      query += ' id DESC ';
+      query += ' RANDOM() ';
       break;
     }
     //first get count
@@ -390,7 +390,7 @@ class dbFunctions {
       query += " id DESC "
       break;
       default:
-      query += ' id DESC ';
+      query += ' RANDOM() ';
       break;
     }
 
@@ -488,7 +488,7 @@ class dbFunctions {
       query += " wished_books "
       break;
       default:
-      query += ' main.id ';
+      query += ' RANDOM() ';
       break;
     }
     //first get count
@@ -581,7 +581,7 @@ class dbFunctions {
       query += " parent.name DESC "
       break;
       default:
-      query += ' main.id DESC ';
+      query += ' RANDOM() ';
       break;
     }
     //first get count
@@ -666,7 +666,7 @@ class dbFunctions {
       query += " id DESC "
       break;
       default:
-      query += ' read_order DESC ';
+      query += ' RANDOM() ';
       break;
     }
     //first get count
@@ -746,7 +746,7 @@ class dbFunctions {
       query += " order_date::DATE "
       break;
       default:
-      query += ' order_date::DATE ';
+      query += ' RANDOM() ';
       break;
     }
     //first get count
@@ -2428,6 +2428,10 @@ class dbFunctions {
                             */
                             moreStoriesToUpdateFlag = tmpResultHolder.rowCount;
                           }
+                        }
+
+                        async setSeed(seed) {
+                          await pg.query(`SELECT SETSEED($1)`, [seed]);
                         }
                       };
 
