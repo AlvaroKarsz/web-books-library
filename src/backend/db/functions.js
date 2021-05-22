@@ -81,11 +81,6 @@ class dbFunctions {
     return res.rows;
   }
 
-  async getCollectionFromStory(storyId) {
-    let res = await pg.query(`SELECT parent FROM stories WHERE id = $1;`, [storyId]);
-    return res.rows[0].parent;
-  }
-
   async getNumberOfStories(collectionId) {
     let res = await pg.query(`SELECT COUNT(1) FROM stories WHERE parent = $1;`, [collectionId]);
     return res.rows[0].count;
@@ -202,6 +197,10 @@ class dbFunctions {
   async getStoryCollectionById(id) {
     let res = await pg.query(`SELECT parent FROM stories WHERE id = $1;`, [id]);
     return res.rows[0].parent;
+  }
+
+  async moveBookMark(id, page) {
+    await pg.query(`UPDATE my_books SET page_tracker_ebook = $1 WHERE id = $2;`, [page, id]);
   }
 
   async getStoryIdFromDetails(details) {
@@ -1333,6 +1332,13 @@ class dbFunctions {
                 return result;
               }
 
+              async checkIfEbookNotCompleted(id) {
+                const query = "SELECT EXISTS(SELECT 1 FROM my_books WHERE id=$1 AND type = $2 AND read_order IS NULL);";
+                let result = await pg.query(query, [id, 'E']);
+                result = result.rows[0]['exists'];
+                return result;
+              }
+
               async checkIfIsbnExistsInWishList(isbn, idToExclude = null) {
                 let query = `SELECT EXISTS(
                   SELECT 1 FROM wish_list WHERE UPPER(isbn)=$1 `;
@@ -1567,6 +1573,7 @@ class dbFunctions {
                       my_books_main.year AS year,
                       my_books_main.author AS author,
                       my_books_main.store AS store,
+                      my_books_main.page_tracker_ebook AS bookmark,
                       my_books_main.description AS description,
                       my_books_main.language AS language,
                       my_books_main.original_language AS o_language,
@@ -1637,6 +1644,7 @@ class dbFunctions {
                       my_books_main.completed,
                       my_books_main.collection,
                       my_books_main.description,
+                      my_books_main.page_tracker_ebook,
                       series_table.name,
                       my_books_main.listed_date,
                       my_books_entry1.id,
@@ -2348,7 +2356,7 @@ class dbFunctions {
                           CHECK IF COLLECTION IS COMPLETED, AND MARK AS COMPLETED IF SO
                           *********************************************************************************************/
                           /*get collection id*/
-                          let collectionId = await this.getCollectionFromStory(id);
+                          let collectionId = await this.getStoryCollectionById(id);
 
                           if(await this.allStoriesAreRead(collectionId)) {
                             await this.markCollectionAsRead(collectionId);

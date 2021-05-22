@@ -42,7 +42,8 @@ module.exports = (app) => {
         bookRead:true,
         openPdf:true,
         fetchDescription: true,
-        fetchRating: true
+        fetchRating: true,
+        Ebookmark: true
       })
     }));
   });
@@ -599,6 +600,59 @@ module.exports = (app) => {
       message += 'New Rating was saved';//add message
       res.redirect(basic.buildRefererUrl(referer, message, false));
     }
+  });
+
+
+  /*route to move bookmark - relevant only for ebooks that were not completed!!*/
+  app.post('/books/bookmark/:id', async (req, res) => {
+    /*
+    get request body
+    should include current page
+    */
+    const requestBody = basic.trimAllFormData(req.body),
+    page = requestBody.page.trim();
+
+    /*get id from url*/
+    const id =  req.params.id;
+
+
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    message = '';
+
+
+    /*validate input data*/
+
+    /*check if book id exists, and this is an uncompleted ebook*/
+    if( ! await db.checkIfEbookNotCompleted(id) ) {
+      /*send error*/
+      message += 'Bookmarks can be used on non-completed E-Books only.';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+
+    /*validate page number - should be integer*/
+    if(!basic.isDigits(page)) {
+      message += 'Invalid number of pages.';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+
+    /*validate pages - should not be bigger than total number of pages*/
+    if( basic.isBiggerInt(page, await db.getBookPages(id)) ) {
+      message += 'Page exceeded total number of pages in E-Book.';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+
+    /*save page*/
+    await db.moveBookMark(id, page);
+
+    /*return sucess msg*/
+    message += 'Bookmark Saved.';
+    res.redirect(basic.buildRefererUrl(referer, message, false));
+    return;
   });
 
 }

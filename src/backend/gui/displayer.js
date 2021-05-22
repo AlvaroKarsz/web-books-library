@@ -98,15 +98,22 @@ class BookDisplayer {
     relevant for owned books and stories
     add read number + read time + was completed
     if not relevant return empty string
+
+    if this is a ebook, it may have bookmark argument, meaning user is currently reading it
     */
     let output = '';
-    if(!data.read_order) {
+    if(!data.read_order && !data.bookmark) {
       return output;
     }
     output += '<div class="general-holder-book-displayer">Read Details';
-    output += this.echoDisplayLine(`Read Order (${basic.capitalize(type)}): ` , data.read_order);
-    output += this.echoDisplayLine('Read Time: ' , data.read_date);
-    output += this.echoDisplayLine('Was Completed: ' , data.read_completed === null ? 'Yes' : `No, Only ${data.read_completed}/${data.pages} were read`);
+    /*normal book - was completed*/
+    if(data.read_order) {
+      output += this.echoDisplayLine(`Read Order (${basic.capitalize(type)}): ` , data.read_order);
+      output += this.echoDisplayLine('Read Time: ' , data.read_date);
+      output += this.echoDisplayLine('Was Completed: ' , data.read_completed === null ? 'Yes' : `No, Only ${data.read_completed}/${data.pages} were read`);
+    } else if (data.bookmark) {/*ebook, is currently been read*/
+      output += this.echoDisplayLine(`Bookmark: Page ` , data.bookmark);
+    }
     output += '</div>';
     return output;
   }
@@ -404,9 +411,11 @@ class BookDisplayer {
     if(actions.openPdf) {
       if(data.type === 'E') {
         output += `<div title="Open This Book in Browser" ` +
-        `onclick = "window.open('/ebook/${data.id}')"` +
+        `onclick = "window.open('/ebook/${data.id}` +
+        (data.bookmark ? `#page=${data.bookmark}` : '') + /*if this ebook has a bookmark, open book in relevant page*/
+        `')"` +
         `>` +
-        `<i class="fa fa-bookmark"></i>` +
+        `<i class="fa fa-file-pdf-o"></i>` +
         `<p>Open This Book</p>` +
         `</div>`;
       }
@@ -464,97 +473,116 @@ class BookDisplayer {
       `</div>`;
     }
 
-    output += '</div>';
-    return output;
-  }
-
-  echoDisplayLine(prevLine, param, ops = {}) {
-    if(!param) {//no param - return empty string
-      return '';
-    }
-
-    /*
-    ops options:
-    max: maximun number of digits, anything above will be replaced with ...
-    add title with full value
-    */
-    let isTruncated = false, finalParam = param;
-
-    if(ops.max) {
-      if(param.length > ops.max) {
-        finalParam = param.slice(0, ops.max) + '...';
-        isTruncated = true
+    /*bookmark ebooks, mark the current page to read*/
+    if(actions.Ebookmark) {
+      if(data.type === 'E') {/*relevant only for ebooks*/
+        if(!data.read_order) {/*relevant only for ebook that weren't completed yet*/
+        output += `<div title="Click To change bookmark">` +
+        `<label for='e-book-bookmark'>` +
+        `<i class="fa fa-bookmark"></i>` +
+        `</label>` +
+        `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'e-book-bookmark'>` +
+        `<p>Bookmark</p>` +
+        `<form action="/books/bookmark/${data.id}" method="post" id = 'move-ebook-bookmark'>` +
+        `<input name="page" placeholder="Current Page" type="number" required>` +
+        `<button type="submit" class="black-white-button" oneline='t'>Save</button>` +
+        `</form>` +
+        `</div>`;
       }
     }
-
-    return `<div class="displayer-body-line" ${isTruncated ? 'title=' + param : '' }>${prevLine}${finalParam}</div>`;
   }
 
-  buildJSRedirector(id) {
-    return `window.location = ${id} + window.location.search`;
+  output += '</div>';
+  return output;
+}
+
+echoDisplayLine(prevLine, param, ops = {}) {
+  if(!param) {//no param - return empty string
+    return '';
   }
 
-  buildCollectionDisplayer(stories) {
-    if(!stories) {//this is not a sotries collection
-      return '';
+  /*
+  ops options:
+  max: maximun number of digits, anything above will be replaced with ...
+  add title with full value
+  */
+  let isTruncated = false, finalParam = param;
+
+  if(ops.max) {
+    if(param.length > ops.max) {
+      finalParam = param.slice(0, ops.max) + '...';
+      isTruncated = true
     }
-    let output = `<div class = "general-holder-book-displayer">Collection: (${stories.length} Stories)<div class = "folder-pictures-holder">`;
-    stories.forEach((stry) => {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${stry.name} by ${stry.author}</p><img src="/pic/stories/${stry.id}" onclick = "window.location='/stories/' + ${stry.id}"></div>`;
+  }
+
+  return `<div class="displayer-body-line" ${isTruncated ? 'title=' + param : '' }>${prevLine}${finalParam}</div>`;
+}
+
+buildJSRedirector(id) {
+  return `window.location = ${id} + window.location.search`;
+}
+
+buildCollectionDisplayer(stories) {
+  if(!stories) {//this is not a sotries collection
+    return '';
+  }
+  let output = `<div class = "general-holder-book-displayer">Collection: (${stories.length} Stories)<div class = "folder-pictures-holder">`;
+  stories.forEach((stry) => {
+    output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${stry.name} by ${stry.author}</p><img src="/pic/stories/${stry.id}" onclick = "window.location='/stories/' + ${stry.id}"></div>`;
+  });
+  /*close main div*/
+  output += '</div></div>';
+  return output;
+}
+
+buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks) {
+  let output = '';
+  if(!books && !booksRead && !wishBooks && !purchasedBooks) {//this is not a serie - return empty string
+    return output;
+  }
+  /*add owned serie books*/
+  if(books) {
+    output += `<div class = "general-holder-book-displayer">${books.length} Owned Books: <div class = "folder-pictures-holder">`
+    books.forEach((book) => {
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/books/${book.id}" onclick = "window.location='/books/' + ${book.id}"></div>`;
     });
     /*close main div*/
     output += '</div></div>';
-    return output;
   }
 
-  buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks) {
-    let output = '';
-    if(!books && !booksRead && !wishBooks && !purchasedBooks) {//this is not a serie - return empty string
-      return output;
-    }
-    /*add owned serie books*/
-    if(books) {
-      output += `<div class = "general-holder-book-displayer">${books.length} Owned Books: <div class = "folder-pictures-holder">`
-      books.forEach((book) => {
-        output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/books/${book.id}" onclick = "window.location='/books/' + ${book.id}"></div>`;
-      });
-      /*close main div*/
-      output += '</div></div>';
-    }
-
-    /*add purchased books*/
-    if(purchasedBooks) {
-      output += `<div class = "general-holder-book-displayer">${purchasedBooks.length} Purchased Books: <div class = "folder-pictures-holder">`
-      purchasedBooks.forEach((book) => {
-        output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/wishlist/${book.id}" onclick = "window.location='/wishlist/' + ${book.id}"></div>`;
-      });
-      /*close main div*/
-      output += '</div></div>';
-    }
-
-    /*add wished books*/
-    if(wishBooks) {
-      output += `<div class = "general-holder-book-displayer">${wishBooks.length} Books in Wishlist: <div class = "folder-pictures-holder">`
-      wishBooks.forEach((book) => {
-        output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/wishlist/${book.id}" onclick = "window.location='/wishlist/' + ${book.id}"></div>`;
-      });
-      /*close main div*/
-      output += '</div></div>';
-    }
-
-    /*add read books*/
-    if(booksRead) {
-      output += `<div class = "general-holder-book-displayer">${booksRead.length} Books Read: <div class = "folder-pictures-holder">`
-      booksRead.forEach((book) => {
-        output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/books/${book.id}" onclick = "window.location='/books/' + ${book.id}"></div>`;
-      });
-      /*close main div*/
-      output += '</div></div>';
-    }
-
-    return output;
-
+  /*add purchased books*/
+  if(purchasedBooks) {
+    output += `<div class = "general-holder-book-displayer">${purchasedBooks.length} Purchased Books: <div class = "folder-pictures-holder">`
+    purchasedBooks.forEach((book) => {
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/wishlist/${book.id}" onclick = "window.location='/wishlist/' + ${book.id}"></div>`;
+    });
+    /*close main div*/
+    output += '</div></div>';
   }
+
+  /*add wished books*/
+  if(wishBooks) {
+    output += `<div class = "general-holder-book-displayer">${wishBooks.length} Books in Wishlist: <div class = "folder-pictures-holder">`
+    wishBooks.forEach((book) => {
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/wishlist/${book.id}" onclick = "window.location='/wishlist/' + ${book.id}"></div>`;
+    });
+    /*close main div*/
+    output += '</div></div>';
+  }
+
+  /*add read books*/
+  if(booksRead) {
+    output += `<div class = "general-holder-book-displayer">${booksRead.length} Books Read: <div class = "folder-pictures-holder">`
+    booksRead.forEach((book) => {
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/books/${book.id}" onclick = "window.location='/books/' + ${book.id}"></div>`;
+    });
+    /*close main div*/
+    output += '</div></div>';
+  }
+
+  return output;
+
+}
 }
 
 module.exports = new BookDisplayer();

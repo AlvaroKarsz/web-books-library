@@ -1619,3 +1619,11 @@ img:hover {
   margin-left: 30px;
   margin-right: 30px;
 }
+
+#move-ebook-bookmark {
+  margin-left: -4px;
+}
+
+#move-ebook-bookmark input {
+  width:110px;
+}
