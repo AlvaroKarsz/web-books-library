@@ -196,8 +196,8 @@ module.exports = (app) => {
 
     /*check arrival date validity, if empty, set the default one - today's date*/
     if(requestBody.arrivalDate) {
-      /*compart epoch time with today - should be equal or smaller*/
-      if( +new Date(requestBody.arrivalDate) > basic.getTodaysEpoch() )  {
+      /*compart epoch time with tomorrow at 00:00 - should be equal or smaller*/
+      if( +new Date(requestBody.arrivalDate) > basic.getTomorrowsEpoch() )  {
         res.send(JSON.stringify({status:false, message:'Invalid Arrival Time'}));
         return;
       }

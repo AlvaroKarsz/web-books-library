@@ -176,8 +176,14 @@ class Basic {
     return `${date.getFullYear()}${delimiter}${date.getMonth() + 1 /*starts from 0*/}${delimiter}${date.getDate()}`;
   }
 
-  getTodaysEpoch() {
-    return + new Date(this.getYYYYMMDDcurrentDate());
+  getTomorrowsEpoch() {
+    let date = new Date();
+    /*add 1 to day, tomorrow*/
+    date.setDate(date.getDate() + 1);
+    /*remove hour*/
+    date.setHours(0,0,0,0);
+    /*get epoch timestamp*/
+    return + date;
   }
 
   intSum(a, b) {
