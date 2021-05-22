@@ -411,9 +411,9 @@ class BookDisplayer {
     if(actions.openPdf) {
       if(data.type === 'E') {
         output += `<div title="Open This Book in Browser" ` +
-        `onclick = "window.open('/ebook/${data.id}` +
+        `onclick = "openEbook('/ebook/${data.id}` +
         (data.bookmark ? `#page=${data.bookmark}` : '') + /*if this ebook has a bookmark, open book in relevant page*/
-        `')"` +
+        `','${data.name} by ${data.author}');"` +
         `>` +
         `<i class="fa fa-file-pdf-o"></i>` +
         `<p>Open This Book</p>` +

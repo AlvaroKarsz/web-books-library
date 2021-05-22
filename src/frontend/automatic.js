@@ -155,3 +155,12 @@ function showOverlayOnexit() {
     });
   };
 }
+
+function openEbook(url, title) {//function to open a new window with title
+  let win = window.open(url);
+  win.document.body.onload = () => {
+    sleep(1000).then(() => {//wait for default title to load then change it
+      win.document.title = title;
+    });
+  };
+}
