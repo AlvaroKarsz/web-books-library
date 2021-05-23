@@ -64,6 +64,7 @@ module.exports = (app) => {
       folder: settings.WISH_LIST_FOLDER_NAME,
       displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {
         buy:true,
+        received:true,
         search:true,
         deleteWish: true,
         fetchDescription: true,
