@@ -193,7 +193,7 @@ class BookDisplayer {
     const formatOptionsConverter = {
       'P': 'PaperBack',
       'H': 'HardCover',
-      'HN': 'HardCover withour Dust Jacket',
+      'HN': 'HardCover without Dust Jacket',
       'E': 'E-Book'
     };
 
