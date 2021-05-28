@@ -34,6 +34,17 @@ class Images {
 
       }
     }
+
+    /*first try to delete picture, just in case the picture already exists*/
+    try {
+      this.deleteImage(filePath ,fileTitle, {
+        basePath: true
+      });
+
+    } catch(err) {
+      console.log(err);
+      /*most times the picture doesn't exists, so the script will get an exception while tring to delete it, just ignore!*/
+    }
     /*save the pic*/
     this.imageFromRaw(raw,filePath,fileTitle, format, ops);
     /*return full path*/
@@ -81,16 +92,36 @@ class Images {
     return path.join(settings.ROOT_PATH , folder, picFullName);
   }
 
-  deleteImage(folderName,fileTitle) {
+  deleteImage(folderName,fileTitle, ops = {}) {
     /*function to delete picture from file system (if picture exists)*/
     /*get picture full name (including extension type)*/
-    const picFullName = basicFunctions.getPictureMime(folderName, fileTitle);
+    let picFullName = '';
+
+    if(ops.basePath) {
+      /*in this case folderName is actually a full path to folder*/
+      picFullName = basicFunctions.getPictureMime(folderName, fileTitle, {
+        basePath:true
+      });
+    } else {
+      picFullName = basicFunctions.getPictureMime(folderName, fileTitle);
+    }
+
     if(!picFullName) {
       /*file not found - no need to delete - exit function*/
       return;
     }
+
     /*delete the picture*/
-    fs.unlinkSync(path.join(settings.ROOT_PATH , folderName, picFullName));
+    let fullPath = '';
+
+    if(ops.basePath) {
+      /*in this case folderName is actually a full path to folder*/
+      fullPath = path.join(folderName, picFullName);
+    } else {
+      fullPath = path.join(settings.ROOT_PATH , folderName, picFullName);
+    }
+
+    fs.unlinkSync(fullPath);
   }
 
   imageFromRaw(raw,filePath,fileTitle, format, ops) {

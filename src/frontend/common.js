@@ -384,7 +384,7 @@ class CoverAutoSearch {
     this.selectMessage = document.createElement('P');
     this.selectMessage.innerHTML = this.clickToSelectMessage;
     this.selectMessage.className = this.selectMessageClass;
-    this.forceCSS(this.selectMessage, 'margin', '23px');
+    this.forceCSS(this.selectMessage, 'margin', '5px 0');
     if(this.coverSelectorSelectMessageClassForce) {
       for(let i in this.coverSelectorSelectMessageClassForce) {
         this.forceCSS(this.selectMessage, i, this.coverSelectorSelectMessageClassForce[i]);
@@ -562,8 +562,7 @@ class CoverUploader {
   makeSelectionMessage() {
     this.selectMessage = document.createElement('P');
     this.selectMessage.innerHTML = 'Cover Selected';
-    this.forceCSS(this.selectMessage, 'margin', '23px');
-    this.forceCSS(this.selectMessage, 'width', 'max-content');
+    this.forceCSS(this.selectMessage, 'margin', '5px 0');
     this.selectMessage.className = this.selectMessageClass;
     this.hideSelectMessage();//hidden by default
     this.parent.appendChild(this.selectMessage);
@@ -605,7 +604,7 @@ class CoverUploader {
   }
 
   showImage() {
-    this.image.style.display = 'block';
+    this.image.style.display = 'unset';
   }
 
   hideImage() {
@@ -668,6 +667,7 @@ class CoverSelector {
     this.coverSelectorSelectMessageClassForce = opts.coverSelectorSelectMessageClassForce || '';
     this.buttonHolderTableCoverSelectorClass = opts.buttonHolderTableCoverSelectorClass || null;
     this.selectedImageClassForUploder = opts.selectedImageClassForUploder || null;
+    this.tabHolderCssForce = opts.tabHolderCssForce || null;
     this.getSearchCoverParamsCallback = opts.getSearchCoverParamsCallback;
     this.defaultPictureClass = opts.selectedImageClassForUploder || 'uploaded-picture-img';
     this.uploadTitle = 'Upload';
@@ -729,7 +729,8 @@ class CoverSelector {
   buildOptionChanger() {
     this.tabsPointer = new Tabs(this.parent, [this.uploadTitle, this.searchTitle, this.urlTitle], {
       buttonHolderClass: this.buttonHolderTableCoverSelectorClass,
-      default: this.uploadTitle
+      default: this.uploadTitle,
+      forceCss: this.tabHolderCssForce
     });
     this.tabsPointer.set();
   }
@@ -1036,6 +1037,7 @@ class Tabs {
     this.values = values;
     this.tabs = {};
     this.buttonHolderClass = opts.buttonHolderClass || 'tabs-buttons-holder';
+    this.forceCss = opts.forceCss || null;
     this.defaultTab = opts.default || '';
     this.selected = '';
     this.setIndexer();
@@ -1076,9 +1078,19 @@ class Tabs {
     this.mainHolder.className = 'tabs';
     this.tabsHolder.className = 'tabs-holder';
     this.buttonHolder.className = this.buttonHolderClass;
+
+    if(this.forceCss) {
+      for(let prop in this.forceCss) {
+        this.forceCSS(this.buttonHolder, prop, this.forceCss[prop]);
+      }
+    }
     this.mainHolder.appendChild(this.buttonHolder);
     this.mainHolder.appendChild(this.tabsHolder);
     this.parent.appendChild(this.mainHolder);
+  }
+
+  forceCSS(el, attribute, value) {
+    el.setAttribute('style', `${el.getAttribute('style') || ''};${attribute}:${value} !important`);
   }
 
   buildTabs() {
@@ -1558,6 +1570,168 @@ class AutoFill {
       values.collection.forEach(a => this.collectionPointer.newStoryTitle(a));
     }
   }
+}
+
+class CoverChanger {
+  constructor(opts = {}) {
+    this.fetchDataEndPoint = opts.fetchScript || null;
+    this.saveDataEndPoint = opts.saveScript || null;
+    this.picture = opts.pic || null;
+
+    if(!this.fetchDataEndPoint || !this.saveDataEndPoint) {
+      return;
+    }
+
+    this.loader = opts.loader || null;
+    this.messager = opts.messager || null;
+    this.parent = opts.parent || document.body;
+    this.overlayClass = opts.overlayClass || 'confirm-overlay';
+    this.popupClass = opts.popupClass || 'cover-changer-style-popup';
+    this.titleClass = opts.titleClass || '';
+    this.saveClass = opts.saveClass || 'black-white-button';
+    this.headerClass = opts.headerClass || 'cover-changer-header-class';
+    this.buttonCloseClass = opts.buttonCloseClass || 'black-white-button';
+    this.make();
+  }
+
+  async make() {
+    await this.fetchDetails();
+    this.makeSkeleton();
+    this.makeCoverElement();
+    this.makeSaveButton();
+    this.hide();
+    this.activate();
+  }
+
+  activate() {
+    this.closeBtn.onclick = () => {
+      this.hide();
+    };
+
+    this.saveButton.onclick = () => {
+      this.save();
+    };
+  }
+
+  async save() {
+    this.showLoader();
+    let coverSelected = this.coverSelector.getSelected();
+    if(!coverSelected) {//nothing new selected
+      this.hideLoader();
+      this.hide();
+      return;
+    }
+    //post data
+    let req = await doHttpRequest(this.saveDataEndPoint, {
+      method: 'POST',
+      body: jsonToFormData({
+        cover: coverSelected
+      })
+    });
+    this.hideLoader();
+    if(!req) {//error
+      this.showError();
+    } else {//success
+      this.showSuccess();
+    }
+  }
+
+  showError() {
+    if(this.messager) {
+      this.messager.setError('General Error');
+    }
+  }
+
+  showSuccess() {
+    document.location.reload();
+  }
+
+  showLoader() {
+    if(this.loader) {
+      this.loader.show();
+    }
+  }
+
+  hideLoader() {
+    if(this.loader) {
+      this.loader.hide();
+    }
+  }
+
+  makeSaveButton() {
+    this.saveButton = document.createElement('BUTTON');
+    this.saveButton.className = this.saveClass;
+    this.saveButton.innerHTML = 'Save';
+    this.popup.appendChild(this.saveButton);
+  }
+
+  async fetchDetails() {
+    let fetchR = await doHttpRequest(this.fetchDataEndPoint);
+    if(!fetchR) {
+      this.searchParams = null;
+      return;
+    }
+    let searchParams = {};
+    if(fetchR.name) {
+      searchParams.title = fetchR.name;
+    }
+    if(fetchR.author || fetchR.story_author) {//story_author is more accurate than author in case of stories
+      searchParams.author = fetchR.story_author ? fetchR.story_author : fetchR.author;
+    }
+    if(fetchR.isbn && fetchR.isbn.length < 14) { //some ebooks without isbn may have an unique long id instead isbn - internal unique id
+      searchParams.isbn = fetchR.isbn;
+    }
+    this.searchParams = searchParams;
+  }
+
+  makeCoverElement() {
+    this.coverSelector = new CoverSelector(this.popup, {
+      getSearchCoverParamsCallback: () => {
+        return this.searchParams;
+      },
+      tabHolderCssForce: {
+        width: '440px',
+        margin: '0 auto'
+      }
+    });
+
+    if(this.picture) {//add default pic
+      this.coverSelector.set(this.picture);
+    }
+  }
+
+  hide() {
+    this.overlay.style.display = 'none';
+  }
+
+  show() {
+    this.overlay.style.display = 'block';
+  }
+
+  makeSkeleton() {
+    this.overlay = document.createElement('DIV');
+    this.popup = document.createElement('DIV');
+    this.overlay.className = this.overlayClass;
+    this.popup.className = this.popupClass;
+    this.overlay.appendChild(this.popup);
+    this.parent.appendChild(this.overlay);
+    this.makePopupHeader();
+  }
+
+  makePopupHeader() {
+    let header = document.createElement('DIV');
+    this.titleEl = document.createElement('DIV');
+    this.closeBtn = document.createElement('BUTTON');
+    header.className = this.headerClass;
+    this.titleEl.className = this.titleClass;
+    this.closeBtn.className = this.buttonCloseClass;
+    this.titleEl.innerHTML = 'Change Cover';
+    this.closeBtn.innerHTML = 'X';
+    header.appendChild(this.titleEl);
+    header.appendChild(this.closeBtn);
+    this.popup.appendChild(header);
+  }
+
 }
 
 class Confirm {

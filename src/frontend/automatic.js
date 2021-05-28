@@ -4,7 +4,48 @@
   showUrlMessage();
   listenToAdvancedBackupMenu();
   listenToDescriptionReFetchAction();
+  listenToCoverChange();
+  listenToMarkBookAsReadButNotCompleted();
 })()
+
+function listenToMarkBookAsReadButNotCompleted() {
+  let cbox = document.getElementById('mark-book-as-completed'),
+  inp = document.getElementById('input-number-read-pages-book');
+  if(cbox && inp) {
+    cbox.onchange = () => {
+      inp.style.display = cbox.checked ? 'none' : 'block';
+    };
+  }
+}
+
+function listenToCoverChange() {
+  let div = document.getElementById('refresh-cover');
+  if(!div) {
+    return;
+  }
+
+  let  coverChanger = new CoverChanger({
+    fetchScript: `/get${document.location.pathname}`,
+    pic: `/pic${document.location.pathname}`,
+    saveScript: `${document.location.pathname}/newPic`,
+    messager: new Messager(),
+    loader: new Loader(document.body, {
+      autoPost: true,
+      withOverlay: true,
+      overlayClass: 'main-overlay',
+      cssForceLoader: {
+        margin: '0',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%) scale(1.8)'
+      }
+    })
+  });
+
+  div.onclick = () => {
+    coverChanger.show();
+  };
+}
 
 
 function listenToDescriptionReFetchAction() {

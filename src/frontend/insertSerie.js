@@ -30,7 +30,7 @@
   let currentId = getIdFromUrl();
 
   if(currentId) {//fetch data
-    let currentData = await doHttpRequest(`/get/serie/${currentId}`);
+    let currentData = await doHttpRequest(`/get/series/${currentId}`);
     if(currentData) {//enter current data into relevant inputs
       addValueToInput(currentData.name, els.titleInp);
       addValueToInput(currentData.author, els.authorInp);

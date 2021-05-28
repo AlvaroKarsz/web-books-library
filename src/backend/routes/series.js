@@ -86,7 +86,9 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.SERIES_FOLDER_NAME,
-      displayer: entryDisplayer.build(serieData, settings.SERIES_FOLDER_NAME, {})
+      displayer: entryDisplayer.build(serieData, settings.SERIES_FOLDER_NAME, {
+        fetchCover: true
+      })
     }));
   });
 
@@ -107,7 +109,7 @@ module.exports = (app) => {
   });
 
   /*fetch serie data by serie id*/
-  app.get('/get/serie/:id', async(req, res) => {
+  app.get('/get/series/:id', async(req, res) => {
     let id = req.params.id;
     res.send(
       await db.fetchSerieById(id)
@@ -162,6 +164,33 @@ module.exports = (app) => {
       });
     }
     res.send(JSON.stringify({status:true}));
+  });
+
+  /*route to change picture*/
+  app.post('/series/:id/newPic', async (req, res) => {
+    const id =  req.params.id;
+    let pic = basic.trimAllFormData(req.body).cover;
+    try {
+      /*save the new picture*/
+      let picPath = await imagesHandler.saveImage(pic,settings.SERIES_PATH , id);/*save picture and get the full path (in order to get picture md5)*/
+      /*now save md5 in DB*/
+      await db.savePictureHashes({
+        id: id,
+        folder: settings.SERIES_FOLDER_NAME,
+        md5: imagesHandler.calculateMD5(picPath)
+      });
+
+      res.send(
+        JSON.stringify(true)
+      );
+    } catch(err) {
+      /*error saving picture*/
+      console.log(err);
+      res.send(
+        JSON.stringify(false)
+      );
+    }
+
   });
 
 }

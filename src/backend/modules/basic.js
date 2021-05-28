@@ -206,9 +206,17 @@ class Basic {
     return this.isBiggerInt(a,b) || this.isEqualInt(a,b);
   }
 
-  getPictureMime(folderName, pictureId) {
-    let result = null;
-    fs.readdirSync(path.join(settings.ROOT_PATH , folderName)).forEach((pic) => {
+  getPictureMime(folderName, pictureId, ops = {}) {
+    let result = null,
+    searchPath = '';
+
+    if(ops.basePath) { /*folderName is actually folderPath*/
+      searchPath = folderName;
+    } else {
+      searchPath = path.join(settings.ROOT_PATH , folderName);
+    }
+
+    fs.readdirSync(searchPath).forEach((pic) => {
       if(new RegExp("^" + pictureId + "[.]").test(pic)) {
         result = pic;
         return;

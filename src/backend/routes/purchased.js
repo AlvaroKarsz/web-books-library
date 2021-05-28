@@ -3,7 +3,7 @@ const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
 const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
 const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
-
+const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
 
 module.exports = (app) => {
 
@@ -29,7 +29,7 @@ module.exports = (app) => {
     /*set the seed*/
     await db.setSeed(basic.getGlobalParam(settings.POSTGRESQL_SEED_PARAMETER_NAME));
 
-    
+
     let request = await db.fetchAllPurchased(filters);
     const books = request.rows;
     const total = request.count;
@@ -63,10 +63,19 @@ module.exports = (app) => {
       displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {
         received:true,
         cancelPurchase: true,
+        fetchCover: true,
         fetchRating: true,
         fetchDescription: true
       })
     }));
+  });
+
+  /*send details by ID*/
+  app.get('/get/purchased/:id', async (req, res) =>  {
+    const id =  req.params.id;
+    res.send(
+      await db.fetchWishById(id)
+    );
   });
 
 
@@ -93,5 +102,33 @@ module.exports = (app) => {
     await db.cancelPurchaseMark(id);
     res.redirect('/wishlist/' + id);
   });
+
+  /*route to change picture*/
+  app.post('/purchased/:id/newPic', async (req, res) => {
+    const id =  req.params.id;
+    let pic = basic.trimAllFormData(req.body).cover;
+    try {
+      /*save the new picture*/
+      let picPath = await imagesHandler.saveImage(pic,settings.WISH_LIST_PATH , id);/*save picture and get the full path (in order to get picture md5)*/
+      /*now save md5 in DB*/
+      await db.savePictureHashes({
+        id: id,
+        folder: settings.WISH_LIST_FOLDER_NAME,
+        md5: imagesHandler.calculateMD5(picPath)
+      });
+
+      res.send(
+        JSON.stringify(true)
+      );
+    } catch(err) {
+      /*error saving picture*/
+      console.log(err);
+      res.send(
+        JSON.stringify(false)
+      );
+    }
+
+  });
+
 
 }

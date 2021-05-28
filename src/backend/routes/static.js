@@ -37,10 +37,6 @@ module.exports = (app) => {
     res.sendFile(settings.SOURCE_CODE_FRONTEND_INSERT_STORY_FILE_PATH);
   });
 
-  app.get('/frontend/markBookAsRead', (req, res) => {
-    res.sendFile(settings.SOURCE_CODE_FRONTEND_MARK_BOOK_READ_FILE_PATH);
-  });
-
   app.get('/frontend/insertWish', (req, res) => {
     res.sendFile(settings.SOURCE_CODE_FRONTEND_INSERT_WISH_FILE_PATH);
   });

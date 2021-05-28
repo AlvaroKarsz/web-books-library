@@ -62,6 +62,7 @@ module.exports = (app) => {
         openPdf:true,
         fetchDescription: true,
         fetchRating: true,
+        fetchCover: true,
         Ebookmark: true
       })
     }));
@@ -104,7 +105,7 @@ module.exports = (app) => {
   });
 
   /*fetch book data by book id*/
-  app.get('/get/book/:id', async(req, res) => {
+  app.get('/get/books/:id', async(req, res) => {
     let id = req.params.id;
     res.send(
       await db.fetchBookById(id)
@@ -677,6 +678,33 @@ module.exports = (app) => {
     message += 'Bookmark Saved.';
     res.redirect(basic.buildRefererUrl(referer, message, false));
     return;
+  });
+
+  /*route to change picture*/
+  app.post('/books/:id/newPic', async (req, res) => {
+    const id =  req.params.id;
+    let pic = basic.trimAllFormData(req.body).cover;
+    try {
+      /*save the new picture*/
+      let picPath = await imagesHandler.saveImage(pic,settings.BOOKS_PATH , id);/*save picture and get the full path (in order to get picture md5)*/
+      /*now save md5 in DB*/
+      await db.savePictureHashes({
+        id: id,
+        folder: settings.BOOKS_FOLDER_NAME,
+        md5: imagesHandler.calculateMD5(picPath)
+      });
+
+      res.send(
+        JSON.stringify(true)
+      );
+    } catch(err) {
+      /*error saving picture*/
+      console.log(err);
+      res.send(
+        JSON.stringify(false)
+      );
+    }
+
   });
 
 }

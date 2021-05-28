@@ -78,6 +78,7 @@ module.exports = (app) => {
       folder: settings.STORIES_FOLDER_NAME,
       displayer: entryDisplayer.build(storyData, settings.STORIES_FOLDER_NAME, {
         storyRead: true,
+        fetchCover: true,
         fetchRating: true,
         fetchDescription: true
       })
@@ -101,7 +102,7 @@ module.exports = (app) => {
   });
 
   /*fetch serie data by serie id*/
-  app.get('/get/story/:id', async(req, res) => {
+  app.get('/get/stories/:id', async(req, res) => {
     let id = req.params.id;
     res.send(
       await db.fetchStoryById(id)
@@ -343,4 +344,32 @@ module.exports = (app) => {
     res.send(JSON.stringify(true));
     return;
   });
+
+  /*route to change picture*/
+  app.post('/stories/:id/newPic', async (req, res) => {
+    const id =  req.params.id;
+    let pic = basic.trimAllFormData(req.body).cover;
+    try {
+      /*save the new picture*/
+      let picPath = await imagesHandler.saveImage(pic,settings.STORIES_PATH , id);/*save picture and get the full path (in order to get picture md5)*/
+      /*now save md5 in DB*/
+      await db.savePictureHashes({
+        id: id,
+        folder: settings.STORIES_FOLDER_NAME,
+        md5: imagesHandler.calculateMD5(picPath)
+      });
+
+      res.send(
+        JSON.stringify(true)
+      );
+    } catch(err) {
+      /*error saving picture*/
+      console.log(err);
+      res.send(
+        JSON.stringify(false)
+      );
+    }
+
+  });
+
 }

@@ -1669,7 +1669,7 @@ class CheckboxGroup {
   let currentData, currentId, wishId;
   if(/^[0-9]+$/.test(currentIdFromPath)) {//user is updating a book - fetch book's data
     currentId = currentIdFromPath;
-    currentData = await doHttpRequest(`/get/book/${currentId}`);
+    currentData = await doHttpRequest(`/get/books/${currentId}`);
     if(currentData) {//enter current data into relevant inputs
       //start with standard data (normal inputs)
       addValueToInput(currentData.name, els.titleInp);
@@ -1724,7 +1724,7 @@ class CheckboxGroup {
 
     wishId = currentIdFromPath.match(/[0-9]+/)[0];//get wish id from string
 
-    currentData = await doHttpRequest(`/get/wish/${wishId}`);
+    currentData = await doHttpRequest(`/get/wishlist/${wishId}`);
     if(currentData) {//enter current data into relevant inputs
       //start with standard data (normal inputs)
       addValueToInput(currentData.name, els.titleInp);

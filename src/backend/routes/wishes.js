@@ -67,6 +67,7 @@ module.exports = (app) => {
         received:true,
         search:true,
         deleteWish: true,
+        fetchCover: true,
         fetchDescription: true,
         fetchRating: true
       })
@@ -217,7 +218,7 @@ module.exports = (app) => {
   });
 
   /*fetch book data by book id*/
-  app.get('/get/wish/:id', async(req, res) => {
+  app.get('/get/wishlist/:id', async(req, res) => {
     let id = req.params.id;
     res.send(
       await db.fetchWishById(id)
@@ -291,4 +292,31 @@ module.exports = (app) => {
     }
   });
 
-}
+  /*route to change picture*/
+  app.post('/wishlist/:id/newPic', async (req, res) => {
+    const id =  req.params.id;
+    let pic = basic.trimAllFormData(req.body).cover;
+    try {
+      /*save the new picture*/
+      let picPath = await imagesHandler.saveImage(pic,settings.WISH_LIST_PATH , id);/*save picture and get the full path (in order to get picture md5)*/
+      /*now save md5 in DB*/
+      await db.savePictureHashes({
+        id: id,
+        folder: settings.WISH_LIST_FOLDER_NAME,
+        md5: imagesHandler.calculateMD5(picPath)
+      });
+
+      res.send(
+        JSON.stringify(true)
+      );
+    } catch(err) {
+      /*error saving picture*/
+      console.log(err);
+      res.send(
+        JSON.stringify(false)
+      );
+    }
+
+  });
+
+};

@@ -399,8 +399,7 @@ class BookDisplayer {
         `<input oneline='t' name="pages" placeholder="Number of Read Pages" id='input-number-read-pages-book' type='number' long='t'>` +
         `<button type="submit" class="black-white-button" oneline='t'>Save</button>` +
         `</form>` +
-        `</div>` +
-        `<script src="/frontend/markBookAsRead"></script>`;
+        `</div>`;
       }
     }
 
@@ -461,6 +460,13 @@ class BookDisplayer {
       output += `<div id='refresh-description' title="Search for a new Description" param-id="${data.id}" param-type="${type}">` +
       `<i class="fa fa-asterisk"></i>` +
       `<p>New Description</p>` +
+      `</div>`;
+    }
+    /*option to change cover picture*/
+    if(actions.fetchCover) {
+      output += `<div id='refresh-cover' title="Change Cover">` +
+      `<i class="fa fa-picture-o"></i>` +
+      `<p>New Cover</p>` +
       `</div>`;
     }
     /*option to reload ratings*/

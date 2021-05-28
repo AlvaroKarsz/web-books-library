@@ -58,7 +58,7 @@
   let currentId = getIdFromUrl();
 
   if(currentId) {//fetch data
-    let currentData = await doHttpRequest(`/get/story/${currentId}`);
+    let currentData = await doHttpRequest(`/get/stories/${currentId}`);
     if(currentData) {//enter current data into relevant inputs
       //start with standard data (normal inputs)
       addValueToInput(currentData.name, els.titleInp);

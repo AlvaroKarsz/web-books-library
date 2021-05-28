@@ -3,6 +3,7 @@ const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
 const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
 const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
+const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
 
 module.exports = (app) => {
   app.get('/reads', async (req, res) =>  {
@@ -58,11 +59,19 @@ module.exports = (app) => {
       folder: settings.BOOKS_FOLDER_NAME,
       displayer: entryDisplayer.build(readData, settings.BOOKS_FOLDER_NAME, {
         fetchRating: true,
+        fetchCover: true,
         fetchDescription: true
       })
     }));
   });
 
+  /*send details by ID*/
+  app.get('/get/reads/:id', async (req, res) =>  {
+    const id =  req.params.id;
+    res.send(
+      await db.fetchReadById(id)
+    );
+  });
 
 
   app.get('/reads/next/:val', async (req, res) =>  {
@@ -81,5 +90,33 @@ module.exports = (app) => {
       more: request.count > basic.intSum(nextVal, settings.IMAGES_NUM_PER_PAGE)
     }));
   });
+
+  /*route to change picture*/
+  app.post('/reads/:id/newPic', async (req, res) => {
+    const id =  req.params.id;
+    let pic = basic.trimAllFormData(req.body).cover;
+    try {
+      /*save the new picture*/
+      let picPath = await imagesHandler.saveImage(pic,settings.BOOKS_PATH , id);/*save picture and get the full path (in order to get picture md5)*/
+      /*now save md5 in DB*/
+      await db.savePictureHashes({
+        id: id,
+        folder: settings.BOOKS_FOLDER_NAME,
+        md5: imagesHandler.calculateMD5(picPath)
+      });
+
+      res.send(
+        JSON.stringify(true)
+      );
+    } catch(err) {
+      /*error saving picture*/
+      console.log(err);
+      res.send(
+        JSON.stringify(false)
+      );
+    }
+
+  });
+
 
 }
