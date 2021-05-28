@@ -144,6 +144,13 @@ class Loader {
     if(this.overlay) {
       this.parent.style.display = 'block';
     }
+    this.bringFront();
+  }
+
+  bringFront() {
+    if(this.overlay) {
+      this.forceCSS(this.overlay, 'z-index', '9999');
+    }
   }
 
   delete() {
@@ -535,6 +542,8 @@ class CoverUploader {
     this.inputButtonClass = opts.inputButtonClass || 'black-white-button';
     this.selectMessageClass = opts.selectMessageClass || 'auto-search-select-message';
     this.selectedImageClass = opts.selectedImageClass || 'uploaded-picture-img';
+    this.pasteTAClass = opts.pasteTAClass || 'text-area-paste-handler';
+    this.file = '';
     this.build();
   }
 
@@ -549,14 +558,49 @@ class CoverUploader {
   build() {
     this.addFileInput();
     this.addUploadButton();
+    this.addPasteElement();
     this.makeSelectionMessage();
     this.makeImageHolder();
     this.redirectClickToInput();
     this.handleFileInput();
+    this.handlePaste();
   }
 
   forceCSS(el, attribute, value) {
     el.setAttribute('style', `${el.getAttribute('style') || ''};${attribute}:${value} !important`);
+  }
+
+  addPasteElement() {
+    this.pasteEl = document.createElement('TEXTAREA');
+    this.pasteEl.placeholder = 'or Paste Screenshot here (Ctrl + V)';
+    this.pasteEl.className = this.pasteTAClass;
+    this.parent.appendChild(this.pasteEl);
+  }
+
+  handlePaste() {
+    this.pasteEl.onkeydown = (e) => {//stop user from typing into it
+      if(e.key === 'Control') {//user typed control key, allow it
+        return;
+      }
+      if(e.key === 'v' && e.ctrlKey) {//user typed ctrl + v
+        return;
+      }
+      e.preventDefault();
+      this.pasteEl.value = '';
+    };
+
+    this.pasteEl.onpaste = (e) => {
+      e.preventDefault();
+      let pastedData = e.clipboardData.items;
+      //get last file (if any)
+      for(let i = pastedData.length - 1 ; i > -1 ; i-- ) {
+        if(pastedData[i].kind === 'file') {//this is a file
+          //set file and exit
+          this.set(pastedData[i].getAsFile());
+          return;
+        }
+      }
+    };
   }
 
   makeSelectionMessage() {
@@ -577,6 +621,7 @@ class CoverUploader {
   }
 
   set(file) {
+    this.file = file;
     let reader = new FileReader();
     reader.onload = (evt) => {
       this.showSelectMessage();
@@ -612,8 +657,9 @@ class CoverUploader {
     this.image.src = '';
   }
 
-  getSelected() {
-    return this.image.getAttribute('src');
+  getSelected(asFile = false) {
+
+    return asFile ? this.file : this.image.getAttribute('src');
   }
 
   addImage(img) {
@@ -670,7 +716,8 @@ class CoverSelector {
     this.tabHolderCssForce = opts.tabHolderCssForce || null;
     this.getSearchCoverParamsCallback = opts.getSearchCoverParamsCallback;
     this.defaultPictureClass = opts.selectedImageClassForUploder || 'uploaded-picture-img';
-    this.uploadTitle = 'Upload';
+    this.getAsFile = opts.getAsFile || null;
+    this.uploadTitle = 'Upload/Paste';
     this.searchTitle = 'Search';
     this.urlTitle = 'Link';
     this.errorIsShown = false;
@@ -858,7 +905,7 @@ class CoverSelector {
       return '';
     }
     if(activeFeature === this.uploadTitle) {
-      return this.coverUploader.getSelected();
+      return this.coverUploader.getSelected(this.getAsFile);
     }
     if(activeFeature === this.searchTitle) {
       return this.coverSearcher.getSelected();
@@ -1692,7 +1739,8 @@ class CoverChanger {
       tabHolderCssForce: {
         width: '440px',
         margin: '0 auto'
-      }
+      },
+      getAsFile: true
     });
 
     if(this.picture) {//add default pic

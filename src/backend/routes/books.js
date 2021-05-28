@@ -683,10 +683,23 @@ module.exports = (app) => {
   /*route to change picture*/
   app.post('/books/:id/newPic', async (req, res) => {
     const id =  req.params.id;
-    let pic = basic.trimAllFormData(req.body).cover;
+
+    let pic = req.files && req.files.cover && req.files.cover.data ? req.files.cover.data : null;
+    let mime = req.files && req.files.cover && req.files.cover.mimetype ? req.files.cover.mimetype : null;
+    /*no picture*/
+    if(!pic || !mime) {
+      res.send(
+        JSON.stringify(false)
+      );
+      return;
+    }
+
     try {
       /*save the new picture*/
-      let picPath = await imagesHandler.saveImage(pic,settings.BOOKS_PATH , id);/*save picture and get the full path (in order to get picture md5)*/
+      let picPath = await imagesHandler.saveImage(pic,settings.BOOKS_PATH , id, {/*save picture and get the full path (in order to get picture md5)*/
+        noModification:true,
+        mime: mime.split('/').pop() /*get last part, extension type*/
+      });
       /*now save md5 in DB*/
       await db.savePictureHashes({
         id: id,
@@ -699,7 +712,6 @@ module.exports = (app) => {
       );
     } catch(err) {
       /*error saving picture*/
-      console.log(err);
       res.send(
         JSON.stringify(false)
       );
