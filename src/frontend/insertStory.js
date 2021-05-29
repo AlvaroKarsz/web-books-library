@@ -5,6 +5,7 @@
     pagesInp: document.getElementById('story-pages'),
     coverHolder: document.getElementById('cover-element-holder'),
     collectionHolder: document.getElementById('collection-holder'),
+    asinInp: document.getElementById('book-asin'),
     descriptionInp: document.getElementById('story-description'),
     autoFillHolder: document.getElementById('auto-fill'),
     saveBtn: document.getElementById('save')
@@ -63,6 +64,7 @@
       //start with standard data (normal inputs)
       addValueToInput(currentData.name, els.titleInp);
       addValueToInput(currentData.description, els.descriptionInp);
+      addValueToInput(currentData.asin, els.asinInp);
       addValueToInput(currentData.story_author ? currentData.story_author : currentData.author , els.authorInp);
       addValueToInput(currentData.pages, els.pagesInp);
       //add collection
@@ -84,6 +86,7 @@
         title: els.titleInp.value,
         author: els.authorInp.value,
         pages: els.pagesInp.value,
+        asin: els.asinInp.value,
         description: els.descriptionInp.value,
         collectionId: collectionE.get(),
         cover: coverEl.getSelected()
