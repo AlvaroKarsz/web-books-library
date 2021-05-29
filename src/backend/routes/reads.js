@@ -99,18 +99,26 @@ module.exports = (app) => {
     let mime = req.files && req.files.cover && req.files.cover.mimetype ? req.files.cover.mimetype : null;
     /*no picture*/
     if(!pic || !mime) {
-      res.send(
-        JSON.stringify(false)
-      );
-      return;
+      /*check if a url was received*/
+      pic = basic.trimAllFormData(req.body);
+      if(pic.cover) {
+        pic = pic.cover;
+      } else {
+        /*nothing recevied*/
+        res.send(
+          JSON.stringify(false)
+        );
+        return;
+      }
     }
 
     try {
       /*save the new picture*/
-      let picPath = await imagesHandler.saveImage(pic,settings.BOOKS_PATH , id, {/*save picture and get the full path (in order to get picture md5)*/
+      /*if url received, just pass the url, if a binary file recevied, pass the mime and noModification flag*/
+      let picPath = await imagesHandler.saveImage(pic,settings.BOOKS_PATH , id, mime ? {/*save picture and get the full path (in order to get picture md5)*/
         noModification:true,
         mime: mime.split('/').pop() /*get last part, extension type*/
-      });
+      } : {});
       /*now save md5 in DB*/
       await db.savePictureHashes({
         id: id,
