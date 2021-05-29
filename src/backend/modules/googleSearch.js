@@ -42,7 +42,7 @@ class GoogleSearcher {
     let url = `${this.BASE_URL}${accurate ? "amazon novel " : ""}${title} ${author} asin`;
 
     /*regexp to extract asin from html result*/
-    const rgx = /ASIN\s?\:?\,?\=?\s?[0-9A-Z]+/i;
+    const rgx = /ASIN\s?\:?\,?\=?\s?[0-9A-Z]{7,}/i;
 
     /*make the http request, and ask for text response*/
     let req = await basicFunctions.doFetch(url, this.SETTINGS, {

@@ -334,6 +334,9 @@ class BookDisplayer {
     /*add goodreads rating*/
     output += this.buildSignleRating('GoodReads', data.rating, data.rating_count);
 
+    /*add amazon rating*/
+    output += this.buildSignleRating('Amazon', data.amazon_rating, data.amazon_rating_count);
+
     /*add google rating*/
     output += this.buildSignleRating('Google', data.google_rating, data.google_rating_count);
 

@@ -285,6 +285,15 @@ class Basic {
     return output;
   }
 
+  generateRandomNumberString(len) {
+    const options = '7458963012';
+    let output = '';
+    for(let i = 0 ; i < len ; i ++ ) {
+      output += options[this.generateRandomNumberInRange(0,options.length)];
+    }
+    return output;
+  }
+
   generateRandomNumberInRange(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
   }

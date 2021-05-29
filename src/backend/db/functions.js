@@ -1090,18 +1090,20 @@ class dbFunctions {
 
     async saveRating(id, isbn, title, author, tableName) {
       /*fetch rating and save it in DB table*/
-      /*fetch goodreads and google ratings*/
+      /*fetch goodreads and google ratings and amazon ratings*/
       let rating = null, additionalIsbn = null;
 
       /*try to fetch rating from goodreads api*/
       const goodreads = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
       const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
+      const amazonApi = require(settings.SOURCE_CODE_BACKEND_AMAZON_MODULE_FILE_PATH);
 
       /*
-      make a separated google rating fetch
+      make a separated google rating fetch & amazon rating fetch
       make it in background, and make wait for it to finish before exiting this function!
       make is without await in order to avoid blocking the function
       */
+
 
       let googleRatingResult = googleApi.fetchRatings({
         isbn: isbn,
@@ -1116,6 +1118,20 @@ class dbFunctions {
         /*save in DB*/
         await this.saveGoogleRating(id, googleRes.rating, googleRes.count, tableName);
       });
+
+      /*asin is needed for amazon api*/
+      let amazonRatingResult = amazonApi.fetchRating(
+        await this.getAsin(id, tableName)
+      )
+      .then(async (amzRes) => {
+        if(!amzRes) {/*not found - clear amazon rating from table and return*/
+          await this.clearAmazonRating(id, tableName);
+          return;
+        }
+        /*save in DB*/
+        await this.saveAmazonRating(id, amzRes.rating, amzRes.count, tableName);
+      });
+
 
       /*may be empty for stories*/
       if(isbn) {
@@ -1141,8 +1157,8 @@ class dbFunctions {
           if(ratingWithoutISBN) {
             /*rating found, save rating & rating count in table, additionalIsbn should be empty in this case since no additional ISBN was used*/
             await this.insertRatingIntoDB(ratingWithoutISBN.rating, ratingWithoutISBN.count, null, id, tableName);
-            /*make sure google rating was fetched before exit*/
-            await googleRatingResult;
+            /*make sure google & amazon rating was fetched before exit*/
+            await Promise.all([amazonRatingResult,googleRatingResult]);
             return true;
           }
         }
@@ -1152,16 +1168,16 @@ class dbFunctions {
           /*no luck - no isbn found*/
           /*clear rating and return clearRating "exit code"*/
 
-          /*make sure google rating was fetched before exit*/
-          await googleRatingResult;
+          /*make sure google & amazon rating was fetched before exit*/
+          await Promise.all([amazonRatingResult,googleRatingResult]);
           return await this.clearRating(id, tableName);
         }
         if(isbn === additionalIsbn) {
           /*isbn found in one of the apis is the same one inserted by user, nothing found in goodreads for this isbn*/
           /*clear rating and return clearRating "exit code"*/
 
-          /*make sure google rating was fetched before exit*/
-          await googleRatingResult;
+          /*make sure google & amazon rating was fetched before exit*/
+          await Promise.all([amazonRatingResult,googleRatingResult]);
           return await this.clearRating(id, tableName);
         }
         /*try to fetch rating with new isbn from google*/
@@ -1170,8 +1186,8 @@ class dbFunctions {
           /*nothing found for this isbn as well*/
           /*clear rating and return clearRating "exit code"*/
 
-          /*make sure google rating was fetched before exit*/
-          await googleRatingResult;
+          /*make sure google & amazon rating was fetched before exit*/
+          await Promise.all([amazonRatingResult,googleRatingResult]);
           return await this.clearRating(id, tableName);
         }
       }
@@ -1185,6 +1201,27 @@ class dbFunctions {
     async getStoryAuthorFromStoryId(id) {
       let res = await pg.query(`SELECT mn.author FROM my_books mn WHERE mn.id = (SELECT strs.parent FROM stories strs WHERE strs.id = $1);`, [id]);
       return res.rows[0].author;
+    }
+
+    async clearAmazonRating(id, table) {
+      let query = 'UPDATE ';
+      /*get table from tableName param*/
+      switch(table) {
+        case 'my_books':
+        query += ' my_books ';
+        break;
+
+        case 'wish_list':
+        query += ' wish_list ';
+        break;
+
+        default: /*unknown param*/
+        return null;
+      }
+
+      query += ` SET amazon_rating = NULL, amazon_rating_count = NULL WHERE id = $1;`;
+      await pg.query(query, [id]);
+      return true;/*success*/
     }
 
     async clearGoogleRating(id, table) {
@@ -1236,6 +1273,72 @@ class dbFunctions {
       query += ` SET goodreads_rating = NULL, goodreads_rating_count = NULL, goodreads_rating_additional_isbn = NULL WHERE id = $1;`;
       await pg.query(query, [id]);
       return true;/*success*/
+    }
+
+    async getAsin(id, table) {
+      let query = 'SELECT asin FROM ';
+
+      /*get table from tableName param*/
+      switch(table) {
+        case 'my_books':
+        query += ' my_books ';
+        break;
+
+        case 'wish_list':
+        query += ' wish_list ';
+        break;
+
+        default: /*unknown param*/
+        return null;
+      }
+
+      query += ` WHERE id = $1;`;
+
+      let res = await pg.query(query, [id]);
+      res = res.rows;
+      return res.length ? res[0].asin : null;
+    }
+
+    async saveAmazonRating(id, rating, count, table) {
+      let query = 'UPDATE ', paramCounter = 0, queryArguments = [];
+
+      /*get table from tableName param*/
+      switch(table) {
+        case 'my_books':
+        query += ' my_books ';
+        break;
+
+        case 'wish_list':
+        query += ' wish_list ';
+        break;
+
+        default: /*unknown param*/
+        return null;
+      }
+
+      query += `SET
+      amazon_rating = `;
+
+      if(rating) {//rating exist
+        query += ` $${++paramCounter} `;
+        queryArguments.push(rating);
+      } else {//no rating - use NULL
+        query += ` NULL `
+      }
+
+      query += ` , amazon_rating_count = `;
+
+      if(count) {//count exist
+        query += ` $${++paramCounter} `;
+        queryArguments.push(count);
+      } else {//no count - use NULL
+        query += ` NULL `
+      }
+
+      query += ` WHERE id = $${++paramCounter};`;
+      queryArguments.push(id);
+      await pg.query(query, queryArguments);
+      return true;
     }
 
     async saveGoogleRating(id, rating, count, table) {
@@ -1615,7 +1718,9 @@ class dbFunctions {
                       main.goodreads_rating AS rating,
                       main.goodreads_rating_count AS rating_count,
                       main.google_rating AS google_rating,
-                      main.google_rating_count AS google_rating_count
+                      main.google_rating_count AS google_rating_count,
+                      main.amazon_rating AS amazon_rating,
+                      main.amazon_rating_count AS amazon_rating_count
 
                       FROM wish_list main
 
@@ -1636,6 +1741,8 @@ class dbFunctions {
                       main.serie,
                       main.google_rating,
                       main.asin,
+                      main.amazon_rating_count,
+                      main.amazon_rating,
                       main.google_rating_count,
                       series.name,
                       main.goodreads_rating_count,
@@ -1749,6 +1856,8 @@ class dbFunctions {
                       my_books_main.goodreads_rating_count AS rating_count,
                       my_books_main.google_rating AS google_rating,
                       my_books_main.google_rating_count AS google_rating_count,
+                      my_books_main.amazon_rating AS amazon_rating,
+                      my_books_main.amazon_rating_count AS amazon_rating_count,
                       JSON_STRIP_NULLS(
                         JSON_AGG(
                           JSONB_BUILD_OBJECT(
@@ -1805,6 +1914,8 @@ class dbFunctions {
                       my_books_main.completed,
                       my_books_main.collection,
                       my_books_main.description,
+                      my_books_main.amazon_rating_count,
+                      my_books_main.amazon_rating,
                       my_books_main.google_rating_count,
                       my_books_main.google_rating,
                       my_books_main.page_tracker_ebook,
