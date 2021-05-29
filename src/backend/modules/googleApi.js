@@ -73,6 +73,66 @@ class GoogleAPI {
     return null;
   }
 
+  async fetchRatings(vars = {}) {
+    /*better result cheching by title and author, if not passed, check by isbn*/
+    let isbn = vars.isbn || null,
+    title = vars.title || null,
+    author = vars.author || null;
+
+    /*can't check by author*/
+    if(!isbn && !title) {
+      return null;
+    }
+
+    let url = this.SEARCH_URL; /*base url*/
+
+    if(title) {
+      url += title;
+      /*add author if passed*/
+      if(author) {
+        url += ' ' + author;
+      }
+    } else { /*search by ISBN*/
+      url += isbn;
+    }
+
+    /*make the http request*/
+    let response = await basicFunctions.doFetch(url, {
+      method:'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }, {
+      timeout: 4000 /*limit to 4 seconds*/
+    });
+
+    if(!response || !response.items) {
+      /*error from http request / nothing found*/
+      return null;
+    }
+    response = response.items;
+
+    /*find rating in items, save the one with bigger count*/
+    let rating = 0, count = 0;
+
+    for(let i = 0 , l = response.length ; i < l ; i ++ ) {
+      if(response[i].volumeInfo) {
+        if(response[i].volumeInfo.averageRating && response[i].volumeInfo.ratingsCount) {/*found*/
+          if(response[i].volumeInfo.ratingsCount > count) {/*bigger - save this one*/
+            rating = response[i].volumeInfo.averageRating;
+            count = response[i].volumeInfo.ratingsCount;
+          }
+        }
+      }
+    }
+
+    /*return data if found, null if not*/
+    return count ? {
+      rating: rating,
+      count: count
+    } : null;
+  }
+
   async fetchIsbnByTitleAndAuthorBulk(dataArr) {
     let isbns = [];
     /*

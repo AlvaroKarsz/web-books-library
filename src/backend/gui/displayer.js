@@ -290,15 +290,15 @@ class BookDisplayer {
     return output;
   }
 
-  buildRating(data) {
+  buildSignleRating(name, rating, count) {
     /*add ratings (including stars) if relevant*/
 
-    let output = `<div class="displayer-body-line">Rating: <div class = "displayer-rating-line"> GoodReads `;
+    let output = `<div class = "displayer-rating-line"> ${name} `;
 
 
     /*no rating - add unknown label*/
-    if(!data.rating || !data.rating_count) {
-      output += `<div style = "display:inline-block;"> UNKNOWN </div></div></div>`;
+    if(!rating || !count) {
+      output += `<div style = "display:inline-block;"> UNKNOWN </div></div>`;
       return output;
     }
 
@@ -311,20 +311,33 @@ class BookDisplayer {
 
     for(let i = 1 ; i <= maxNumberOfStars ; i ++ ) {
       /*calculate width for current star based on rating and loop index*/
-      width = basic.isBiggerOrEqualInt(data.rating, i) ?
+      width = basic.isBiggerOrEqualInt(rating, i) ?
       /*if the index is smaller (or equal) int that rating, star shold be full*/
       '100%' :
       /*else, if index is bigger by more than 1 int, should be 0, else. should be partial*/
       (
-        basic.isBiggerInt(i, basic.toInt(data.rating) + 1) ?
+        basic.isBiggerInt(i, basic.toInt(rating) + 1) ?
         '0%' :
         /*in this case, star should be partial painted, for example: index is 3 and rating is 3.87*/
-        basic.getDecimalPartOfNumber(data.rating) * 100 + '%'
+        basic.getDecimalPartOfNumber(rating) * 100 + '%'
       );
       output += `<div class="${starClass}">${starCode}<div class="${partialStarClass}" style = "width: ${width};">${starCode}</div></div>`;
     }
     /*now add to output the rating data*/
-    output += `<p>${data.rating} (${basic.addCommasToNum(data.rating_count)})</p></div></div>`;
+    output += `<p>${rating} (${basic.addCommasToNum(count)})</p></div>`;
+    return output;
+  }
+
+  buildRating(data) {
+    let output = '<div class="displayer-body-line">Rating: ';
+    /*add goodreads rating*/
+    output += this.buildSignleRating('GoodReads', data.rating, data.rating_count);
+
+    /*add google rating*/
+    output += this.buildSignleRating('Google', data.google_rating, data.google_rating_count);
+
+    output += '</div>';
+
     return output;
   }
 
