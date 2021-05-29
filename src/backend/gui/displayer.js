@@ -166,6 +166,7 @@ class BookDisplayer {
     output += this.echoDisplayLine('Publication Year: ' , data.year);
     output += this.echoDisplayLine('Number of Pages: ' , data.pages);
     output += this.echoDisplayLine(this.getIsbnTitle(data.isbn), data.isbn, {max:20}); /*book may have no isbn (some ebooks for example)*/
+    output += this.echoDisplayLine('ASIN: ' , data.asin);
     output += this.echoDisplayLine('Book Language: ' , data.language);
     output += this.echoDisplayLine('Book Original Publication Language: ' , data.o_language);
     output += this.addFormat(data.type);
@@ -488,6 +489,16 @@ class BookDisplayer {
       `<a href = "/${type}/rating/change/${data.id}">` +
       `<i class="fa fa-star"></i>` +
       `<p>New Rating</p>` +
+      `</a>` +
+      `</div>`;
+    }
+
+    /*option to refetch asin*/
+    if(actions.fetchAsin) {
+      output += `<div title="Click to reload ASIN">` +
+      `<a href = "/${type}/asin/${data.id}">` +
+      `<i class="fa fa-amazon"></i>` +
+      `<p>New ASIN</p>` +
       `</a>` +
       `</div>`;
     }

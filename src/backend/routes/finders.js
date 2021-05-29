@@ -6,6 +6,8 @@ const openLibraryApi = require(settings.SOURCE_CODE_BACKEND_OPEN_LIBRARY_MODULE_
 const picDecoder = require(settings.SOURCE_CODE_BACKEND_PICTURE_DECODER_MODULE_FILE_PATH);
 const wikiApi = require(settings.SOURCE_CODE_BACKEND_WIKI_MODULE_FILE_PATH);
 const goodReadsAPI = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
+const googleSearcher = require(settings.SOURCE_CODE_BACKEND_GOOGLE_SEARCH_MODULE_FILE_PATH);
+
 const fs = require('fs');
 
 
@@ -116,6 +118,12 @@ module.exports = (app) => {
     let openLibraryOutput = output[0],
     goodReadsOutput = output[1];
 
+    /*if title and author were found, search for asin based on these parameters*/
+    let asin = '';
+    if(openLibraryOutput.title && openLibraryOutput.author) {
+      asin = await googleSearcher.getAsin(openLibraryOutput.title, openLibraryOutput.author);
+    }
+
     output = {};
 
     if(openLibraryOutput) {
@@ -126,10 +134,14 @@ module.exports = (app) => {
       output.description = goodReadsOutput;
     }
 
+    /*if asin found add it to output data*/
+    if(asin) {
+      output.asin = asin;
+    }
+
     /*send data to frontend*/
     res.send(JSON.stringify(output));
   });
-
 
   /*
   route to decode text from received picture

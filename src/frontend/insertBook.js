@@ -1525,6 +1525,7 @@ class CheckboxGroup {
     coverHolder: document.getElementById('cover-element-holder'),
     collectionHolder: document.getElementById('collection-holder'),
     bookPagesInput: document.getElementById('book-pages'),
+    asinInp: document.getElementById('book-asin'),
     nextBookHolder: document.getElementById('next-book-holder'),
     prevBookHolder: document.getElementById('prev-book-holder'),
     seriesHolder: document.getElementById('series-holder'),
@@ -1643,7 +1644,8 @@ class CheckboxGroup {
       author: els.authorInp,
       pages: els.bookPagesInput,
       year: els.yearInp,
-      description: els.descriptionInp
+      description: els.descriptionInp,
+      asin: els.asinInp
     }
   }),
 
@@ -1676,6 +1678,7 @@ class CheckboxGroup {
       addValueToInput(currentData.author, els.authorInp);
       addValueToInput(currentData.isbn, els.isbnInp);
       addValueToInput(currentData.language, els.langInp);
+      addValueToInput(currentData.asin, els.asinInp);
       addValueToInput(currentData.o_language, els.langOrgInp);
       addValueToInput(currentData.pages, els.bookPagesInput);
       addValueToInput(currentData.year, els.yearInp);
@@ -1732,6 +1735,7 @@ class CheckboxGroup {
       addValueToInput(currentData.isbn, els.isbnInp);
       addValueToInput(currentData.year, els.yearInp);
       addValueToInput(currentData.store, els.bookStoreInp);
+      addValueToInput(currentData.asin, els.asinInp);
       addValueToInput(currentData.description, els.descriptionInp);
 
 
@@ -1761,6 +1765,7 @@ class CheckboxGroup {
         store: els.bookStoreInp.value,
         lang: els.langInp.value,
         langOrg: els.langOrgInp.value,
+        asin: els.asinInp.value,
         type: bookTypeE.get(),
         serie: serieE.get(),
         next: nextEl.get(),

@@ -2,6 +2,7 @@ const settings = require('../settings.js');
 const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
 const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
+const googleSearcher = require(settings.SOURCE_CODE_BACKEND_GOOGLE_SEARCH_MODULE_FILE_PATH);
 const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
 const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
 
@@ -69,7 +70,8 @@ module.exports = (app) => {
         deleteWish: true,
         fetchCover: true,
         fetchDescription: true,
-        fetchRating: true
+        fetchRating: true,
+        fetchAsin: true
       })
     }));
   });
@@ -337,6 +339,43 @@ module.exports = (app) => {
       );
     }
 
+  });
+
+  /*route to change asin, fetch and change*/
+  app.get('/wishlist/asin/:id', async (req, res) =>  {
+    const id =  req.params.id;
+
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    message = '';
+
+    if(!id) {
+      /*send error*/
+      message += 'Could not fetch ASIN, Invalid Book ID';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+
+    /*fetch title and author for the asin search*/
+    let data = await db.fetchWishById(id);
+
+    /*invalid data*/
+    if(!data.name || !data.author) {
+      message += 'Could not fetch ASIN, Invalid Book Name/Author';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+
+    /*fetch asin*/
+    let asin = await googleSearcher.getAsin(data.name, data.author);
+
+    /*save in DB - in case of errors asin will be null, and the DB will null the value in relevant table*/
+    await db.saveAsin(asin, id, 'wish_list');
+
+    /*return success*/
+    message += 'New ASIN was saved';//add message
+    res.redirect(basic.buildRefererUrl(referer, message, false));
   });
 
 };

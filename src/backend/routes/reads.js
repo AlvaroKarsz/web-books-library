@@ -60,7 +60,8 @@ module.exports = (app) => {
       displayer: entryDisplayer.build(readData, settings.BOOKS_FOLDER_NAME, {
         fetchRating: true,
         fetchCover: true,
-        fetchDescription: true
+        fetchDescription: true,
+        fetchAsin: true
       })
     }));
   });
