@@ -18,7 +18,7 @@
     actionScript: '/collectionList'
   }),
 
-  /*autoFill = new AutoFill(els.autoFillHolder, {
+  autoFill = new AutoFill(els.autoFillHolder, {
     checkParamsCallback: () => {
       return els.titleInp.value && (els.authorInp.value || collectionE.get().value)
     },
@@ -32,9 +32,10 @@
     actionScript: '/search/story/',
     checkParamsErrorMessage: 'Please fiil Title and Author or Collection',
     inputsToFill: {
-      description: els.descriptionInp
+      description: els.descriptionInp,
+      asin: els.asinInp
     }
-  }),*/
+  }),
 
   coverEl = new CoverSelector(els.coverHolder, {
     getSearchCoverParamsCallback: () => {

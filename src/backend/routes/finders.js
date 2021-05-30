@@ -27,7 +27,7 @@ module.exports = (app) => {
     title = requestBody.title || null;
 
 
-    /*no valid data received - return empty object*/
+    /*invalid data received - return empty object*/
     if(!isbn  && !author && !title) {
       res.send(JSON.stringify([]));//empty
       return;
@@ -142,6 +142,50 @@ module.exports = (app) => {
     /*send data to frontend*/
     res.send(JSON.stringify(output));
   });
+
+  /*
+  route to find story details based on title and (author or collection)
+  */
+  app.post('/search/story/', async (req, res) => {
+    /*get request body*/
+    const requestBody = basic.trimAllFormData(req.body);
+
+    let collection = requestBody.collection || null,
+    author = requestBody.author || null,
+    title = requestBody.title || null;
+
+    /*invalid data received - return empty object*/
+    if(!title || (!author && !collection)) {
+      res.send(JSON.stringify({}));
+      return;
+    }
+
+    /*if author is empty, get author from collection*/
+    if(!author) {
+      author = await db.getAuthorAndPagesById(collection);
+      author = author.author;
+    }
+
+    /*returned data should be asin and description*/
+    let output = await Promise.all([
+      goodReadsAPI.fetchDescription({
+        title: title,
+        author: author
+      }),
+      googleSearcher.getAsin(title, author)
+    ]);
+
+
+    let description = output[0],
+    asin = output[1];
+
+    /*send data to frontend*/
+    res.send(JSON.stringify({
+      asin: asin,
+      description: description
+    }));
+  });
+
 
   /*
   route to decode text from received picture
