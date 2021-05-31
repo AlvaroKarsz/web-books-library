@@ -774,12 +774,12 @@ img:hover {
 .collection-single-story-holder {
   border: 3px solid white;
   border-radius: 10px;
-  width: 300px;
+  width: 450px;
   padding: 8px;
   box-shadow: 1px 3px 3px white;
   display: inline-block;
   margin: 5px 10px;
-  height: 315px;
+  height: 350px;
   overflow-y: auto;
   overflow-x: hidden;
   text-align: center;
@@ -795,10 +795,25 @@ img:hover {
   font-size: 16px !important;
 }
 
+.collection-story-line p[oneline='t'] {
+display: block !important;
+}
+
 .collection-story-line input{
-  width: 180px !important;
+  width: 75% !important;
   margin-left: 12px !important;
   height: 25px !important;
+}
+
+.collection-story-line textarea {
+  display: inline-block !important;
+  position: relative !important;
+  resize: none !important;
+  width: 75% !important;
+  height: 90px !important;
+  border-radius: 5px !important;
+  outline: none !important;
+  margin-left: 75px !important;
 }
 
 .story-single-title {
@@ -1684,6 +1699,7 @@ img:hover {
 .text-area-paste-handler {
   resize: none;
   width: 34%;
+  min-width: 370px;
   display: block;
   margin: 0 auto;
   margin-top: 8px;

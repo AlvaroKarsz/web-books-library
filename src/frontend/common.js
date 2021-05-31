@@ -1501,6 +1501,10 @@ class AutoFill {
     this.activate();
   }
 
+  addInputsToFill(inps) {
+    this.inputsToFill = inps;
+  }
+
   build() {
     this.makeButton();
     this.makeErrorBox();
@@ -1541,6 +1545,7 @@ class AutoFill {
     this.btn = document.createElement('BUTTON');
     this.btn.className = this.buttonClass;
     this.btn.innerHTML = this.buttonText;
+    this.btn.type = 'button';
     this.parent.appendChild(this.btn);
   }
 
@@ -1576,6 +1581,9 @@ class AutoFill {
     return this.errorIsShown;
   }
 
+  manualTrigger() {
+    this.btn.click();
+  }
 
   activate() {
     this.btn.onclick = () => {
@@ -1603,6 +1611,14 @@ class AutoFill {
         this.fillInputs(res);
       }
     });
+  }
+
+  hide() {
+    this.parent.style.display = 'none';
+  }
+
+  show() {
+    this.parent.style.display = 'block';
   }
 
   fillInputs(values) {

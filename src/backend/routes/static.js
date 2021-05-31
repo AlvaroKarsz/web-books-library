@@ -52,6 +52,11 @@ module.exports = (app) => {
     }
   });
 
+/*return blank pic*/
+app.get('/pic/blank', (req, res) => {
+  res.sendFile(settings.BLANK_PIC_PATH);
+});
+
   app.get('/ebook/:id', function (req, res) {
     let eBookId = req.params.id;
       res.sendFile(path.join(settings.E_BOOKS_PATH , eBookId + '.pdf'));

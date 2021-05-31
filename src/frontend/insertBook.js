@@ -36,6 +36,8 @@ class StoriesCollection {
         title: this.stories[k].title,
         pages: this.stories[k].pages,
         author: this.stories[k].author,
+        asin: this.stories[k].asin,
+        description: this.stories[k].description,
         id: this.stories[k].id,
         cover: this.stories[k].pointer.getCover()
       });
@@ -73,6 +75,8 @@ class StoriesCollection {
     this.stories[storyData.id] = {
       title: storyData.title,
       pages: storyData.pages,
+      asin: storyData.asin,
+      description: storyData.description,
       author: storyData.author,
       pointer: storyData.pointer,
       id: storyData.storyExistingId//if this story already saved in DB (collection update)
@@ -115,8 +119,21 @@ class StoriesCollection {
     this.triggerDecoderploaderOnButtonClick();
     this.handlePicDecoding();
     this.handleStoriesCoverSearch();
+    this.handleAutoSearchAll();
     this.handleSaveAllClick();
   }
+
+  handleAutoSearchAll() {
+    this.autoSearchBtn.onclick = () => {
+      for(let o in this.stories) {//search in all saved stories
+        this.stories[o].pointer.autoSearchTrigger();
+      }
+      for(let o in this.storiesInProcess) {//search in all not saved stories
+        this.storiesInProcess[o].autoSearchTrigger();
+      }
+    };
+  }
+
 
   handleStoriesCoverSearch() {
     this.findCoversBtn.onclick = () => {
@@ -483,6 +500,7 @@ class StoriesCollection {
     this.makeHiddenFileUploaderDecoder();
     this.addStoryButton = this.makeButton('Add Story', "Add a new story");
     this.findCoversBtn = this.makeButton('Find Covers', "Find cover to all stories");
+    this.autoSearchBtn = this.makeButton('Auto Search All', "Auto Search info for all stories");
     this.saveAllBtn = this.makeButton('Save All Stories', "Save all unsaved Stories");
   }
 
@@ -580,11 +598,20 @@ class StoriesCollection {
     name -> story name
     author -> story author or false/null (same author as collection)
     pages -> number of pages
+    asin -> story ASIN,
+    description -> story's description
     id -> story id (to search picture)
     */
     this.checkBox.click();//enable collection
     stories.forEach((stry) => {
-      this.addStoryWithValues([stry.name, stry.pages, stry.author, stry.id], `/pic/stories/${stry.id}`);
+      this.addStoryWithValues([
+        stry.name,
+        stry.pages,
+        stry.author,
+        stry.id,
+        stry.asin,
+        stry.description
+      ], `/pic/stories/${stry.id}`);
     });
   }
 
@@ -601,7 +628,9 @@ class StoriesCollection {
         name: storyData[0],
         pages: storyData[1],
         author: storyData[2] || false,
-        id: storyData[3] || false
+        id: storyData[3] || false,
+        asin: storyData[4] || false,
+        description: storyData[5] || false
       },
       collectionPointer: this,
       authorInput: this.mainAuthorInput,
@@ -657,6 +686,7 @@ class Story {
     this.permanentCoverClass = opts.permanentCoverClass || 'super-mini-pic';
     this.mainAuthorInput = opts.authorInput || null;
     this.defaultPic = opts.defaultPic || null;
+    this.defaultStoryPicSrc = '/pic/blank';
     this.permanentLines = [];
     this.build();
     this.activate();
@@ -690,12 +720,63 @@ class Story {
     this.parent.appendChild(this.body);
     this.makeHeader();
     this.makeTitle();
+    this.makeAutoSearcher();
     this.titleInput = this.makeNormalInput('Title:');
     this.pagesInput = this.makeNormalInput('Pages:', {type:'number'});
+    this.descriptionInput = this.makeNormalTextArea('Description: ');
+    this.asinInput = this.makeNormalInput('ASIN:', {placeholder: 'OPTIONAL'});
     this.makeAuthorInput();
     this.makeCoverSelector();
     this.makeSaveButton();
     this.makeErrorDiv();
+    this.addInputsToFillToAutoSearcher();//AutoFill class need the asin and description inputs, but these weren't defined when autofill was created, pass it now
+  }
+
+  addInputsToFillToAutoSearcher() {
+    this.autoSearcher.addInputsToFill({
+      description: this.descriptionInput,
+      asin: this.asinInput
+    });
+  }
+
+  hideAutoSearcher() {
+    this.autoSearcher.hide();
+  }
+
+  showAutoSearcher() {
+    this.autoSearcher.show();
+  }
+
+  autoSearchTrigger() {
+    //make sure this one is not saved and trigger search
+    if(this.saved) {
+      this.editButton.click();
+    }
+    this.autoSearcher.manualTrigger();
+  }
+
+  makeAutoSearcher() {
+    let holder = document.createElement('DIV');
+    holder.style.cssText = 'margin: 5px; transform: scale(0.9);';
+    this.body.appendChild(holder);
+    this.autoSearcher = new AutoFill(holder, {
+      checkParamsCallback: () => {
+        return this.titleInput.value && //title must not be empty
+        (
+          !this.authorCheckBox.checked && this.authorInput.value //author check box is checked and author input is filled
+        ) || (
+          this.authorCheckBox.checked && this.mainAuthorInput && this.mainAuthorInput.value//author checkbox is not filled, main author input exist and is not empty
+        )
+      },
+      getParamsCallback: () => {
+        return {
+          title: this.titleInput.value,
+          author: this.authorCheckBox.checked ? this.mainAuthorInput.value : this.authorInput.value //get author from relevant one (story author or main author)
+        };
+      },
+      actionScript: '/search/story/',
+      checkParamsErrorMessage: 'Please fill Title and Author(story author or collection author)'
+    });//no inputsToFill value, the asin and description inputs are not defined yet, pass them to calss after the definition
   }
 
   hideCoverSelector() {
@@ -744,6 +825,7 @@ class Story {
       this.saved = false;
       this.declareStoryInProcess();
       this.hideEditButton();
+      this.showAutoSearcher();
       this.removePermanentCover();
       this.showCoverSelector();
       this.cancelPermanentStory();
@@ -767,6 +849,7 @@ class Story {
   save() {
     this.saveDataVariables();
     this.hideCoverSelector();
+    this.hideAutoSearcher();
     this.sendDataToCollection();
     this.saved = true;
     this.showEditButton();
@@ -777,6 +860,8 @@ class Story {
   cancelPermanentStory() {
     this.showInputHolder(this.titleInput);
     this.showInputHolder(this.pagesInput);
+    this.showInputHolder(this.asinInput);
+    this.showInputHolder(this.descriptionInput);
     this.showAuthorHolder();
     this.showSaveButton();
     this.returnErrorDiv();
@@ -796,7 +881,7 @@ class Story {
     if(!cover) {
       cover = this.coverSelector.getDefault();
     }
-    this.permanentCover.src = cover;
+      this.permanentCover.src = cover ? cover : this.defaultStoryPicSrc;
     this.permanentCover.className = this.permanentCoverClass;
     this.body.appendChild(this.permanentCover);
   }
@@ -808,25 +893,40 @@ class Story {
   makePermanentStory() {
     this.removeInputHolder(this.titleInput);//remove title holder - title story is div title
     this.removeInputHolder(this.pagesInput);//remove pages holder - pages will be saved as P
+    this.removeInputHolder(this.asinInput);
+    this.removeInputHolder(this.descriptionInput);
     this.removeAuthorHolder();//remove author holder - will be saved as P
     this.removeSaveButton();
     this.killErrorDiv();//no more need for error displaier
     this.mainTitle.innerHTML = this.title;//change div title to be as story
     this.saveAsLine(`Pages: ${this.pages}`);
     this.saveAsLine(`Author: ${this.author ? this.author : 'Same as Collection'}`);
+    this.saveAsLine(`Description:<br>${this.description ? this.description.match(/.{1,60}/g).map(a => a.trim()).join("<br>") : 'None'}`, {
+      force: {
+        'font-size': '13px'
+      }
+    });//add line breaks every 60 chars
+    this.saveAsLine(`ASIN: ${this.asin || 'None'}`)
   }
 
   saveDataVariables() {
     this.title = this.titleInput.value.trim();
     this.pages = this.pagesInput.value.trim();
+    this.asin = this.asinInput.value.trim();
+    this.description = this.descriptionInput.value.trim();
     this.author = this.authorCheckBox.checked ? false : this.authorInput.value.trim();
     this.cover = this.getSelectedCover();
   }
 
-  saveAsLine(txt) {
+  saveAsLine(txt, ops = {}) {
     let p = document.createElement('P');
     p.innerHTML = txt;
     this.forceCSS(p, 'width', '100%');
+    if(ops.force && typeof ops.force === 'object') {
+      for(let val in ops.force) {
+        this.forceCSS(p, val, ops.force[val]);
+      }
+    }
     p.className = this.linePermanentClass;
     this.body.appendChild(p);
     this.permanentLines.push(p);
@@ -838,6 +938,8 @@ class Story {
       title: this.title,
       pages: this.pages,
       author: this.author,
+      asin: this.asin,
+      description: this.description,
       storyExistingId: this.storyExistingId,
       pointer: this
     });
@@ -914,13 +1016,20 @@ class Story {
 
     if(values.author) {
       this.authorCheckBox.checked = false;
-      this.authorInput.value = values.author
+      this.authorInput.value = values.author;
     }
 
     if(values.id) {//if this story is already saved in DB - save the id
-      this.storyExistingId = values.id
+      this.storyExistingId = values.id;
     }
 
+    if(values.asin) {
+      this.asinInput.value = values.asin;
+    }
+
+    if(values.description) {
+      this.descriptionInput.value = values.description;
+    }
 
     this.prepareToSaveStory();
   }
@@ -1034,11 +1143,28 @@ class Story {
     this.body.appendChild(this.saveButton);
   }
 
+  makeNormalTextArea(txt) {
+    let inp = document.createElement('TEXTAREA'),
+    title = document.createElement('P'),
+    holder = document.createElement('DIV');
+    holder.className = this.inputLineClass;
+    title.innerHTML = txt;
+    inp.placeholder = 'OPTIONAL';
+    title.setAttribute('oneline', 't');
+    holder.appendChild(title);
+    holder.appendChild(inp);
+    this.body.appendChild(holder);
+    return inp;
+  }
+
   makeNormalInput(txt,opts = {}) {
     let inp = document.createElement('INPUT'),
     title = document.createElement('P'),
     holder = opts.parent ? opts.parent : document.createElement('DIV');
     inp.type = opts.type ? opts.type : 'text';
+    if(opts.placeholder) {
+      inp.placeholder = opts.placeholder;
+    }
     holder.className = this.inputLineClass;
     title.innerHTML = txt;
     holder.appendChild(title);

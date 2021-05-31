@@ -30,7 +30,7 @@
       };
     },
     actionScript: '/search/story/',
-    checkParamsErrorMessage: 'Please fiil Title and Author or Collection',
+    checkParamsErrorMessage: 'Please fill Title and Author or Collection',
     inputsToFill: {
       description: els.descriptionInp,
       asin: els.asinInp

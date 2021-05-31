@@ -961,7 +961,7 @@ class dbFunctions {
         /*
         if the story author is the same as the collection author, author value in DB should be NULL
         */
-        query = 'INSERT INTO stories(name, pages, parent, author) VALUES ';
+        query = 'INSERT INTO stories(name, pages, parent, author, asin, description) VALUES ';
         queryArguments.length = 0;//reset queryArguments array
         bookJson.collection.forEach((stry) => {
           queryArguments.push(stry.title, stry.pages, bookId);
@@ -972,6 +972,21 @@ class dbFunctions {
             } else {//no author, set value as null
               query += `NULL),`;
             }
+
+            if(stry.asin) {//story has asin - insert to DB
+              queryArguments.push(stry.asin);
+              query += `$${++counter}),`;
+            } else {//no author, set value as null
+              query += `NULL),`;
+            }
+
+            if(stry.description) {//story has description - insert to DB
+              queryArguments.push(stry.description);
+              query += `$${++counter}),`;
+            } else {//no author, set value as null
+              query += `NULL),`;
+            }
+
           });
           query = query.replace(/[,]$/,'') + ";";//remove last comma
           await pg.query(query, queryArguments);
@@ -1038,6 +1053,15 @@ class dbFunctions {
           }
         }
 
+        /*amazon and google ratings can be as bulk in parallel (no API key), so fetch all in parallel, and goodreads ratings fetch as one action*/
+        let promisesHolder = [];
+        for(let i = 0 , l = stories.length ; i < l ; i ++ ) {
+          promisesHolder.push(
+            this.fetchAndSaveAmzonRating(stories[i].id, 'stories'),
+            this.fetchAndSaveGoogleRating('', stories[i].author, stories[i].name, stories[i].id, 'stories')
+          );
+        }
+
         /*
         fetch ISBN by author and title for these stories
         if no ISBN exist, the returned value will be null
@@ -1100,6 +1124,39 @@ class dbFunctions {
           stories[i].id,
           'stories');
         }
+
+        /*make sure all amazon and google api calls finished*/
+        await Promise.all(promisesHolder);
+      }
+
+      async fetchAndSaveGoogleRating(isbn, author, title, id, tableName) {
+        const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
+        /*call the module's function to fetch ratings*/
+        let res = await googleApi.fetchRatings({
+          isbn: isbn,
+          author: author,
+          title: title
+        });
+
+        if(!res) {//nothing found, clear google rating for this one
+          await this.clearGoogleRating(id, tableName);
+        } else {//found - save
+          await this.saveGoogleRating(id, res.rating, res.count, tableName);
+        }
+      }
+
+      async fetchAndSaveAmzonRating(id, tableName) {
+        const amazonApi = require(settings.SOURCE_CODE_BACKEND_AMAZON_MODULE_FILE_PATH);
+        /*call module's function to fetch ratings*/
+        let res = await amazonApi.fetchRating(
+          await this.getAsin(id, tableName)
+        );
+
+        if(!res) {//nothing found, clear google rating for this one
+          await this.clearAmazonRating(id, tableName);
+        } else {//found - save
+          await this.saveAmazonRating(id, res.rating, res.count, tableName);
+        }
       }
 
       async saveRating(id, isbn, title, author, tableName) {
@@ -1110,7 +1167,6 @@ class dbFunctions {
         /*try to fetch rating from goodreads api*/
         const goodreads = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
         const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
-        const amazonApi = require(settings.SOURCE_CODE_BACKEND_AMAZON_MODULE_FILE_PATH);
 
         /*
         make a separated google rating fetch & amazon rating fetch
@@ -1119,33 +1175,8 @@ class dbFunctions {
         */
 
 
-        let googleRatingResult = googleApi.fetchRatings({
-          isbn: isbn,
-          author: author,
-          title: title
-        })
-        .then(async (googleRes) => {
-          if(!googleRes) {/*not found - clear google rating from table and return*/
-            await this.clearGoogleRating(id, tableName);
-            return;
-          }
-          /*save in DB*/
-          await this.saveGoogleRating(id, googleRes.rating, googleRes.count, tableName);
-        });
-
-        /*asin is needed for amazon api*/
-        let amazonRatingResult = amazonApi.fetchRating(
-          await this.getAsin(id, tableName)
-        )
-        .then(async (amzRes) => {
-          if(!amzRes) {/*not found - clear amazon rating from table and return*/
-            await this.clearAmazonRating(id, tableName);
-            return;
-          }
-          /*save in DB*/
-          await this.saveAmazonRating(id, amzRes.rating, amzRes.count, tableName);
-        });
-
+        let googleRatingResult = this.fetchAndSaveGoogleRating(isbn, author, title, id, tableName);
+        let amazonRatingResult = this.fetchAndSaveAmzonRating(id, tableName);
 
         /*may be empty for stories*/
         if(isbn) {
@@ -1891,6 +1922,10 @@ class dbFunctions {
                               stories_table.name,
                               'id',
                               stories_table.id::TEXT,
+                              'asin',
+                              stories_table.asin,
+                              'description',
+                              stories_table.description,
                               'pages',
                               stories_table.pages,
                               'author',
@@ -2435,6 +2470,23 @@ class dbFunctions {
                                   } else {//same author as collection, set value as NULL
                                     query += `NULL `;
                                   }
+
+                                  query += `, asin=`;
+                                  if(bookJson.collection[i].asin) {//story has asin
+                                    query += `$${++paramsCounter} `;
+                                    queryArguments.push(bookJson.collection[i].asin);
+                                  } else {//same author as collection, set value as NULL
+                                    query += `NULL `;
+                                  }
+
+                                  query += `, description=`;
+                                  if(bookJson.collection[i].description) {//story has description
+                                    query += `$${++paramsCounter} `;
+                                    queryArguments.push(bookJson.collection[i].description);
+                                  } else {//same author as collection, set value as NULL
+                                    query += `NULL `;
+                                  }
+
                                   //complete query and run it
                                   query += ` WHERE id = $${++paramsCounter};`;
                                   queryArguments.push(bookJson.collection[i].id);
@@ -2455,14 +2507,30 @@ class dbFunctions {
                                 /*no match - should never happen because if a story from bookJson has an ID value, this means the story already exists - anyway insert it*/
                                 queryArguments.length = 0;//reset queryArguments array
                                 paramsCounter = 0;//reset counter
-                                query = `INSERT INTO stories(name, pages, parent, author) VALUES ($${++paramsCounter},$${++paramsCounter},$${++paramsCounter},`;
+                                query = `INSERT INTO stories(name, pages, parent, author, asin, description) VALUES ($${++paramsCounter},$${++paramsCounter},$${++paramsCounter},`;
                                   queryArguments.push(bookJson.collection[i].title, bookJson.collection[i].pages, id);
+
                                   if(bookJson.collection[i].author) {//story has author different from collection, add into query
                                     query += `$${++paramsCounter} `;
                                     queryArguments.push(bookJson.collection[i].author);
                                   } else {//same author as collection, set value as NULL
                                     query += `NULL `;
                                   }
+
+                                  if(bookJson.collection[i].asin) {//story has asin
+                                    query += `$${++paramsCounter} `;
+                                    queryArguments.push(bookJson.collection[i].asin);
+                                  } else {//no asin
+                                    query += `NULL `;
+                                  }
+
+                                  if(bookJson.collection[i].description) {//story has description
+                                    query += `$${++paramsCounter} `;
+                                    queryArguments.push(bookJson.collection[i].description);
+                                  } else {//no description
+                                    query += `NULL `;
+                                  }
+
                                   /*close query and send it*/
                                   query += `);`;
                                   await pg.query(query, queryArguments);
@@ -2471,7 +2539,7 @@ class dbFunctions {
                                 /*book has no ID - new book - should be inserted*/
                                 queryArguments.length = 0;//reset queryArguments array
                                 paramsCounter = 0;//reset counter
-                                query = `INSERT INTO stories(name, pages, parent, author) VALUES ($${++paramsCounter},$${++paramsCounter},$${++paramsCounter},`;
+                                query = `INSERT INTO stories(name, pages, parent, author, asin, description) VALUES ($${++paramsCounter},$${++paramsCounter},$${++paramsCounter},`;
                                   queryArguments.push(bookJson.collection[i].title, bookJson.collection[i].pages, id);
                                   if(bookJson.collection[i].author) {//story has author different from collection, add into query
                                     query += `$${++paramsCounter} `;
@@ -2479,6 +2547,21 @@ class dbFunctions {
                                   } else {//same author as collection, set value as NULL
                                     query += `NULL `;
                                   }
+
+                                  if(bookJson.collection[i].asin) {//story has asin
+                                    query += `$${++paramsCounter} `;
+                                    queryArguments.push(bookJson.collection[i].asin);
+                                  } else {//same author as collection, set value as NULL
+                                    query += `NULL `;
+                                  }
+
+                                  if(bookJson.collection[i].description) {//story has description
+                                    query += `$${++paramsCounter} `;
+                                    queryArguments.push(bookJson.collection[i].description);
+                                  } else {//same author as collection, set value as NULL
+                                    query += `NULL `;
+                                  }
+
                                   /*close query and send it*/
                                   query += `);`;
                                   await pg.query(query, queryArguments);
