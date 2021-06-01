@@ -1652,6 +1652,7 @@ class CheckboxGroup {
     collectionHolder: document.getElementById('collection-holder'),
     bookPagesInput: document.getElementById('book-pages'),
     asinInp: document.getElementById('book-asin'),
+    tagsInp: document.getElementById('book-tags'),
     nextBookHolder: document.getElementById('next-book-holder'),
     prevBookHolder: document.getElementById('prev-book-holder'),
     seriesHolder: document.getElementById('series-holder'),
@@ -1763,7 +1764,7 @@ class CheckboxGroup {
     },
     actionScript: '/search/book/',
     collectionPointer: collectionEl,
-    checkParamsErrorMessage: 'Please fiil ISBN or Author and Title',
+    checkParamsErrorMessage: 'Please fill ISBN or Author and Title',
     inputsToFill: {
       isbn: els.isbnInp,
       title: els.titleInp,
@@ -1771,7 +1772,8 @@ class CheckboxGroup {
       pages: els.bookPagesInput,
       year: els.yearInp,
       description: els.descriptionInp,
-      asin: els.asinInp
+      asin: els.asinInp,
+      tags: els.tagsInp
     }
   }),
 
@@ -1808,6 +1810,7 @@ class CheckboxGroup {
       addValueToInput(currentData.o_language, els.langOrgInp);
       addValueToInput(currentData.pages, els.bookPagesInput);
       addValueToInput(currentData.year, els.yearInp);
+      addValueToInput(currentData.tags, els.tagsInp);
       addValueToInput(currentData.store, els.bookStoreInp);
       addValueToInput(currentData.description, els.descriptionInp);
       //add book format
@@ -1862,6 +1865,7 @@ class CheckboxGroup {
       addValueToInput(currentData.year, els.yearInp);
       addValueToInput(currentData.store, els.bookStoreInp);
       addValueToInput(currentData.asin, els.asinInp);
+      addValueToInput(currentData.tags, els.tagsInp);
       addValueToInput(currentData.description, els.descriptionInp);
 
 
@@ -1892,6 +1896,7 @@ class CheckboxGroup {
         lang: els.langInp.value,
         langOrg: els.langOrgInp.value,
         asin: els.asinInp.value,
+        tags: els.tagsInp.value,
         type: bookTypeE.get(),
         serie: serieE.get(),
         next: nextEl.get(),

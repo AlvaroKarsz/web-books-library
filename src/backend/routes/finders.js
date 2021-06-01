@@ -105,18 +105,24 @@ module.exports = (app) => {
       }
     }
 
-    /*get data by isbn from openlibrary API + description from goodreads*/
+    /*get data by isbn from openlibrary API + description & tags from goodreads*/
     let output = await Promise.all([
       openLibraryApi.getDataByISBN(isbn),
       goodReadsAPI.fetchDescription({
         isbn: isbn,
         title: title,
         author: author
-      })
+      }),
+      goodReadsAPI.fetchTags({
+        isbn: isbn,
+        title: title,
+        author: author
+      }),
     ]);
 
     let openLibraryOutput = output[0],
-    goodReadsOutput = output[1];
+    goodReadsDescription = output[1],
+    goodReadsTags = output[2];
 
     /*if title and author were found, search for asin based on these parameters*/
     let asin = '';
@@ -130,8 +136,12 @@ module.exports = (app) => {
       output = { ...output, ...openLibraryOutput }  ;
     }
 
-    if(goodReadsOutput) {
-      output.description = goodReadsOutput;
+    if(goodReadsDescription) {
+      output.description = goodReadsDescription;
+    }
+
+    if(goodReadsTags) {
+      output.tags = goodReadsTags.join(", ");
     }
 
     /*if asin found add it to output data*/

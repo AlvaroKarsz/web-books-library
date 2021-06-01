@@ -66,7 +66,8 @@ module.exports = (app) => {
         fetchCover: true,
         fetchRating: true,
         fetchDescription: true,
-        fetchAsin: true
+        fetchAsin: true,
+        fetchTags: true
       })
     }));
   });

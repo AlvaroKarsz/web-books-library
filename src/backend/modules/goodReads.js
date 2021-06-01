@@ -281,5 +281,151 @@ class GoodReads {
     return output;
   }
 
+  async fetchTags(vars = {}) {
+    /*
+    vars options:
+    title, author, isbn
+    */
+
+    /*no need to check if all are empty, this will be checked in fetchBookInfo*/
+    const title = vars.title || null,
+    author = vars.author || null,
+    isbn = vars.isbn || null;
+
+
+    /*
+    this function fetches tags for a book, (Example: Nonfiction, Business, Psychology, Personal Development, Leadership)
+    tags are not received from the REST API, do the work method is fetching the HTML page and retrieving it from the HTML coce.
+    In order to fetch the HTML page, the page's URL is needed, and is fetched from the INFO_BY_TITLE_AND_AUTHOR_URL API's endpoint
+    */
+
+    /* get the URL using fetchBookInfo function */
+    const bookInfo = await this.fetchBookInfo({
+      title: title,
+      author: author,
+      isbn: isbn
+    });
+
+    /*no data found*/
+    if(!bookInfo) {
+      return null;
+    }
+
+    /*
+    fetch url from XML data, the wanted key is url or link, example:
+
+    <url>
+    <![CDATA[ https://www.goodreads.com/some-book-unique-url ]]>
+    </url>
+    <link>
+    <![CDATA[ https://www.goodreads.com/some-book-unique-url ]]>
+    </link>
+
+    should be a non empty array
+    */
+
+    let url = '';
+
+    if(bookInfo.url && Array.isArray(bookInfo.url) && bookInfo.url.length) {
+      url = bookInfo.url[0];
+    } else if (bookInfo.link && Array.isArray(bookInfo.link) && bookInfo.link.length) {
+      url = bookInfo.link[0];
+    } else {
+      /*no link , can't fetch html page*/
+      return null;
+    }
+
+    /*
+    fetch HTML page
+    ask response as text
+    */
+    let htmlRes = await basicFunctions.doFetch(url, {
+      method: 'GET',
+      headers: {
+        "User-Agent": `Mozilla/5.0 ${basicFunctions.generateRandomString(15)}`, /*add some random chars to user agent*/
+        "cache-control": "max-age=0",
+        "accept-language": "en-US,en;q=0.9",
+        "accept-encoding": "gzip, deflate, br",
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+      }
+    }, {
+      timeout: 4000,
+      text:true
+    });
+
+    /*fetch error*/
+    if(!htmlRes) {
+      return null;
+    }
+
+
+    /*
+    tags in HTML page looks like:
+
+    <a class="actionLinkLite bookPageGenreLink" href="/genres/non-fiction">Nonfiction</a>
+
+    ...
+    */
+
+    let rgx = /href\="\/genres\/[0-9A-Z\_\-\.]+"\>[0-9A-Z\_\-\.]+\</gi;
+
+    htmlRes = htmlRes.match(rgx);
+
+    /*
+    expected output example:
+    [
+    'href="/genres/non-fiction">Nonfiction<',
+    'href="/genres/economics">Economics<' ]
+
+    get data between > <
+    */
+
+    /*no tags found*/
+    if(!htmlRes) {
+      return null;
+    }
+
+    /*regexp to fetch tag from html line*/
+    rgx = /\>(.*?)\</;
+
+    /*get tag*/
+    htmlRes = htmlRes.map( a => a.match(rgx)[1] );
+
+    /*remove duplicated*/
+    htmlRes = htmlRes.filter( (a, i) => htmlRes.indexOf(a) === i  );
+
+    /*ignore tags from this list*/
+    const blackList = [
+      'audiobook',
+      'novels',
+      'children',
+      'adult',
+      'unfinished',
+      'buisness', /*typo, appears in alot of books*/
+      'collections',
+      'teen',
+      'childrens',
+      'novella',
+      'textbooks',
+      'literature',
+      'anthologies',
+      'canada',
+      'essays',
+      'writing',
+      'language',
+      'american',
+      'japan'
+    ];
+
+    /*remove blacklist values*/
+    htmlRes = htmlRes.filter( a => !blackList.includes(a.toLowerCase()) )
+
+    if(!htmlRes.length) {/*no tags*/
+      return null;
+    }
+
+    return htmlRes;
+  }
+
 };
 module.exports = new GoodReads();

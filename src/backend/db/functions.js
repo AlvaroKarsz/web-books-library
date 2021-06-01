@@ -876,6 +876,12 @@ class dbFunctions {
         queryArguments.push(bookJson.asin);
       }
 
+      /*if tags was received, add it to query*/
+      if(bookJson.tags) {
+        queryParams.push('tags');
+        queryArguments.push(bookJson.tags);
+      }
+
       /*if this wish is part of serie - add serie parameters*/
       if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
         queryParams.push('serie','serie_num');
@@ -929,6 +935,12 @@ class dbFunctions {
       if(bookJson.asin) {
         queryParams.push('asin');
         queryArguments.push(bookJson.asin);
+      }
+
+      /*add tags if received*/
+      if(bookJson.tags) {
+        queryParams.push('tags');
+        queryArguments.push(bookJson.tags);
       }
 
       /*if this book is part of serie - add serie parameters*/
@@ -1271,6 +1283,37 @@ class dbFunctions {
         query += ` SET amazon_rating = NULL, amazon_rating_count = NULL WHERE id = $1;`;
         await pg.query(query, [id]);
         return true;/*success*/
+      }
+
+
+      async saveTags(tags, id, table) {
+        let query = 'UPDATE ', params = [], counter = 0;
+
+        /*get table from tableName param*/
+        switch(table) {
+          case 'my_books':
+          query += ' my_books ';
+          break;
+
+          case 'wish_list':
+          query += ' wish_list ';
+          break;
+
+          default: /*unknown param*/
+          return null;
+        }
+        query += `SET tags = `;
+        if(tags) {
+          query += `$${++counter}`;
+          params.push(tags.join(', '));
+        } else {
+          query += `NULL`;
+        }
+
+        query += ` WHERE id = $${++counter};`;
+        params.push(id);
+
+        await pg.query(query, params);
       }
 
       async clearGoogleRating(id, table) {
@@ -1764,6 +1807,7 @@ class dbFunctions {
                         main.name AS name,
                         main.isbn AS isbn,
                         main.year AS year,
+                        main.tags AS tags,
                         main.description AS description,
                         main.asin AS asin,
                         main.author AS author,
@@ -1800,6 +1844,7 @@ class dbFunctions {
                         main.asin,
                         main.amazon_rating_count,
                         main.amazon_rating,
+                        main.tags,
                         main.google_rating_count,
                         series.name,
                         main.goodreads_rating_count,
@@ -1895,6 +1940,7 @@ class dbFunctions {
                         my_books_main.author AS author,
                         my_books_main.store AS store,
                         my_books_main.asin AS asin,
+                        my_books_main.tags AS tags,
                         my_books_main.page_tracker_ebook AS bookmark,
                         my_books_main.description AS description,
                         my_books_main.language AS language,
@@ -1980,6 +2026,7 @@ class dbFunctions {
                         my_books_main.google_rating_count,
                         my_books_main.google_rating,
                         my_books_main.page_tracker_ebook,
+                        my_books_main.tags,
                         series_table.name,
                         my_books_main.listed_date,
                         my_books_entry1.id,
@@ -2365,10 +2412,11 @@ class dbFunctions {
                         type = $${++paramsCounter},
                         pages = $${++paramsCounter},
                         asin = $${++paramsCounter},
+                        tags = $${++paramsCounter},
                         listed_date = $${++paramsCounter},
                         description = $${++paramsCounter}
                         `;
-                        let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages, bookJson.asin, bookJson.arrivalDate, bookJson.description];
+                        let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages, bookJson.asin, bookJson.tags, bookJson.arrivalDate, bookJson.description];
 
 
                         /*if this book is part of serie - add serie parameters*/
@@ -2685,9 +2733,9 @@ class dbFunctions {
                             *********************************************************************************************/
                             /*general parameters*/
                             let paramsCounter = 0;
-                            let query = `UPDATE wish_list SET name = $${++paramsCounter}, year = $${++paramsCounter}, author = $${++paramsCounter}, isbn = $${++paramsCounter}, description = $${++paramsCounter}, asin = $${++paramsCounter}`;
+                            let query = `UPDATE wish_list SET name = $${++paramsCounter}, year = $${++paramsCounter}, author = $${++paramsCounter}, isbn = $${++paramsCounter}, description = $${++paramsCounter}, asin = $${++paramsCounter}, tags = $${++paramsCounter}`;
 
-                            let queryArguments = [bookJson.title, bookJson.year, bookJson.author,bookJson.isbn, bookJson.description, bookJson.asin];
+                            let queryArguments = [bookJson.title, bookJson.year, bookJson.author,bookJson.isbn, bookJson.description, bookJson.asin, bookJson.tags];
 
                             /*if this wish is part of serie - add serie parameters*/
                             if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {

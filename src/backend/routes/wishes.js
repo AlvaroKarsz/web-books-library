@@ -3,6 +3,7 @@ const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
 const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
 const googleSearcher = require(settings.SOURCE_CODE_BACKEND_GOOGLE_SEARCH_MODULE_FILE_PATH);
+const goodReadsAPI = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
 const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
 const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
 
@@ -71,7 +72,8 @@ module.exports = (app) => {
         fetchCover: true,
         fetchDescription: true,
         fetchRating: true,
-        fetchAsin: true
+        fetchAsin: true,
+        fetchTags: true
       })
     }));
   });
@@ -375,6 +377,46 @@ module.exports = (app) => {
 
     /*return success*/
     message += 'New ASIN was saved';//add message
+    res.redirect(basic.buildRefererUrl(referer, message, false));
+  });
+
+  /*route to change tags, fetch and change*/
+  app.get('/wishlist/tags/:id', async (req, res) =>  {
+    const id =  req.params.id;
+
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    message = '';
+
+    if(!id) {
+      /*send error*/
+      message += 'Could not fetch Tags, Invalid Book ID';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+
+    /*fetch title, author and ISBN for the tags search*/
+    let data = await db.fetchWishById(id);
+
+    /*invalid data*/
+    if((!data.name && !data.author) || !data.isbn) {
+      message += 'Could not fetch Tags, Invalid Book Name/Author/ISBN';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+
+    /*fetch tags*/
+    let tags = await goodReadsAPI.fetchTags({title: data.name,
+      author: data.author,
+      isbn: data.isbn
+    });
+
+    /*save in DB*/
+    await db.saveTags(tags, id, 'wish_list');
+
+    /*return success*/
+    message += 'New Tags were saved';//add message
     res.redirect(basic.buildRefererUrl(referer, message, false));
   });
 

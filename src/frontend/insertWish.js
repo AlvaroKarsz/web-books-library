@@ -6,6 +6,7 @@
     yearInp: document.getElementById('book-year'),
     descriptionInp: document.getElementById('book-description'),
     asinInp: document.getElementById('book-asin'),
+    tagsInp: document.getElementById('book-tags'),
     coverHolder: document.getElementById('cover-element-holder'),
     seriesHolder: document.getElementById('series-holder'),
     autoFillHolder: document.getElementById('auto-fill'),
@@ -53,7 +54,8 @@
       author: els.authorInp,
       year: els.yearInp,
       description: els.descriptionInp,
-      asin: els.asinInp
+      asin: els.asinInp,
+      tags: els.tagsInp
     }
   }),
 
@@ -79,6 +81,7 @@
       addValueToInput(currentData.isbn, els.isbnInp);
       addValueToInput(currentData.asin, els.asinInp);
       addValueToInput(currentData.year, els.yearInp);
+      addValueToInput(currentData.tags, els.tagsInp);
       addValueToInput(currentData.description, els.descriptionInp);
 
       //add serie if exists
@@ -103,6 +106,7 @@
         isbn: els.isbnInp.value,
         year: els.yearInp.value,
         asin: els.asinInp.value,
+        tags: els.tagsInp.value,
         description: els.descriptionInp.value.trim(),
         serie: serieE.get(),
         cover: coverEl.getSelected()

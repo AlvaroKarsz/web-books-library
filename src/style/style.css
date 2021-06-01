@@ -796,7 +796,7 @@ img:hover {
 }
 
 .collection-story-line p[oneline='t'] {
-display: block !important;
+  display: block !important;
 }
 
 .collection-story-line input{
@@ -1329,6 +1329,9 @@ display: block !important;
   color: white;
   text-align: center;
   font-size: 20px;
+  margin: 0 auto;
+  max-width: 1100px;
+
 }
 
 .displayer-options div {
@@ -1708,4 +1711,21 @@ display: block !important;
   box-shadow: 1px 1px 1px rgb(255 255 255 / 40%);
   height: 33px;
   font-size: 15px;
+}
+
+.main-displayer-tags {
+  color: white;
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 25px;
+  margin-top: 140px;
+  margin-right: 50px;
+  text-align: left;
+}
+
+.main-displayer-tags div {
+  border-bottom: 2px solid white;
+  width: 220px;
+  padding: 5px;
 }

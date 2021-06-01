@@ -29,6 +29,9 @@ class BookDisplayer {
     /*add actions*/
     output += this.addActions(data,type ,actions);
 
+    /*add tags if relevant*/
+    output += this.addTags(data.tags);
+
     /*add ratings*/
     output += this.buildRating(data);
 
@@ -496,6 +499,16 @@ class BookDisplayer {
       `</div>`;
     }
 
+    /*fetch tags and save*/
+    if(actions.fetchTags) {
+      output += `<div title="Click to fetch new Tags">` +
+      `<a href = "/${type}/tags/${data.id}">` +
+      `<i class="fa fa-tag"></i>` +
+      `<p>New Tags</p>` +
+      `</a>` +
+      `</div>`;
+    }
+
     /*option to refetch asin*/
     if(actions.fetchAsin) {
       output += `<div title="Click to reload ASIN">` +
@@ -615,6 +628,32 @@ buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks) {
 
   return output;
 
+}
+
+addTags(tags) {
+  let output = '';
+
+  if(!tags) {
+    return output;/*no tags - return empty string*/
+  }
+
+
+  tags = tags
+  .split(',') /*tags are separated by commans, split it*/
+  .map( a => a.trim() ); /*trim whitespaces*/
+
+  /*add main div holder*/
+  output += '<div class = "main-displayer-tags">';
+
+  /*add tags*/
+  for(let i = 0 , l = tags.length ; i < l ; i ++ ) {
+    output += `<div>${tags[i]}</div>`;
+  }
+
+  /*close main div*/
+  output += '</div>';
+
+  return output;
 }
 }
 
