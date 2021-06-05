@@ -126,7 +126,7 @@ module.exports = (app) => {
 
     /*if title and author were found, search for asin based on these parameters*/
     let asin = '';
-    if(openLibraryOutput.title && openLibraryOutput.author) {
+    if(openLibraryOutput && openLibraryOutput.title && openLibraryOutput.author) {
       asin = await googleSearcher.getAsin(openLibraryOutput.title, openLibraryOutput.author);
     }
 
