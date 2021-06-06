@@ -68,7 +68,7 @@ module.exports = (app) => {
         buy:true,
         received:true,
         search:true,
-        deleteWish: true,
+        delete: true,
         fetchCover: true,
         fetchDescription: true,
         fetchRating: true,
@@ -231,6 +231,11 @@ module.exports = (app) => {
 
   app.get('/wishlist/delete/:id', async (req, res) =>  {
     const id =  req.params.id;
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    message = '';
+
 
     /*delete md5sum from cache*/
     await db.deleteMD5(settings.WISH_LIST_FOLDER_NAME,id);
@@ -239,8 +244,13 @@ module.exports = (app) => {
     /*delete picture*/
     await imagesHandler.deleteImage(settings.WISH_LIST_FOLDER_NAME,id);
 
-    /*redirect*/
-    res.redirect('/wishlist');
+
+    /*redirect with success message*/
+    message += 'Wish was Deleted';
+    /*redirect to main page, the wish no longer exist, no point redirecting to it*/
+    res.redirect(basic.buildRefererUrl('/wishlist/', message, false));
+    return;
+
   });
 
   /*route to change description*/

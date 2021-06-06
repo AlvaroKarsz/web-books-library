@@ -460,15 +460,15 @@ class BookDisplayer {
       }
     }
 
-    /*delete wish*/
-    if(actions.deleteWish) {
-      output += `<div title="Delete Wishlist">` +
+    /*delete this note from DB & delete picture*/
+    if(actions.delete) {
+      output += `<div title="Delete">` +
       `<label for='delete-wish-label'>` +
       `<i class="fa fa-trash"></i>` +
       `</label>` +
       `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'delete-wish-label'>` +
-      `<p>Delete Wishlist</p>` +
-      `<form action="/wishlist/delete/${data.id}" method="get" style = "margin-left: 14px;">` +
+      `<p>Delete</p>` +
+      `<form action="/${type}/delete/${data.id}" method="get" style = "margin-left: 14px;">` +
       `<p oneline='t'>Are you sure?</p>` +
       `<button type="submit" class="black-white-button" oneline='t'>I'm sure</button>` +
       `</form>` +

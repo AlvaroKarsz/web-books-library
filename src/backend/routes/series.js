@@ -87,7 +87,8 @@ module.exports = (app) => {
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.SERIES_FOLDER_NAME,
       displayer: entryDisplayer.build(serieData, settings.SERIES_FOLDER_NAME, {
-        fetchCover: true
+        fetchCover: true,
+        delete: true
       })
     }));
   });
@@ -211,6 +212,36 @@ module.exports = (app) => {
       );
     }
 
+  });
+
+  /*check if this serie is not linked to anything then delete it*/
+  app.get('/series/delete/:id', async (req, res) =>  {
+    const id =  req.params.id;
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    message = '';
+
+    /*make sure serie has no books or wishes linked to it*/
+    if( basic.toInt( await db.getBooksCountFromSerie(id) ) || basic.toInt( await db.getWishesCountFromSerie(id) ) ) {
+      /*send error*/
+      message += 'Books/Wishes are linked to this serie, delete them and try again';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+    /*delete md5sum from cache*/
+    await db.deleteMD5(settings.SERIES_FOLDER_NAME,id);
+    /*delete wish*/
+    await db.deleteSerie(id);
+    /*delete picture*/
+    await imagesHandler.deleteImage(settings.SERIES_FOLDER_NAME,id);
+
+
+    /*redirect with success message*/
+    message += 'Serie was Deleted';
+    /*redirect to main page, the serie no longer exist, no point redirecting to it*/
+    res.redirect(basic.buildRefererUrl('/series/', message, false));
+    return;
   });
 
 }

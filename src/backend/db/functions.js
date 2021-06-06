@@ -271,6 +271,20 @@ class dbFunctions {
     return res.rows[0].pages;
   }
 
+  async deleteSerie(id) {
+    await pg.query(`DELETE FROM series WHERE id = $1;`, [id]);
+  }
+
+  async getBooksCountFromSerie(id) {
+    let count = await pg.query(`SELECT COUNT(1) FROM my_books WHERE serie = $1;`, [id]);
+    return count.rows[0].count;
+  }
+
+  async getWishesCountFromSerie(id) {
+    let count = await pg.query(`SELECT COUNT(1) FROM wish_list WHERE serie = $1;`, [id]);
+    return count.rows[0].count;
+  }
+
   async deleteWish(id) {
     await pg.query(`DELETE FROM wish_list WHERE id = $1;`, [id]);
   }
