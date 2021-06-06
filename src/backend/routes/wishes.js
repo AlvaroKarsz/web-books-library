@@ -53,6 +53,14 @@ module.exports = (app) => {
   app.get('/wishlist/:id', async (req, res) =>  {
     const id =  req.params.id;
 
+    /*check if ID actually exists*/
+    if(! await db.wishExists(id) ) {
+      /*return error message to main page*/
+      res.redirect(basic.buildRefererUrl('/wishlist/', "Book doesn't exist"));
+      /*exit*/
+      return;
+    }
+
     /*use pagination seed*/
     await db.setSeed(basic.getGlobalParam(settings.POSTGRESQL_SEED_PARAMETER_NAME));
 
@@ -81,6 +89,15 @@ module.exports = (app) => {
   app.post('/wishlist/purchased/:id', async (req, res) =>  {
     /*get wish id from url*/
     const id = req.params.id;
+
+    /*check if ID actually exists*/
+    if(! await db.wishExists(id) ) {
+      /*return error message to main page*/
+      res.redirect(basic.buildRefererUrl('/wishlist/', "Wish doesn't exist"));
+      /*exit*/
+      return;
+    }
+
     /*get store name from post body*/
     let store = req.body.store;
 
@@ -224,6 +241,14 @@ module.exports = (app) => {
   /*fetch book data by book id*/
   app.get('/get/wishlist/:id', async(req, res) => {
     let id = req.params.id;
+
+    /*check if ID actually exists*/
+    if(! await db.wishExists(id) ) {
+      /*return error message to main page*/
+      res.send(null);
+      /*exit*/
+      return;
+    }
     res.send(
       await db.fetchWishById(id)
     );

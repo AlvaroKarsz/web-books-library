@@ -51,6 +51,15 @@ module.exports = (app) => {
     const id =  req.params.id;
     /*fetch from DB the wish info - pass to DB function filter in order to get the next and prev. id in this sort type(if any)*/
 
+
+    /*check if ID actually exists*/
+    if(! await db.bookExists(id) ) {
+      /*return error message to main page*/
+      res.redirect(basic.buildRefererUrl('/books/', "Book doesn't exist"));
+      /*exit*/
+      return;
+    }
+
     /*use pagination seed*/
     await db.setSeed(basic.getGlobalParam(settings.POSTGRESQL_SEED_PARAMETER_NAME));
 
@@ -111,6 +120,15 @@ module.exports = (app) => {
   /*fetch book data by book id*/
   app.get('/get/books/:id', async(req, res) => {
     let id = req.params.id;
+
+    /*check if ID actually exists*/
+    if(! await db.bookExists(id) ) {
+      /*return error message to main page*/
+      res.send(null);
+      /*exit*/
+      return;
+    }
+
     res.send(
       await db.fetchBookById(id)
     );
@@ -527,6 +545,15 @@ module.exports = (app) => {
     errorMessage = 'err-msg';
     /*validate date format and beautify it*/
     date = basic.readDateForDB(date);
+
+
+    /*check if ID actually exists*/
+    if(! await db.bookExists(id) ) {
+      /*return error message to main page*/
+      res.redirect(basic.buildRefererUrl('/books/', "Book doesn't exist"));
+      /*exit*/
+      return;
+    }
 
     /*invalid date format*/
     if(!date) {

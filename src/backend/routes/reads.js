@@ -46,6 +46,14 @@ module.exports = (app) => {
   app.get('/reads/:id', async (req, res) =>  {
     const id =  req.params.id;
 
+    /*check if ID actually exists*/
+    if(! await db.bookExists(id) ) {
+      /*return error message to main page*/
+      res.redirect(basic.buildRefererUrl('/reads/', "Book doesn't exist"));
+      /*exit*/
+      return;
+    }
+
     /*use pagination seed*/
     await db.setSeed(basic.getGlobalParam(settings.POSTGRESQL_SEED_PARAMETER_NAME));
 
@@ -70,6 +78,13 @@ module.exports = (app) => {
   /*send details by ID*/
   app.get('/get/reads/:id', async (req, res) =>  {
     const id =  req.params.id;
+    /*check if ID actually exists*/
+    if(! await db.bookExists(id) ) {
+      /*return error message to main page*/
+      res.send(null);
+      /*exit*/
+      return;
+    }
     res.send(
       await db.fetchReadById(id)
     );

@@ -3,6 +3,26 @@ const pg = require(settings.SOURCE_CODE_BACKEND_CONNECTION_DATABASE_FILE_PATH);
 
 class dbFunctions {
 
+  async bookExists(id) {
+    let exists = await pg.query(`SELECT EXISTS(SELECT 1 FROM my_books WHERE id = $1);`, [id]);
+    return exists.rows[0].exists;
+  }
+
+  async serieExists(id) {
+    let exists = await pg.query(`SELECT EXISTS(SELECT 1 FROM series WHERE id = $1);`, [id]);
+    return exists.rows[0].exists;
+  }
+
+    async storyExists(id) {
+      let exists = await pg.query(`SELECT EXISTS(SELECT 1 FROM stories WHERE id = $1);`, [id]);
+      return exists.rows[0].exists;
+    }
+
+  async wishExists(id) {
+    let exists = await pg.query(`SELECT EXISTS(SELECT 1 FROM wish_list WHERE id = $1);`, [id]);
+    return exists.rows[0].exists;
+  }
+
   async saveAsin(asin, id, table) {
     let query = 'UPDATE ', paramCounter = 0, queryArguments = [];
 
