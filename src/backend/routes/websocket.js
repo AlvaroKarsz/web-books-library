@@ -1,4 +1,5 @@
 const settings = require('../settings.js');
+const logger = require(settings.SOURCE_CODE_BACKEND_LOGGER_MODULE_FILE_PATH);
 const Ws = require(settings.SOURCE_CODE_BACKEND_WEBSOCKET_MODULE_FILE_PATH);
 
 /*
@@ -26,6 +27,10 @@ module.exports = (app) => {
     */
     const response = Ws.init();
 
+    /*log action*/
+    logger.log({
+      text: "WebSocket server was initialized for a backup process.\nServer is listening in port " + response
+    });
     /*send port/error to client*/
     res.send(
       JSON.stringify(response)

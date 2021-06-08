@@ -2,6 +2,7 @@ const settings = require('../settings.js');
 const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
 const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
+const logger = require(settings.SOURCE_CODE_BACKEND_LOGGER_MODULE_FILE_PATH);
 const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
 const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
 
@@ -78,6 +79,14 @@ module.exports = (app) => {
     /*check if ID actually exists*/
     if(! await db.serieExists(id) ) {
       /*return error message to main page*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error loading seire page.\nSerie ID does not exists in DB, ID: " + id
+      });
+
+
       res.redirect(basic.buildRefererUrl('/series/', "Serie doesn't exist"));
       /*exit*/
       return;
@@ -124,6 +133,13 @@ module.exports = (app) => {
     /*check if ID actually exists*/
     if(! await db.serieExists(id) ) {
       /*return error message to main page*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error fetching seire info.\nSerie ID does not exists in DB, ID: " + id
+      });
+
       res.send(null);
       /*exit*/
       return;
@@ -151,6 +167,13 @@ module.exports = (app) => {
 
     /*make sure this serie has an unique title<->author combination*/
     if(await db.checkIfSerieAuthorAndTitleExistsInSeriesList(requestBody.title,requestBody.author, existingId)) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new Serie.\nSerie with same title ${requestBody.title}, by same author ${requestBody.author} already exists in DB.`
+      });
+
       res.send(JSON.stringify({status:false, message:'A serie with this title by same author already exist.'}));
       return;
     }
@@ -160,9 +183,21 @@ module.exports = (app) => {
     if(existingId) {
       /*existing serie - alter it*/
       await db.alterSerieById(existingId, requestBody);
+
+      /*log action*/
+      logger.log({
+        text: `Serie info was altered.\Serie id: ${existingId}`
+      });
+
     }  else {
       /*new serie to save*/
       await db.saveSerie(requestBody);
+
+      /*log action*/
+      logger.log({
+        text: `New serie was saved.\nTitle: ${requestBody.title}\nAuthor: ${requestBody.author}`
+      });
+
     }
 
 
@@ -197,6 +232,13 @@ module.exports = (app) => {
         pic = pic.cover;
       } else {
         /*nothing recevied*/
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: "Error Changing cover picture for serie ID " + id + ".\nNo cover received"
+        });
+
         res.send(
           JSON.stringify(false)
         );
@@ -217,12 +259,23 @@ module.exports = (app) => {
         md5: imagesHandler.calculateMD5(picPath)
       });
 
+      /*log action*/
+      logger.log({
+        text: "Cover was changed for serie ID " + id
+      });
+
       res.send(
         JSON.stringify(true)
       );
     } catch(err) {
       /*error saving picture*/
-      console.log(err);
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error Changing cover picture for serie ID " + id + ".\nError - " + err
+      });
+
       res.send(
         JSON.stringify(false)
       );
@@ -241,6 +294,13 @@ module.exports = (app) => {
     /*make sure serie has no books or wishes linked to it*/
     if( basic.toInt( await db.getBooksCountFromSerie(id) ) || basic.toInt( await db.getWishesCountFromSerie(id) ) ) {
       /*send error*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error Deleting serie from DB\nBooks/Wishlists are linked to this serie\nThese links must be removed before deleting this serie"
+      });
+
       message += 'Books/Wishes are linked to this serie, delete them and try again';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
       return;
@@ -252,6 +312,11 @@ module.exports = (app) => {
     /*delete picture*/
     await imagesHandler.deleteImage(settings.SERIES_FOLDER_NAME,id);
 
+
+    /*log action*/
+    logger.log({
+      text: "Serie ID " + id + " was deleted."
+    });
 
     /*redirect with success message*/
     message += 'Serie was Deleted';

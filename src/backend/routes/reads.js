@@ -2,6 +2,7 @@ const settings = require('../settings.js');
 const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
 const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
+const logger = require(settings.SOURCE_CODE_BACKEND_LOGGER_MODULE_FILE_PATH);
 const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
 const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
 
@@ -49,6 +50,13 @@ module.exports = (app) => {
     /*check if ID actually exists*/
     if(! await db.bookExists(id) ) {
       /*return error message to main page*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error loading read book page.\nBook ID does not exists in DB, ID: " + id
+      });
+
       res.redirect(basic.buildRefererUrl('/reads/', "Book doesn't exist"));
       /*exit*/
       return;
@@ -81,6 +89,13 @@ module.exports = (app) => {
     /*check if ID actually exists*/
     if(! await db.bookExists(id) ) {
       /*return error message to main page*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error fetching read book info.\nBook ID does not exists in DB, ID: " + id
+      });
+
       res.send(null);
       /*exit*/
       return;
@@ -122,6 +137,13 @@ module.exports = (app) => {
         pic = pic.cover;
       } else {
         /*nothing recevied*/
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: "Error Changing cover picture for read book ID " + id + ".\nNo cover received"
+        });
+
         res.send(
           JSON.stringify(false)
         );
@@ -143,12 +165,23 @@ module.exports = (app) => {
         md5: imagesHandler.calculateMD5(picPath)
       });
 
+      /*log action*/
+      logger.log({
+        text: "Cover was changed for read book ID " + id
+      });
+
       res.send(
         JSON.stringify(true)
       );
     } catch(err) {
       /*error saving picture*/
-      console.log(err);
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error Changing cover picture for read book ID " + id + ".\nError - " + err
+      });
+
       res.send(
         JSON.stringify(false)
       );

@@ -2,6 +2,7 @@ const settings = require('../settings.js');
 const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
 const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
+const logger = require(settings.SOURCE_CODE_BACKEND_LOGGER_MODULE_FILE_PATH);
 const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
 const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
 const googleSearcher = require(settings.SOURCE_CODE_BACKEND_GOOGLE_SEARCH_MODULE_FILE_PATH);
@@ -69,6 +70,13 @@ module.exports = (app) => {
     /*check if ID actually exists*/
     if(! await db.storyExists(id) ) {
       /*return error message to main page*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error loading story's page.\nStory ID does not exists in DB, ID: " + id
+      });
+
       res.redirect(basic.buildRefererUrl('/stories/', "Story doesn't exist"));
       /*exit*/
       return;
@@ -117,6 +125,13 @@ module.exports = (app) => {
     /*check if ID actually exists*/
     if(! await db.storyExists(id) ) {
       /*return error message to main page*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error fetching story's info.\nStory ID does not exists in DB, ID: " + id
+      });
+
       res.send(null);
       /*exit*/
       return;
@@ -144,18 +159,39 @@ module.exports = (app) => {
 
     //check book pages validity
     if( !basic.isValidInt(requestBody.pages) ) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new Story.\nInvalid number of pages: ${requestBody.pages}`
+      });
+
       res.send(JSON.stringify({status:false, message:'Invalid Pages'}));
       return;
     }
 
     /*make sure collection id is a valid integer*/
     if(!basic.isValidInt(requestBody.collectionId.value)) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new Story.\nInvalid Collection ID (Story's parent): ${requestBody.collectionId.value}`
+      });
+
       res.send(JSON.stringify({status:false, message:'Invalid Collection'}));
       return;
     }
 
     /*make sure the Collection exists*/
     if(! await db.checkIsCollectionIdExists(requestBody.collectionId.value)) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new Story.\nCollection ID (Story's parent): ${requestBody.collectionId.value} Doesn't exists in DB`
+      });
+
       res.send(JSON.stringify({status:false, message:'Collection not exist'}));
       return;
     }
@@ -187,6 +223,13 @@ module.exports = (app) => {
 
     /*make sure this author<->title<->pages combination is unique*/
     if(await db.checkIfStoryAuthorAndTitleAndPagesExistsInStoriesList(requestBody.title,requestBody.author, requestBody.pages, existingStoryId)) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new Story.\nA story with same title (${requestBody.title}), by same author(${requestBody.author}) , wish same number of pages (${requestBody.pages}) already exists in DB.`
+      });
+
       res.send(JSON.stringify({status:false, message:'A story with this title by same author already exist.'}));
       return;
     }
@@ -206,6 +249,13 @@ module.exports = (app) => {
       requestBody.pages ,
       await db.getStoriesPagesSumFromCollection(requestBody.collectionId.value , existingStoryId )
     ) > basic.toInt(collectionAuthorAndPages.pages) ) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new Story.\nThe sum of all stories pages (including the new one inserted) exceeded collection total number of pages ${collectionAuthorAndPages.pages}.`
+      });
+
       res.send(JSON.stringify({status:false, message:'Sum of stories pages exceeded collection number of pages.'}));
       return;
     }
@@ -214,9 +264,21 @@ module.exports = (app) => {
     if(existingStoryId) {
       /*existing story - alter it*/
       await db.alterStoryById(existingStoryId, requestBody);
+
+      /*log action*/
+      logger.log({
+        text: `Story was altered.\nStory id: ${existingStoryId}`
+      });
+
     }  else {
       /*new story to save*/
       await db.saveStory(requestBody);
+
+      /*log action*/
+      logger.log({
+        text: `New story was saved.\nTitle: ${requestBody.title}\nAuthor: ${requestBody.author}\nCollection ID: ${requestBody.collectionId.value}`
+      });
+
     }
 
 
@@ -263,6 +325,13 @@ module.exports = (app) => {
 
     /*invalid date format*/
     if(!date) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error marking story as Read\nInvalid read date.\nStory ID: ${id}`
+      });
+
       errorMessage += '=Invalid Date';//add error
       if(referer.indexOf('?') === -1) {//no query params, add the first one
         referer += '?' + errorMessage;
@@ -280,6 +349,12 @@ module.exports = (app) => {
         basic.toInt(pages)
       )) {/*invalid pages number*/
 
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error marking story as partly Read\nInvalid number of read pages.\nStory ID: ${id}\nRead pages: ${pages}`
+        });
+
         errorMessage += '=Invalid Number of Pages';//add error
         if(referer.indexOf('?') === -1) {//no query params, add the first one
           referer += '?' + errorMessage;
@@ -291,7 +366,15 @@ module.exports = (app) => {
       }
 
       /*number of read pages is bigger than story total pages*/
-      if( basic.isBiggerInt(pages, await db.getStoryPages(id) )) {
+      const storyPages = await db.getStoryPages(id);
+
+      if( basic.isBiggerInt(pages, storyPages)) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error marking story as partly Read\nNumber of read pages is bigger than story.\nStory ID: ${id}\nRead pages: ${pages}\nTotal story pages: ${storyPages}`
+        });
 
         errorMessage += '=Number of Read Pages is Bigger than Total Story Pages';//add error
         if(referer.indexOf('?') === -1) {//no query params, add the first one
@@ -307,6 +390,12 @@ module.exports = (app) => {
 
     /*valid data - update DB*/
     await db.markStoryAsRead(id, date, pages);
+
+    /*log action*/
+    logger.log({
+      text: `Story (ID: ${id}) was marked as Read.`
+    });
+
     res.redirect(referer);
   });
 
@@ -321,7 +410,14 @@ module.exports = (app) => {
 
     if(!id) {
       /*send error*/
-      message += 'Could not fetch Rating, Invalid Book ID';//add error
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error fetching new ratings for a story.\nInvalid Story ID: ${id}`
+      });
+
+      message += 'Could not fetch Rating, Invalid Story ID';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
       return;
     }
@@ -329,10 +425,18 @@ module.exports = (app) => {
     if(! await db.saveStoryRating(id) ) {
       /*error finding new rating*/
       message += 'Could not fetch Rating, Generic Error';//add error
+
+      /*saveStoryRating function will log the error*/
       res.redirect(basic.buildRefererUrl(referer, message));
       return;
     } else {
       /*success*/
+
+      /*log action*/
+      logger.log({
+        text: `New ratings were fetched for Story ID ${id}`
+      });
+
       message += 'New Rating was saved';//add message
       res.redirect(basic.buildRefererUrl(referer, message, false));
     }
@@ -350,12 +454,25 @@ module.exports = (app) => {
     desc = requestBody.desc;
     /*if not present return error*/
     if(!id || !desc) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error changing description for a story.\nMissing data in request body.\Story ID: ${id}.\nDescription ${desc}.`
+      });
+
       res.send(JSON.stringify(false));
       return;
     }
 
     /*update DB*/
     await db.changeStoryDescription(id, desc);
+
+    /*log action*/
+    logger.log({
+      text: `Story description was changed for Story ID ${id}.`
+    });
+
 
     /*send success message*/
     res.send(JSON.stringify(true));
@@ -376,6 +493,13 @@ module.exports = (app) => {
         pic = pic.cover;
       } else {
         /*nothing recevied*/
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error changing story's cover, no picture received.\nStory ID ${id}`
+        });
+
         res.send(
           JSON.stringify(false)
         );
@@ -396,12 +520,24 @@ module.exports = (app) => {
         md5: imagesHandler.calculateMD5(picPath)
       });
 
+      /*log action*/
+      logger.log({
+        text: `Cover picture was changed for Story ID ${id}.\nNew cover path: ${picPath}`
+      });
+
       res.send(
         JSON.stringify(true)
       );
     } catch(err) {
       /*error saving picture*/
-      console.log(err);
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error changing story's cover, Error: ${err}.\nStory ID ${id}`
+      });
+
+
       res.send(
         JSON.stringify(false)
       );
@@ -419,6 +555,13 @@ module.exports = (app) => {
     message = '';
 
     if(!id) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error fetching new ASIN for a Story.\nInvalid Story ID: ${id}`
+      });
+
       /*send error*/
       message += 'Could not fetch ASIN, Invalid Book ID';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
@@ -432,7 +575,14 @@ module.exports = (app) => {
     data.author = data.story_author ? data.story_author : data.author;
     /*invalid data*/
     if(!data.name || !data.author) {
-      message += 'Could not fetch ASIN, Invalid Book Name/Author';//add error
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error fetching new ASIN for a Story.\nInvalid Story Title/Author.\nStory ID: ${id}, Title: ${data.name}, Author: ${data.author}`
+      });
+
+      message += 'Could not fetch ASIN, Invalid Story Name/Author';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
       return;
     }
@@ -442,6 +592,11 @@ module.exports = (app) => {
 
     /*save in DB - in case of errors asin will be null, and the DB will null the value in relevant table*/
     await db.saveAsin(asin, id, 'stories');
+
+    /*log action*/
+    logger.log({
+      text: `New ASIN number (${asin}) was saved for Story ID :${id}`
+    });
 
     /*return success*/
     message += 'New ASIN was saved';//add message

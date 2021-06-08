@@ -2,6 +2,7 @@ const settings = require('../settings.js');
 const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
 const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
+const logger = require(settings.SOURCE_CODE_BACKEND_LOGGER_MODULE_FILE_PATH);
 const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
 const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
 
@@ -53,6 +54,13 @@ module.exports = (app) => {
     /*check if ID actually exists*/
     if(! await db.wishExists(id) ) {
       /*return error message to main page*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error loading purchased wishlist page.\nBook ID does not exists in DB, ID: " + id
+      });
+
       res.redirect(basic.buildRefererUrl('/purchased/', "Book doesn't exist"));
       /*exit*/
       return;
@@ -86,6 +94,13 @@ module.exports = (app) => {
 
     /*check if ID actually exists*/
     if(! await db.wishExists(id) ) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error fetching purchased wishlist info.\nBook ID does not exists in DB, ID: " + id
+      });
+
       res.send(null);
       return;
     }
@@ -116,6 +131,12 @@ module.exports = (app) => {
   app.get('/purchased/read/cancel/:id', async (req, res) =>  {
     const id =  req.params.id;
     await db.cancelPurchaseMark(id);
+
+    /*log action*/
+    logger.log({
+      text: "Purchased mark was removed from Wish ID: " + id
+    });
+
     res.redirect('/wishlist/' + id);
   });
 
@@ -133,6 +154,13 @@ module.exports = (app) => {
         pic = pic.cover;
       } else {
         /*nothing recevied*/
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: "Error Changing cover picture for purchased wishlist ID " + id + ".\nNo cover received"
+        });
+
         res.send(
           JSON.stringify(false)
         );
@@ -153,12 +181,24 @@ module.exports = (app) => {
         md5: imagesHandler.calculateMD5(picPath)
       });
 
+      /*log action*/
+      logger.log({
+        text: "Cover was changed for purchased wishlist ID " + id
+      });
+
+
       res.send(
         JSON.stringify(true)
       );
     } catch(err) {
       /*error saving picture*/
-      console.log(err);
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error Changing cover picture for purchased wishlist ID " + id + ".\nError - " + err
+      });
+
       res.send(
         JSON.stringify(false)
       );

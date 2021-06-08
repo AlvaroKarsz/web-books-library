@@ -4,6 +4,7 @@ const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
 const openLibraryApi = require(settings.SOURCE_CODE_BACKEND_OPEN_LIBRARY_MODULE_FILE_PATH);
 const picDecoder = require(settings.SOURCE_CODE_BACKEND_PICTURE_DECODER_MODULE_FILE_PATH);
+const logger = require(settings.SOURCE_CODE_BACKEND_LOGGER_MODULE_FILE_PATH);
 const wikiApi = require(settings.SOURCE_CODE_BACKEND_WIKI_MODULE_FILE_PATH);
 const goodReadsAPI = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
 const googleSearcher = require(settings.SOURCE_CODE_BACKEND_GOOGLE_SEARCH_MODULE_FILE_PATH);
@@ -29,6 +30,13 @@ module.exports = (app) => {
 
     /*invalid data received - return empty object*/
     if(!isbn  && !author && !title) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for a cover picture.\nMore data is needed.\nReceived ISBN: ${isbn}, Author: ${author}, Title: ${title}`
+      });
+
       res.send(JSON.stringify([]));//empty
       return;
     }
@@ -59,6 +67,12 @@ module.exports = (app) => {
     covers = covers.flat();
     /*remove nulls*/
     covers = covers.filter(r => r);
+
+    /*log action*/
+    logger.log({
+      text: `Cover were fetched for:\nISBN: ${isbn}, Author: ${author}, Title: ${title}.\n ${covers.length} Covers found`
+    });
+
     /*send covers arr*/
     res.send(JSON.stringify(covers));
   });
@@ -76,8 +90,18 @@ module.exports = (app) => {
     author = requestBody.author || null,
     title = requestBody.title || null;
 
-    /*no valid data received - return empty object*/
-    if(!isbn && !author && !title) {
+    /*
+    the fetch is based on isbn
+    so if isbn is not present, use title and author to retrieve isbn
+    */
+    if(!isbn && !title) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for book details.\nMore data is needed.\nReceived ISBN: ${isbn}, Author: ${author}, Title: ${title}`
+      });
+
       res.send(JSON.stringify({}));
       return;
     }
@@ -87,19 +111,19 @@ module.exports = (app) => {
     so if isbn is not present, use title and author to retrieve isbn
     */
     if(!isbn) {
-      if(!title) {
-        /*
-        can't be done with author only - return empty object
-        */
-        res.send(JSON.stringify({}));
-        return;
-      }
       /*get isbn using goodreads API*/
       isbn = await goodReadsAPI.fetchIsbnFromTitleAndAuthor(title, author || '');
       if(!isbn) {
         /*
         isbn not found - return empty object
         */
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error while searching for book details.\nISBN not received from user, so ISBN was searched based on title (${title}) and author (${author}).\nNo ISBN found.`
+        });
+
         res.send(JSON.stringify({}));
         return;
       }
@@ -149,8 +173,15 @@ module.exports = (app) => {
       output.asin = asin;
     }
 
+    output = JSON.stringify(output);
+
+    /*log action*/
+    logger.log({
+      text: `Book details were fetched.\nReceived ISBN: ${isbn}, Author: ${author}, Title: ${title}.\nOutput: ${output}`
+    });
+
     /*send data to frontend*/
-    res.send(JSON.stringify(output));
+    res.send(output);
   });
 
   /*
@@ -166,6 +197,13 @@ module.exports = (app) => {
 
     /*invalid data received - return empty object*/
     if(!title || (!author && !collection)) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for story details.\nMore data is needed.\nReceived Author: ${author}, Title: ${title}, Collection ID ${collection}`
+      });
+
       res.send(JSON.stringify({}));
       return;
     }
@@ -189,11 +227,18 @@ module.exports = (app) => {
     let description = output[0],
     asin = output[1];
 
-    /*send data to frontend*/
-    res.send(JSON.stringify({
+    output = JSON.stringify({
       asin: asin,
       description: description
-    }));
+    });
+
+    /*log action*/
+    logger.log({
+      text: `Story details were fetched.\nReceived Author: ${author}, Title: ${title}, Collection ID: ${collection}.\nOutput: ${output}`
+    });
+
+    /*send data to frontend*/
+    res.send(output);
   });
 
 
@@ -204,7 +249,15 @@ module.exports = (app) => {
     let output = [];
     /*no files  -  empty response*/
     if(!req.files || !req.files.file || !req.files.file.data) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while Decoding text from picture.\nNo picture received.`
+      });
+
       res.send(JSON.stringify(output));
+      return;
     }
 
     /*all maps and filters may cause unexpected errors, so wrap the code in try catch block*/
@@ -224,8 +277,21 @@ module.exports = (app) => {
           page: a[a.length - 1]
         };
       });
+
+      /*log action*/
+      logger.log({
+        text: `Text was decoded from received picture.\nText found: ${output}`
+      });
+
     } catch (e) {
       /*error while decoding picture or handling output*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while Decoding text from picture.\nError - ${e}`
+      });
+
       output = [];
     }
     /*
@@ -249,6 +315,13 @@ module.exports = (app) => {
     type = requestBody.type;
     /*if not present return empty response*/
     if(!id || !type) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for book/story description.\nMore data is needed.\nReceived ID: ${id}, type: ${type}`
+      });
+
       res.send(JSON.stringify(''));
       return;
     }
@@ -286,18 +359,32 @@ module.exports = (app) => {
 
       default:
       /*unexpected - return empty string*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for book/story description.\nUnknown type (${type}) received.\nAllowed types: books/wishlist/stories`
+      });
+
       res.send(JSON.stringify(''));
       return;
     }
     /*use goodreads module to fetch description*/
 
-    res.send(JSON.stringify(
+    const output = JSON.stringify(
       await goodReadsAPI.fetchDescription({
         title: dbInfo.name,
         author: dbInfo.author,
         isbn: dbInfo.isbn
       })
-    ));
+    );
+
+    /*log action*/
+    logger.log({
+      text: `Description was fetched for data: ID ${id}, type: ${type}.\nOutput: ${output}`
+    });
+
+    res.send(output);
 
   });
 

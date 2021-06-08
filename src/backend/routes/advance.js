@@ -2,6 +2,7 @@ const settings = require('../settings.js');
 const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const config = require(settings.SOURCE_CODE_BACKEND_CONFIG_FILE_PATH);
 const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
+const logger = require(settings.SOURCE_CODE_BACKEND_LOGGER_MODULE_FILE_PATH);
 const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
 const exec = require("child_process").execSync;
 
@@ -35,6 +36,11 @@ module.exports = (app) => {
 
       /*shell command error*/
 
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error while backing up PostgreSQL DB - " + err
+      });
       /*change directory to saved one*/
       process.chdir(initDirectory);
 
@@ -45,6 +51,11 @@ module.exports = (app) => {
       return;
 
     }
+
+    /*log action*/
+    logger.log({
+      text: "PostgreSQL DB backup succeeded.\nBackup file: " + settings.BACKUP_DB_FILE_PATH
+    });
     /*change directory to saved one*/
     process.chdir(initDirectory);
 

@@ -3,6 +3,7 @@ const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
 const basic = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const imagesHandler = require(settings.SOURCE_CODE_BACKEND_IMAGES_MODULE_FILE_PATH);
 const googleSearcher = require(settings.SOURCE_CODE_BACKEND_GOOGLE_SEARCH_MODULE_FILE_PATH);
+const logger = require(settings.SOURCE_CODE_BACKEND_LOGGER_MODULE_FILE_PATH);
 const goodReadsAPI = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
 const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_PATH);
 const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
@@ -54,6 +55,12 @@ module.exports = (app) => {
 
     /*check if ID actually exists*/
     if(! await db.bookExists(id) ) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error loading book's page.\nBook ID does not exists in DB, ID: " + id
+      });
       /*return error message to main page*/
       res.redirect(basic.buildRefererUrl('/books/', "Book doesn't exist"));
       /*exit*/
@@ -123,6 +130,11 @@ module.exports = (app) => {
 
     /*check if ID actually exists*/
     if(! await db.bookExists(id) ) {
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: "Error fetching book's data.\nBook ID does not exists in DB, ID: " + id
+      });
       /*return error message to main page*/
       res.send(null);
       /*exit*/
@@ -221,6 +233,11 @@ module.exports = (app) => {
     if(requestBody.arrivalDate) {
       /*compart epoch time with tomorrow at 00:00 - should be equal or smaller*/
       if( +new Date(requestBody.arrivalDate) > basic.getTomorrowsEpoch() )  {
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook Arrival date Timestamp (${+new Date(requestBody.arrivalDate)}) is bigger then tomorrows Timestamp ${basic.getTomorrowsEpoch()}.`
+        });
         res.send(JSON.stringify({status:false, message:'Invalid Arrival Time'}));
         return;
       }
@@ -230,12 +247,25 @@ module.exports = (app) => {
 
     /*check year validity*/
     if(basic.toInt(requestBody.year) > new Date().getFullYear() || ! basic.isValidInt(requestBody.year)) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new book.\nInvalid publication year ${requestBody.year}`
+      });
+
       res.send(JSON.stringify({status:false, message:'Invalid Year'}));
       return;
     }
 
     //check book pages validity
     if( !basic.isValidInt(requestBody.pages) ) {
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new book.\nInvalid number of pages ${requestBody.pages}`
+      });
+
       res.send(JSON.stringify({status:false, message:'Invalid Pages'}));
       return;
     }
@@ -247,24 +277,52 @@ module.exports = (app) => {
 
       /*make sure there are no empty names*/
       if(requestBody.collection.map(a => a.title).filter(a => a === '').length) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is a collection and has stories without names`
+        });
+
         res.send(JSON.stringify({status:false, message:'Empty Story Name'}));
         return;
       }
 
       /*make sure all sotory pages are valid ints*/
       if(requestBody.collection.map(a => a.pages).filter(a => !basic.isValidInt(a)).length) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is a collection and has stories with invalid number of pages`
+        });
+
         res.send(JSON.stringify({status:false, message:'Invalid Story Pages'}));
         return;
       }
 
       /*make sure the number of story pages is not bigger than total book pages*/
       if(requestBody.collection.map(a => basic.toInt(a.pages)).reduce((a, b) => a + b ) > basic.toInt(requestBody.pages)) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is a collection, and total number of stories pages is bigger than total number of collection pages.`
+        });
+
         res.send(JSON.stringify({status:false, message:'Story pages are bigger than the actual book length'}));
         return;
       }
 
       /*validate author if any*/
       if(requestBody.collection.map(a => a.author).filter(a => a !== false).filter(a => a === '').length) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is a collection and has stories with invalid author names`
+        });
+
         res.send(JSON.stringify({status:false, message:'Invalid Story Author'}));
         return;
       }
@@ -278,6 +336,13 @@ module.exports = (app) => {
         for(let p = 0 , s = tmp.length ; p < s ; p ++ ) {
           if(basic.insensitiveCompare(requestBody.collection[o].author || requestBody.author, requestBody.collection[tmp[p]].author || requestBody.author)) {
             if(tmp[p] !== o) {/*to avoid cases when a book is found duplicated with itself*/
+
+              /*log error*/
+              logger.log({
+                type: 'error',
+                text: `Error Saving new book.\nBook is a collection and has a duplicated stories.\nTitle: ${requestBody.collection[o].name}.\nAuthor: ${requestBody.collection[o].author || requestBody.author}`
+              });
+
               res.send(JSON.stringify({status:false, message:'Duplicated story'}));
               return;
             }
@@ -289,20 +354,48 @@ module.exports = (app) => {
     if(requestBody.serie) {
       /*both serie value (serie's id) and seire pages should be a valid integer - validate it*/
       if(!basic.isValidInt(requestBody.serie.value)) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is a part of series, and selected serie ID is invalid.\nSelected serie ID: ${requestBody.serie.value}.`
+        });
+
         res.send(JSON.stringify({status:false, message:'Invalid Serie'}));
         return;
       }
       if(!basic.isValidInt(requestBody.serie.number)) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is a part of series, and location in serie is invalid.\nSelected serie ID: ${requestBody.serie.value}\nLocation: ${requestBody.serie.number}`
+        });
+
         res.send(JSON.stringify({status:false, message:'Invalid Number in Serie'}));
         return;
       }
       /*make sure the serie ID actualy exist*/
       if(! await db.checkIsSerieIdExists(requestBody.serie.value)) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is a part of series, and selected serie doesn't exists in DB.\nSelected serie ID: ${requestBody.serie.value}.`
+        });
+
         res.send(JSON.stringify({status:false, message:'Serie not exist'}));
         return;
       }
       /*check if the number in serie is already taken*/
       if(await db.bookFromSerieExists(requestBody.serie.value, requestBody.serie.number, existingBookId)) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is a part of series, and location in serie is already taken\nSelected serie ID: ${requestBody.serie.value}\nLocation: ${requestBody.serie.number}`
+        });
+
         res.send(JSON.stringify({status:false, message:'Number in serie is already taken'}));
         return;
       }
@@ -311,10 +404,24 @@ module.exports = (app) => {
     /*if this book is followed - make sure the following book id is valid and exist*/
     if(requestBody.next) {
       if(!basic.isValidInt(requestBody.next.value)) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is followed by another book, but the next book ID is invalid.\nNext book ID: ${requestBody.next.value}`
+        });
+
         res.send(JSON.stringify({status:false, message:'Invalid following book ID.'}));
         return;
       }
       if(!await db.checkIfBookIdExists(requestBody.next.value)) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is followed by another book, but the next book ID doesn't exists in DB.\nNext book ID: ${requestBody.next.value}`
+        });
+
         res.send(JSON.stringify({status:false, message:'Following book does not exist.'}));
         return;
       }
@@ -330,10 +437,25 @@ module.exports = (app) => {
     /*if this book is preceded - make sure the preceded book id is valid and exist*/
     if(requestBody.prev) {
       if(!basic.isValidInt(requestBody.prev.value)) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is preceded by another book, but the prev. book ID is invalid.\nPrev. book ID: ${requestBody.prev.value}`
+        });
+
         res.send(JSON.stringify({status:false, message:'Invalid Preceding book ID.'}));
         return;
       }
+
       if(!await db.checkIfBookIdExists(requestBody.prev.value)) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new book.\nBook is preceded by another book, but the prev. book ID doesn't exists in DB.\nPrev. book ID: ${requestBody.prev.value}`
+        });
+
         res.send(JSON.stringify({status:false, message:'Preceding book does not exist.'}));
         return;
       }
@@ -348,26 +470,53 @@ module.exports = (app) => {
 
     /*validate book type*/
     if(! ['H','P','HN', 'E'].includes(requestBody.type)) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new book.\nUnknown book type.\nAllowed types:\nH: HardCover\nP: PaperBack\nE: E-book\nHN: HardCover without Dust Jacket\nReceived: ${requestBody.type}`
+      });
+
       res.send(JSON.stringify({status:false, message:'Invalid Book Format.'}));
       return;
     }
 
     /*if this is a ebook, make sure a ebook file received (if a new book is been inserted)*/
     if( requestBody.type === 'E' && !eBook && !existingBookId) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new book.\nBook type is E-book, but no E-book was received.`
+      });
+
       res.send(JSON.stringify({status:false, message:'Upload E-Book.'}));
       return;
     }
 
 
     /*make sure isbn isn't taken*/
-
     if(await db.checkIfIsbnExists(requestBody.isbn, existingBookId)) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new book.\nISBN already exists in DB and should be unique.\nISBN: ${requestBody.isbn}`
+      });
+
       res.send(JSON.stringify({status:false, message:'ISBN already exist in DB.'}));
       return;
     }
 
     /*make sure this book has an unique title, author combination*/
     if(await db.checkIfBookAuthorAndTitleExists(requestBody.title,requestBody.author, existingBookId)) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Saving new book.\nBook's Title + Author combination already exists.\nThis combination must be unique.\nTitle: ${requestBody.title}.\nAuthor: ${requestBody.author}`
+      });
+
       res.send(JSON.stringify({status:false, message:'A book with this title by same author already exist.'}));
       return;
     }
@@ -384,9 +533,20 @@ module.exports = (app) => {
       oldStoriesList = await db.fetchCollectionStories(existingBookId);
       /*existing book - alter it*/
       await db.alterBookById(existingBookId, requestBody);
+
+      /*log action*/
+      logger.log({
+        text: `Book was altered.\nBook id: ${existingBookId}`
+      });
+
     } else { /* existingWishId or normal case*/
       /*new book to save*/
       await db.saveBook(requestBody);
+
+      /*log action*/
+      logger.log({
+        text: `New book was saved.\nTitle: ${requestBody.title}\nAuthor: ${requestBody.author}\nISBN: ${requestBody.isbn}`
+      });
     }
 
 
@@ -403,9 +563,20 @@ module.exports = (app) => {
       /*delete md5sum hash from cache table*/
       await db.deleteMD5(settings.WISH_LIST_FOLDER_NAME, existingWishId);
 
+      /*log action*/
+      logger.log({
+        text: `Book from WishList was registered as a owned book.\nWishlist was deleted from DB.\nWishlist ID: ${existingWishId}`
+      });
+
       /*user used another cover, delete this one*/
       if (mainCoverReceivedFromUser) {
         imagesHandler.deleteImage(settings.WISH_LIST_FOLDER_NAME, existingWishId);
+
+        /*log action*/
+        logger.log({
+          text: `Book from WishList was registered as a owned book.\nWishlist Picture was not used for book's picture.\nWishlist picture was deleted\nWishlist ID: ${existingWishId}`
+        });
+
       } else { /*user is using wish cover as book cover, move the picture and save the md5sum in DB*/
         /*get inserted book ID*/
         let newInsertedBookId = await db.getBookIdFromISBN(requestBody.isbn);
@@ -417,6 +588,11 @@ module.exports = (app) => {
         }, {
           folder: settings.BOOKS_FOLDER_NAME,
           id: newInsertedBookId
+        });
+
+        /*log action*/
+        logger.log({
+          text: `Book from WishList was registered as a owned book.\nWishlist picture was used as book's picture.\nWishlist ID: ${existingWishId}.\nNew book ID :${newInsertedBookId}`
         });
 
         /*save md5hash*/
@@ -479,6 +655,12 @@ module.exports = (app) => {
           }
           if(!storyFoundFlag) {//story has beed deleted - delete the picture (if any)
             imagesHandler.deleteImage(settings.STORIES_FOLDER_NAME, oldStoriesList[i].id);
+
+            /*log action*/
+            logger.log({
+              text: `Book that is a collection was altered.\nStory was removed.\nBook ID :${existingBookId}\nStory ID: ${oldStoriesList[i].id}\nStory Title: ${oldStoriesList[i].name}`
+            });
+
           }
         }
       }
@@ -497,6 +679,11 @@ module.exports = (app) => {
         folder: settings.E_BOOKS_FOLDER_NAME,
         md5: imagesHandler.calculateMD5(eBookFullPath)
       }]);
+
+      /*log action*/
+      logger.log({
+        text: `New E-book file was received\nBook ID ${bookID}`
+      });
 
     }
 
@@ -549,6 +736,13 @@ module.exports = (app) => {
 
     /*check if ID actually exists*/
     if(! await db.bookExists(id) ) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error marking book as Read\nBook ID (${id}) doesn't exists in DB`
+      });
+
       /*return error message to main page*/
       res.redirect(basic.buildRefererUrl('/books/', "Book doesn't exist"));
       /*exit*/
@@ -557,6 +751,13 @@ module.exports = (app) => {
 
     /*invalid date format*/
     if(!date) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error marking book as Read\nInvalid read date.\nBook ID: ${id}`
+      });
+
       errorMessage += '=Invalid Date';//add error
       if(referer.indexOf('?') === -1) {//no query params, add the first one
         referer += '?' + errorMessage;
@@ -574,6 +775,12 @@ module.exports = (app) => {
         basic.toInt(pages)
       )) {/*invalid pages number*/
 
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error marking book as partly Read\nInvalid number of read pages.\nBook ID: ${id}\nRead pages: ${pages}`
+        });
+
         errorMessage += '=Invalid Number of Pages';//add error
         if(referer.indexOf('?') === -1) {//no query params, add the first one
           referer += '?' + errorMessage;
@@ -585,7 +792,14 @@ module.exports = (app) => {
       }
 
       /*number of read pages is bigger than book total pages*/
-      if( basic.isBiggerInt(pages, await db.getBookPages(id) )) {
+      const bookPages = await db.getBookPages(id);
+      if( basic.isBiggerInt(pages, bookPages) ) {
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error marking book as partly Read\nNumber of read pages is bigger than book.\nBook ID: ${id}\nRead pages: ${pages}\nTotal Book pages: ${bookPages}`
+        });
 
         errorMessage += '=Number of Read Pages is Bigger than Total Book Pages';//add error
         if(referer.indexOf('?') === -1) {//no query params, add the first one
@@ -601,6 +815,12 @@ module.exports = (app) => {
 
     /*valid data - update DB*/
     await db.markBookAsRead(id, date, pages);
+
+    /*log action*/
+    logger.log({
+      text: `Book (ID: ${id}) was marked as Read.`
+    });
+
     res.redirect(referer);
   });
 
@@ -618,12 +838,25 @@ module.exports = (app) => {
     desc = requestBody.desc;
     /*if not present return error*/
     if(!id || !desc) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error changing description for a book.\nMissing data in request body.\nBook ID: ${id}.\nDescription ${desc}.`
+      });
+
       res.send(JSON.stringify(false));
       return;
     }
 
     /*update DB*/
     await db.changeBookDescription(id, desc);
+
+    /*log action*/
+    logger.log({
+      text: `Book description was changed for Book ID ${id}.`
+    });
+
 
     /*send success message*/
     res.send(JSON.stringify(true));
@@ -640,6 +873,13 @@ module.exports = (app) => {
     message = '';
 
     if(!id) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error fetching new ratings for a book.\nInvalid Book ID: ${id}`
+      });
+
       /*send error*/
       message += 'Could not fetch Rating, Invalid Book ID';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
@@ -648,11 +888,19 @@ module.exports = (app) => {
     /*fetch new rating and save in DB*/
     if(! await db.saveBookRating(id) ) {
       /*error finding new rating*/
+
+      /*saveBookRating function will log the error*/
       message += 'Could not fetch Rating, Generic Error';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
       return;
     } else {
       /*success*/
+
+      /*log action*/
+      logger.log({
+        text: `New ratings were fetched for Book ID ${id}`
+      });
+
       message += 'New Rating was saved';//add message
       res.redirect(basic.buildRefererUrl(referer, message, false));
     }
@@ -683,6 +931,13 @@ module.exports = (app) => {
     /*check if book id exists, and this is an uncompleted ebook*/
     if( ! await db.checkIfEbookNotCompleted(id) ) {
       /*send error*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error seting a bookmark for an E-book.\nBook is not an E-book, or Book is a completed E-book.\nBook ID: ${id}`
+      });
+
       message += 'Bookmarks can be used on non-completed E-Books only.';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
       return;
@@ -690,13 +945,28 @@ module.exports = (app) => {
 
     /*validate page number - should be integer*/
     if(!basic.isDigits(page)) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error seting a bookmark for an E-book.\nInvalid page to bookmark.\nBook ID: ${id}, Page: ${page}`
+      });
+
       message += 'Invalid number of pages.';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
       return;
     }
 
     /*validate pages - should not be bigger than total number of pages*/
-    if( basic.isBiggerInt(page, await db.getBookPages(id)) ) {
+    const totalNumberOfPages = await db.getBookPages(id);
+    if( basic.isBiggerInt(page, totalNumberOfPages) ) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error seting a bookmark for an E-book.\nPage to bookmark is bigger than Number of book's pages.\nBook ID: ${id}\nWanted bookmark page: ${page}, Number of pages in book: ${totalNumberOfPages}`
+      });
+
       message += 'Page exceeded total number of pages in E-Book.';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
       return;
@@ -704,6 +974,11 @@ module.exports = (app) => {
 
     /*save page*/
     await db.moveBookMark(id, page);
+
+    /*log action*/
+    logger.log({
+      text: `Bookmark was set in page ${page} for E-book ID: ${id}`
+    });
 
     /*return sucess msg*/
     message += 'Bookmark Saved.';
@@ -725,6 +1000,13 @@ module.exports = (app) => {
         pic = pic.cover;
       } else {
         /*nothing recevied*/
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error changing book's cover, no picture received.\nBook ID ${id}`
+        });
+
         res.send(
           JSON.stringify(false)
         );
@@ -746,11 +1028,23 @@ module.exports = (app) => {
         md5: imagesHandler.calculateMD5(picPath)
       });
 
+      /*log action*/
+      logger.log({
+        text: `Cover picture was changed for Book ID ${id}.\nNew cover path: ${picPath}`
+      });
+
       res.send(
         JSON.stringify(true)
       );
     } catch(err) {
       /*error saving picture*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error changing book's cover, Error: ${err}.\nBook ID ${id}`
+      });
+
       res.send(
         JSON.stringify(false)
       );
@@ -768,6 +1062,12 @@ module.exports = (app) => {
     message = '';
 
     if(!id) {
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error fetching new ASIN for a Book.\nInvalid Book ID: ${id}`
+      });
+
       /*send error*/
       message += 'Could not fetch ASIN, Invalid Book ID';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
@@ -779,6 +1079,13 @@ module.exports = (app) => {
 
     /*invalid data*/
     if(!data.name || !data.author) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error fetching new ASIN for a Book.\nInvalid Book Title/Author.\nBook ID: ${id}, Title: ${data.name}, Author: ${data.author}`
+      });
+
       message += 'Could not fetch ASIN, Invalid Book Name/Author';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
       return;
@@ -789,6 +1096,11 @@ module.exports = (app) => {
 
     /*save in DB - in case of errors asin will be null, and the DB will null the value in relevant table*/
     await db.saveAsin(asin, id, 'my_books');
+
+    /*log action*/
+    logger.log({
+      text: `New ASIN number (${asin}) was saved for Book ID :${id}`
+    });
 
     /*return success*/
     message += 'New ASIN was saved';//add message
@@ -805,6 +1117,13 @@ module.exports = (app) => {
     message = '';
 
     if(!id) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error fetching new Tags for a Book.\nInvalid Book ID: ${id}`
+      });
+
       /*send error*/
       message += 'Could not fetch Tags, Invalid Book ID';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
@@ -816,6 +1135,13 @@ module.exports = (app) => {
 
     /*invalid data*/
     if((!data.name && !data.author) || !data.isbn) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error fetching new Tags for a Book.\nInvalid Book Title/Author or Invalid ISBN.\nBook ID: ${id}, Title: ${data.name}, Author: ${data.author}, ISBN ${data.isbn}`
+      });
+
       message += 'Could not fetch Tags, Invalid Book Name/Author/ISBN';//add error
       res.redirect(basic.buildRefererUrl(referer, message));
       return;
@@ -829,6 +1155,11 @@ module.exports = (app) => {
 
     /*save in DB*/
     await db.saveTags(tags, id, 'my_books');
+
+    /*log action*/
+    logger.log({
+      text: `New tags were fetched for a Book.\nBook ID: ${id}.\nNew tags: ${tags}`
+    });
 
     /*return success*/
     message += 'New Tags were saved';//add message
