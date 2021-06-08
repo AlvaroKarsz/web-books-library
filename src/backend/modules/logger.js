@@ -11,7 +11,7 @@ class Logger {
 
   getTodayLogPath() {
     /*generates today's log path based on today's date*/
-    const today = new Date(),
+    const today = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Jerusalem"})),
 
     year = today.getFullYear().toString(), /*taday's year*/
 
@@ -100,7 +100,7 @@ class Logger {
     "\n" +
     type.toUpperCase() + /*type*/
     "\n" +
-    new Date().toISOString().replace('T', ' ').split(".")[0] + /*date*/
+     new Date().toLocaleString("en-US", {timeZone: "Asia/Jerusalem"}) + /*date*/
     "\n" +
     text + /*contents*/
     "\n" +
