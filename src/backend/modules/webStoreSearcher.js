@@ -1,6 +1,6 @@
 class StoreSearcher {
   ebay(isbn) {
-    return `https://www.ebay.com/sch/i.html?_from=R40&_ipg=200&_nkw=${isbn}`;
+    return `https://www.ebay.com/sch/i.html?_from=R40&_ipg=200&_nkw=${isbn}&_sop=15`;
   }
 
   amazon(isbn) {
