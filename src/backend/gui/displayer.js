@@ -509,6 +509,14 @@ class BookDisplayer {
       `</div>`;
     }
 
+    /*option to search similar books*/
+    if(actions.similarBooks) {
+      output += `<div title="Click to find similar books" id='similar-books-search' param-id="${data.id}" param-type="${type}">` +
+      `<i class="fa fa-arrows-h"></i>` +
+      `<p>Similar Books</p>` +
+      `</div>`;
+    }
+
     /*option to refetch asin*/
     if(actions.fetchAsin) {
       output += `<div title="Click to reload ASIN">` +

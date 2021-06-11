@@ -9,6 +9,10 @@ class Basic {
     return parseInt(num, base);
   }
 
+  isPromise(pr) {
+    return pr instanceof Promise;
+  }
+
   capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }

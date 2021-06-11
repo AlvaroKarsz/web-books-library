@@ -1,6 +1,7 @@
 const settings = require('../settings.js');
 const basicFunctions = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const config = require(settings.SOURCE_CODE_BACKEND_CONFIG_FILE_PATH);
+const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
 const xml2js = require('xml2js');
 
 class GoodReads {
@@ -425,6 +426,158 @@ class GoodReads {
     }
 
     return htmlRes;
+  }
+
+
+  async fetchSimilarBooks(vars = {}) {
+    /*
+    fetch similars books
+    vars can include isbn, title and author
+    Isbn or title are required
+    */
+
+    /*fetch all data for book with fetchBookInfo function*/
+    let info = await this.fetchBookInfo(vars);
+
+    /*nothing found or vars is empty*/
+    if(!info) {
+      return null;
+    }
+
+    /*no similar books*/
+    if(!info.similar_books) {
+      return null;
+    }
+
+    info = info.similar_books;
+
+    /*
+    similar books example:
+    [ {
+    book: [
+    [Object], [Object], [Object],
+    [Object], [Object], [Object],
+    [Object], [Object], [Object],
+    [Object], [Object], [Object],
+    [Object], [Object], [Object],
+    [Object], [Object], [Object]  ]
+  } ]
+
+  validate format
+  */
+
+  if(!Array.isArray(info) || ! info[0] || !info[0].book) { /*invalid format*/
+    return null;
+  }
+
+  info = info[0].book;
+
+  let books = [];
+
+  /*iterate through info and save book elements*/
+  /*
+  after saving books into array,
+  we are going to fetch ratings from another function, and check if books exists in one of our DB tables.
+  in order to make it easier, add an unique ID to each book to indenity it by.
+  */
+  let uniqueId = 0;
+  for(let i = 0, l = info.length ; i < l ; i ++ ) {
+
+    /*if all required data exist - save book*/
+    if(
+      info[i].title && info[i].title[0] &&
+      (
+        info[i].isbn13 && info[i].isbn13[0]
+        || info[i].isbn && info[i].isbn[0]
+      ) &&
+      info[i].authors
+    ) {
+
+      /*data in arrays*/
+      books.push({
+        title: info[i].title[0],
+        isbn: info[i].isbn13 ? info[i].isbn13[0] : info[i].isbn[0], /*priority for isbn13*/
+        author: info[i].authors[0].author.map(a => a.name).join(' and '), /*join all authors into 1 string*/
+        cover: info[i].image_url && !/nophoto/.test(info[i].image_url[0]) ?/*ignore empty photos*/
+        info[i].image_url[0] :
+        info[i].small_image_url && !/nophoto/.test(info[i].small_image_url[0]) ?
+        info[i].small_image_url[0] : null, /*priority for bigger pictures*/
+        year: info[i].publication_year ? info[i].publication_year[0] : null,
+        unique: (++uniqueId).toString()
+      });
+
+    }
+  }
+
+  /*
+  ALL SIMILAR BOOKS HAVE RATINGS DATA, BUT THE RATINGS IS EQUAL TO THE OGIRINAL BOOK RATINGS (GOODREADS API BUG)
+  Search for following data:
+  * ratings
+  * Check if books exists in DB
+  * Search for covers (only books without covers)
+  do all these in parallel (async actions)
+  use google Api to search for covers
+  */
+
+  let parallelActions = [
+    this.fetchRatings(
+      books.map(a => a.isbn)
+    ),
+    db.checkIfExistInDB(books)
+  ];
+
+  const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
+
+  books.forEach((bk) => {
+    if(!bk.cover) {
+      bk.cover = googleApi.fetchCoversByTitleAndAuthor(
+        bk.title.split('(')[0].//remove () if exists
+        split(':')[0]. //remove : if exists
+        replace(/\s+/g,' ').//remove multiple white space with one
+        trim()//remove whitespaces
+        ,bk.author, {limit:1})
+      }
+    });
+
+
+
+    /*wait for resolve in all actions*/
+    parallelActions = await Promise.all(parallelActions);
+    /*wait for all covers to resolve*/
+    for(let i = 0 , l = books.length; i < l ; i ++ ) {
+      if(basicFunctions.isPromise(books[i].cover)) { /*only if this is a promise*/
+        books[i].cover = await books[i].cover;
+      }
+    }
+
+    /*add ratings to books arr*/
+    let ratings = parallelActions[0];
+    if(ratings) {
+      for(let i = 0 , l = ratings.length ; i < l ; i ++ ) {/*iterate through ratings*/
+        for(let j = 0 , s = books.length ; j < s ; j ++ ) {/*find matching book by isbn*/
+          if(books[j].isbn === ratings[i].isbn || books[j].isbn === ratings[i].isbn13) {
+            books[j].rating = ratings[i].average_rating;
+            books[j].rating_count = ratings[i].ratings_count;
+            break;/*exit loop - go to next rating element*/
+          }
+        }
+      }
+    }
+
+    /*add DB data*/
+    let dbData = parallelActions[1];
+    /*output example:
+    {unique id 1: exists stamp 1, unique id 2, exists stamp 2 ...}
+    */
+    if(dbData) {
+      for(let i = 0 , l = books.length ; i < l ; i ++ ) {/*iterate through books*/
+        if(dbData[books[i].unique]) {//stamp exists
+          books[i].exist = dbData[books[i].unique];
+        }
+      }
+    }
+
+    return books;
   }
 
 };

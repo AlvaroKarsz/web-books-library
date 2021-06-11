@@ -1729,3 +1729,125 @@ img:hover {
   width: 220px;
   padding: 5px;
 }
+
+.books-displayer-main {
+  width: 98%;
+  min-width: 950px;
+  max-height: 800px;
+  background: rgba(0,0,0,0.87);
+  position: fixed;
+  transform: translate(-50%, -50%);
+  left: 50%;
+  top: 50%;
+  border-radius: 20px;
+  border: 4px solid white;
+  padding: 8px;
+  color: white;
+}
+
+.books-displayer-title {
+  font-size: 32px;
+  text-align: center;
+  padding: 7px;
+}
+
+.books-displayer-body {
+  display: block;
+  max-height: 700px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  width: 98%;
+  margin: 0 auto;
+}
+
+.books-displayer-book-holder {
+  border: 3px solid white;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 1px 3px 3px white;
+  display: inline-block;
+  margin: 5px 10px;
+  width: 20%;
+  min-width: 370px;
+  height: 85%;
+  min-height: 650px;
+  overflow-y: auto;
+  overflow-x: auto;
+  text-align: center;
+  font-size: 19px;
+  max-height: 650px;
+}
+
+.books-displayer-book-holder img {
+  width: 180px;
+  height: 230px;
+  margin: 8px 0;
+}
+
+.close-book-displayer-popup {
+  margin: 0px 15px;
+  padding: 2px 15px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 32px;
+  font-weight: 100;
+  cursor: pointer;
+  outline: none;
+  right: 0;
+  position: absolute;
+}
+
+.close-book-displayer-popup:hover {
+  transform: scale(1.1);
+}
+
+.books-displayer-exist-marker {
+  margin-top: -15px;
+  text-align: left;
+  padding-left: 10px;
+  cursor: pointer;
+  height: 55px;
+  width: max-content;
+}
+
+.books-displayer-exist-marker i {
+  display: inline-block;
+  padding-right: 8px;
+  font-size: 28px;
+}
+
+.books-displayer-exist-marker p {
+  display: inline-block;
+  font-size: 20px;
+}
+
+.books-displayer-exist-marker i:hover {
+  transform: scale(1.1);
+}
+
+.rating-star-title {
+  display: inline-block;
+  margin-left: 7px;
+}
+
+.rating-star-main-holder {
+  width: max-content;
+  margin: 0 auto;
+  margin-top: -20px;
+  height: 55px;
+}
+
+.books-displayer-book-content {
+  margin-bottom: 7px;
+}
+
+.books-displayer-book-description {
+  width: 95%;
+  white-space: break-spaces;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  font-size: 15px;
+  margin: 0 auto;
+}

@@ -96,6 +96,22 @@
     coverEl.set(`/pic/wishlist/${currentData.id}`);
   }
 
+  //check if this page received data from url, if so auto search it
+  let params = getUrlParams();
+  //isbn is required, title and author are not
+  if(params.isbn) {//auto insert data
+    addValueToInput(params.isbn, els.isbnInp);
+    if(params.author) {
+      addValueToInput(params.author, els.authorInp);
+    }
+    if(params.title) {
+      addValueToInput(params.title, els.titleInp);
+    }
+    //trigger auto search
+    autoFill.manualTrigger();
+    //trigger cover search
+    coverEl.search();
+  }
 
   els.saveBtn.onclick = () => {
     saveWish({

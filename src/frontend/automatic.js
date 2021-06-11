@@ -6,6 +6,7 @@
   listenToDescriptionReFetchAction();
   listenToCoverChange();
   listenToMarkBookAsReadButNotCompleted();
+  listenToSimilarBooksSearch();
 })()
 
 function listenToMarkBookAsReadButNotCompleted() {
@@ -47,6 +48,63 @@ function listenToCoverChange() {
   };
 }
 
+function listenToSimilarBooksSearch() {
+  /*if page has similar-books-search element, listen to clicks*/
+  let div = document.getElementById("similar-books-search");
+  if(!div) {
+    return;
+  }
+  //get ID and type
+  let id = div.getAttribute('param-id'),
+  type = div.getAttribute('param-type');
+
+  if(!id || !type) {
+    return;
+  }
+
+  let loader = new Loader(document.body, {
+    autoPost: true,
+    withOverlay: true,
+    overlayClass: 'main-overlay',
+    cssForceLoader: {
+      margin: '0',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%) scale(1.8)'
+    }
+  }),
+
+  messager =  new Messager(),
+
+  booksDisplyer = new BooksDisplayer({
+    title: 'Similar Books'
+  });
+
+
+  div.onclick = async () => {
+    loader.show();
+    let req = await doHttpRequest('/search/similar/', {
+      method:'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id:id,
+        type:type
+      })
+    });
+    loader.hide();
+
+    //error/nothing found - show msg and return
+    if(!req) {
+      messager.setError('Nothing Found...');
+      return;
+    }
+    /*show books*/
+    booksDisplyer.display(req)
+  };
+
+}
 
 function listenToDescriptionReFetchAction() {
   /*if page has refresh-description element, listen to clicks*/

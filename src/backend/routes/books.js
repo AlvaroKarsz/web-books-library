@@ -83,7 +83,8 @@ module.exports = (app) => {
         fetchCover: true,
         Ebookmark: true,
         fetchAsin: true,
-        fetchTags: true
+        fetchTags: true,
+        similarBooks: true
       })
     }));
   });

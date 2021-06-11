@@ -1798,6 +1798,247 @@ class CoverChanger {
 
 }
 
+class BooksDisplayer {
+  constructor(opts = {}) {
+    this.parent = opts.parent || document.body;
+    this.mainClass = opts.mainClass || 'books-displayer-main';
+    this.titleClass = opts.titleClass || 'books-displayer-title';
+    this.bodyClass = opts.bodyClass || 'books-displayer-body';
+    this.olayClass = opts.olayClass || 'confirm-overlay';
+    this.bookClassName = opts.bookClassName || 'books-displayer-book-holder';
+    this.exitClass = opts.exitClass || 'close-book-displayer-popup';
+    this.bookIndicatorClass = opts.bookIndicatorClass || 'books-displayer-exist-marker';
+    this.descButtonClass = opts.descButtonClass || 'black-white-button';
+    this.singleBookContentClass = opts.singleBookContentClass || 'books-displayer-book-content';
+    this.singleBookDescClass = opts.singleBookDescClass || 'books-displayer-book-description';
+    this.title = opts.title || 'Title';
+    this.starCode = '&#x2605;';
+    this.starClass = 'rating-star';
+    this.partialStarClass = 'partial-rating-star';
+    this.starsTitleClass = 'rating-star-title';
+    this.ratingsStarsHolderClass = 'rating-star-main-holder';
+    this.maxRatingStars = 5;
+    this.make();
+    this.hide();
+  }
+
+  display(books) {
+    if(!books || !Array.isArray(books)) {
+      return;
+    }
+    books.forEach((bk) => {
+      this.buildBook(bk);
+    });
+    this.show();
+    this.activate();
+  }
+
+  activate() {
+    this.closeOnBodyClick();
+    this.closeOnButtonClick();
+  }
+
+  closeOnButtonClick() {
+    this.exitButton.onclick = () => {
+      this.close();
+    };
+  }
+
+  close() {
+    this.clear();
+    this.hide();
+    this.deactivate();
+  }
+
+  deactivate() {
+    document.body.onclick = null;
+    this.exitButton.onclick = null;
+  }
+
+  closeOnBodyClick() {
+    document.body.onclick = (clkEvt) => {
+      if(clkEvt.target !== this.popup && !this.popup.contains(clkEvt.target)) {
+        this.close();
+      }
+    };
+  }
+
+  buildBook(bookEl) {
+    let body = document.createElement('DIV');
+    body.className = this.bookClassName;
+    this.buildRedirector(body, bookEl);
+    let title = document.createElement('DIV');
+    title.innerHTML = bookEl.title;
+    let content = document.createElement('DIV');
+    content.className = this.singleBookContentClass;
+    if(bookEl.author) {
+      content.innerHTML += 'Author: ' + bookEl.author + '<br>';
+    }
+
+    if(bookEl.isbn) {
+      content.innerHTML += 'ISBN: ' + bookEl.isbn + '<br>';
+    }
+
+    if(bookEl.year) {
+      content.innerHTML += 'Publication Year: ' + bookEl.year + '<br>';
+    }
+
+    let img = document.createElement('IMG');
+    img.src = bookEl.cover ? bookEl.cover : '/pic/blank';//blank picture if no cover received
+
+    //add description searcher
+    let descSearcher = document.createElement('BUTTON');
+    descSearcher.className = this.descButtonClass;
+    descSearcher.innerHTML = 'Search Description';
+
+    body.appendChild(title);
+    body.appendChild(img);
+    this.buildRatingElement(body, bookEl.rating, bookEl.rating_count);
+    body.appendChild(content);
+    body.appendChild(descSearcher);
+    this.bodyHolder.appendChild(body);
+    //search description onclick
+    descSearcher.onclick = async () => {
+      descSearcher.style.display = 'none';//hide button
+      descSearcher.onclick = null;//remove search listener
+
+      //make a loader
+      let loader = new Loader(body, {
+        autoPost: true,
+        autoShow: true,
+        noMessage: true,
+        cssForceLoader: {
+          transform: 'scale(0.6)',
+          margin: '0 auto'
+        }
+      });
+      //fetch description searcher route
+      let req = await doHttpRequest('/search/description/', {
+        method: 'POST',
+        body: JSON.stringify({
+          isbn: bookEl.isbn,
+          title: bookEl.title.split('(')[0].split('#')[0].trim(),
+          author: bookEl.author
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      //kill loader
+      loader.delete();
+      //show description
+      let descriptionInp = document.createElement('DIV');
+      descriptionInp.className = this.singleBookDescClass;
+      if(req) {
+        descriptionInp.innerHTML = 'Description<br><br>' + req;
+      } else {//nothing found
+        descriptionInp.innerHTML = 'No Description';
+      }
+      body.appendChild(descriptionInp);
+      descSearcher.remove();//remove search button
+    };
+  }
+
+  buildRedirector(parent, data) {
+    let holder = document.createElement('DIV'),
+    icon = document.createElement('I'),
+    p = document.createElement('P');
+    holder.className = this.bookIndicatorClass;
+    holder.appendChild(icon);
+    holder.appendChild(p);
+    if(data.exist) {//book exists, add redirector to book's page
+      icon.className = 'fa fa-certificate';
+      if(/book/.test(data.exist)) {//owned book
+        p.innerHTML = 'Owned Book';
+      } else if (/wish/.test(data.exist)) { // in wishlist
+        p.innerHTML = 'in Wishlist';
+      } else if (/stor/.test(data.exist)) {//owned story
+        p.innerHTML = 'Owned Story';
+      } else {//will never happen
+        p.innerHTML = 'Unknown';
+      }
+      holder.setAttribute('onclick', 'window.location = "' + data.exist + '"');
+
+    } else { //not exists - option to save
+      icon.className = 'fa fa-plus';
+      p.innerHTML = 'Add to Wishlist';
+      holder.setAttribute('onclick', 'window.location = "/insert/wishlist?isbn=' + encodeURIComponent(data.isbn) + '&title=' + encodeURIComponent(data.title.split('(')[0].split('#')[0].trim()) + '&author=' + encodeURIComponent(data.author.trim()) + '"');
+    }
+    parent.appendChild(holder);
+  }
+
+  clear() {
+    this.bodyHolder.innerHTML = '';
+  }
+
+  buildRatingElement(holder, rating=0, ratingCount=0) {
+
+    let width, htmlStr = `<div class="${this.ratingsStarsHolderClass}">`;
+
+    for(let i = 1 ; i <= this.maxRatingStars ; i ++ ) {
+      width =
+      isBiggerOrEqualInt(rating, i) ?
+      /*if the index is smaller (or equal) int that rating, star shold be full*/
+      '100%' :
+      /*else, if index is bigger by more than 1 int, should be 0, else. should be partial*/
+      (
+        isBiggerInt(i, toInt(rating) + 1) ?
+        '0%' :
+        /*in this case, star should be partial painted, for example: index is 3 and rating is 3.87*/
+        getDecimalPartOfNumber(rating) * 100 + '%'
+      );
+      htmlStr += `<div class="${this.starClass}">${this.starCode}<div class="${this.partialStarClass}" style = "width: ${width};">${this.starCode}</div></div>`;
+    }
+    /*now add to output the rating data*/
+    htmlStr += `<p class="${this.starsTitleClass}">${rating} (${addCommasToNum(ratingCount)})</p></div>`;
+
+    holder.innerHTML += htmlStr;
+  }
+
+  make() {
+    this.makeSkeleton();
+    this.makeCloseButton();
+    this.makeTitle();
+    this.makeBody();
+  }
+
+  makeCloseButton() {
+    this.exitButton = document.createElement('BUTTON');
+    this.exitButton.innerHTML = 'X';
+    this.exitButton.className = this.exitClass;
+    this.popup.appendChild(this.exitButton);
+  }
+
+
+  hide() {
+    this.overlay.style.display = 'none';
+  }
+
+  show() {
+    this.overlay.style.display = 'block';
+  }
+
+  makeSkeleton() {
+    this.overlay = document.createElement('DIV');
+    this.popup = document.createElement('DIV');
+    this.popup.className = this.mainClass;
+    this.overlay.className = this.olayClass;
+    this.parent.appendChild(this.overlay);
+    this.overlay.appendChild(this.popup);
+  }
+
+  makeTitle() {
+    this.titleHolder = document.createElement('DIV');
+    this.titleHolder.className = this.titleClass;
+    this.titleHolder.innerHTML = this.title;
+    this.popup.appendChild(this.titleHolder);
+  }
+
+  makeBody() {
+    this.bodyHolder = document.createElement('DIV');
+    this.bodyHolder.className = this.bodyClass;
+    this.popup.appendChild(this.bodyHolder);
+  }
+
+}
 class Confirm {
   constructor(opts = {}) {
     this.parent = opts.parent || document.body;
@@ -2155,4 +2396,28 @@ async function doBackUp(folder) {
     scrollBottom() {
       this.dialogBody.scrollTop = this.dialogBody.scrollHeight - this.dialogBody.clientHeight;
     }
+  }
+
+  function toInt(a, base=10) {
+    return parseInt(a, base);
+  }
+
+  function isBiggerInt(a, b) {
+    return this.toInt(a) > this.toInt(b);
+  }
+
+  function isEqualInt(a, b) {
+    return this.toInt(a) === this.toInt(b);
+  }
+
+  function isBiggerOrEqualInt(a, b) {
+    return isBiggerInt(a,b) || isEqualInt(a,b);
+  }
+
+  function getDecimalPartOfNumber(num) {
+    return Number((num - Math.trunc(num)).toFixed(3));
+  }
+
+  function addCommasToNum(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }

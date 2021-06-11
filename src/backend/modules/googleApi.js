@@ -159,9 +159,11 @@ class GoogleAPI {
     return dataArr;
   }
 
-  async fetchCoversByTitleAndAuthor(title, author = null) {
+  async fetchCoversByTitleAndAuthor(title, author = null, opts = {}) {
     /*
     use google API in order to fetch covers
+    opts options:
+    limit: max results
     */
     const requestSettings = {
       method:'GET',
@@ -189,7 +191,7 @@ class GoogleAPI {
     /*save images*/
     let imagesArr = [];
     /*number of maximun images to fetch*/
-    const maxImages = 9;
+    const maxImages = opts.limit ? opts.limit : 9;
     /*save number of valid images so far*/
     let counter = 0;
 

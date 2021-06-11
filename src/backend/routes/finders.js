@@ -303,8 +303,8 @@ module.exports = (app) => {
 
 
 
-  /*route to search for a description*/
-  app.post('/search/description/', async (req, res) => {
+  /*route to search for similar books*/
+  app.post('/search/similar/', async (req, res) => {
     /*
     get request body
     should include id and type (book/wish/etc..)
@@ -319,20 +319,18 @@ module.exports = (app) => {
       /*log error*/
       logger.log({
         type: 'error',
-        text: `Error while searching for book/story description.\nMore data is needed.\nReceived ID: ${id}, type: ${type}`
+        text: `Error while searching for similar books.\nMore data is needed.\nReceived ID: ${id}, type: ${type}`
       });
 
       res.send(JSON.stringify(''));
       return;
     }
-
     /*
-    needed data to get description:
+    needed data to get similar books:
     ISBN
     TITLE
     AUTHOR
 
-    (TITLE AND AUTHOR FOR STORIES)
     fetch data from DB based on type and ID
     */
 
@@ -363,16 +361,16 @@ module.exports = (app) => {
       /*log error*/
       logger.log({
         type: 'error',
-        text: `Error while searching for book/story description.\nUnknown type (${type}) received.\nAllowed types: books/wishlist/stories`
+        text: `Error while searching for similar books.\nUnknown type (${type}) received.\nAllowed types: books/wishlist/stories`
       });
 
       res.send(JSON.stringify(''));
       return;
     }
-    /*use goodreads module to fetch description*/
 
+    /*use goodreads module to fetch similar books*/
     const output = JSON.stringify(
-      await goodReadsAPI.fetchDescription({
+      await goodReadsAPI.fetchSimilarBooks({
         title: dbInfo.name,
         author: dbInfo.author,
         isbn: dbInfo.isbn
@@ -381,7 +379,102 @@ module.exports = (app) => {
 
     /*log action*/
     logger.log({
-      text: `Description was fetched for data: ID ${id}, type: ${type}.\nOutput: ${output}`
+      text: `Similar books were fetched for data: ID ${id}, type: ${type}.\nOutput: ${output}`
+    });
+
+    res.send(output);
+  });
+
+  /*route to search for a description*/
+  app.post('/search/description/', async (req, res) => {
+    /*
+    get request body
+    should include id and type (book/wish/etc..)
+    or isbn, title and author
+    if includes id and type, fetch isbn title and author from DB
+    */
+    const requestBody = basic.trimAllFormData(req.body);
+
+    let id = requestBody.id,
+    type = requestBody.type,
+    isbn = requestBody.isbn,
+    title = requestBody.title,
+    author = requestBody.author;
+    /*if not present return empty response*/
+    if( (!id || !type) && (!isbn || !title) ) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for book/story description.\nMore data is needed.\nReceived ID: ${id}, type: ${type}, isbn: ${isbn}, title: ${title}, author: ${author}.`
+      });
+
+      res.send(JSON.stringify(''));
+      return;
+    }
+
+    //no data, fetch from DB
+    if(!isbn) {
+      /*
+      needed data to get description:
+      ISBN
+      TITLE
+      AUTHOR
+
+      (TITLE AND AUTHOR FOR STORIES)
+      fetch data from DB based on type and ID
+      */
+
+      let dbInfo = '';
+
+      switch(type) {
+        case 'books':
+
+        dbInfo = await db.fetchBookById(id);
+
+        break;
+        case 'wishlist':
+
+        dbInfo = await db.fetchWishById(id);
+
+        break;
+
+        case 'stories':
+
+        dbInfo = await db.fetchStoryById(id);
+        dbInfo.author = dbInfo.story_author ? dbInfo.story_author : dbInfo.author;/*use story author if exist*/
+
+        break;
+
+        default:
+        /*unexpected - return empty string*/
+
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error while searching for book/story description.\nUnknown type (${type}) received.\nAllowed types: books/wishlist/stories`
+        });
+
+        res.send(JSON.stringify(''));
+        return;
+      }
+      isbn = dbInfo.isbn;
+      title = dbInfo.name;
+      author = dbInfo.author;
+    }
+    /*use goodreads module to fetch description*/
+
+    const output = JSON.stringify(
+      await goodReadsAPI.fetchDescription({
+        title: title,
+        author: author,
+        isbn: isbn
+      })
+    );
+
+    /*log action*/
+    logger.log({
+      text: `Description was fetched for data: ID ${id}, type: ${type}, isbn: ${isbn}, title: ${title}, author: ${author}.\nOutput: ${output}`
     });
 
     res.send(output);

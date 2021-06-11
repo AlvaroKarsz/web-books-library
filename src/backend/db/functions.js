@@ -3,6 +3,112 @@ const pg = require(settings.SOURCE_CODE_BACKEND_CONNECTION_DATABASE_FILE_PATH);
 
 class dbFunctions {
 
+  async checkIfExistInDB(els) {
+    /*
+    check if elements in els exists in DB
+    check in books table, wishlist table and stories table
+
+    books: check by ISBN or title and author
+    wishlist: check by ISBN or title and author
+    story: check by title and author
+
+    each element must include a unique id labeled unique.
+    output will be:
+    [{unique: , type: book/wish/story/null}]
+    so the output will be recognized easly by some unique ID
+    */
+
+    let counter = 0, args = [],
+    query = `SELECT `, title='', author = '', isbn = '';
+
+    els.forEach((el) => {
+      /*prepare data before usage*/
+      title = el.title.
+      split('(')[0].//remove () if exists
+      split(':')[0]. //remove : if exists
+      replace(/\s+/g,' ').//remove multiple white space with one
+      trim().//remove whitespaces
+      toLowerCase();//convert lower, used in query
+
+      author = el.author.
+      replace(/\s+/g,' ').//remove multiple white space with one
+      trim().//remove whitespaces
+      toLowerCase();//convert lower, used in query
+
+      isbn = el.isbn.
+      trim().//remove whitespaces
+      toLowerCase();//convert lower, used in query
+
+      query += ` (
+        SELECT COALESCE(
+          (
+            SELECT '/books/' || id
+            FROM my_books
+            --match condition - if ISBN match, we know its a good match
+            WHERE isbn = $${++counter} OR (
+              --if ISBN doesn't match, check if title match, if so, check if title is big enough(at least 10 chars) or same author name
+              --needed because sometimes author name us written differently
+              LOWER(name) = $${++counter} AND (
+                LENGTH(name) > 20
+                OR
+                LOWER(author) ~ $${++counter}
+              )
+            ) LIMIT 1
+          ),
+          (
+            SELECT '/wishlist/' || id
+            FROM wish_list
+            --match condition - if ISBN match, we know its a good match
+            WHERE isbn = $${++counter} OR (
+              --if ISBN doesn't match, check if title match, if so, check if title is big enough(at least 20 chars) or same author name
+              --needed because sometimes author name us written differently
+              LOWER(name) = $${++counter} AND (
+                LENGTH(name) > 20
+                OR
+                LOWER(author) ~ $${++counter}
+              )
+            ) LIMIT 1
+          ),
+          (
+            SELECT '/stories/' || id
+            FROM stories entry_id
+            --story has no ISBN, so check match by title and author
+            --if title matches and title is big enough, or same author
+            --some stories have no author in stories table, in these cases check collection author
+            WHERE LOWER(name) = $${++counter} AND (
+              LENGTH(name) > 20
+              OR
+              LOWER(author) ~ $${++counter}
+              OR
+              (
+                SELECT LOWER(author) FROM my_books WHERE id = entry_id.parent
+              ) ~ $${++counter}
+            ) LIMIT 1
+          ),
+          ''
+        )
+      ) AS "${ el.unique }",`;
+      /*push arguments to query*/
+      args.push(
+        isbn,
+        title,
+        author,
+        isbn,
+        title,
+        author,
+        title,
+        author,
+        author
+      );
+    });
+
+    /*remove last comma and add ;*/
+    query = query.replace(/\,$/, '') + ';';
+    let res = await pg.query(query, args);
+    res = res.rows[0];
+    return res;
+  }
+
   async bookExists(id) {
     let exists = await pg.query(`SELECT EXISTS(SELECT 1 FROM my_books WHERE id = $1);`, [id]);
     return exists.rows[0].exists;
@@ -13,10 +119,10 @@ class dbFunctions {
     return exists.rows[0].exists;
   }
 
-    async storyExists(id) {
-      let exists = await pg.query(`SELECT EXISTS(SELECT 1 FROM stories WHERE id = $1);`, [id]);
-      return exists.rows[0].exists;
-    }
+  async storyExists(id) {
+    let exists = await pg.query(`SELECT EXISTS(SELECT 1 FROM stories WHERE id = $1);`, [id]);
+    return exists.rows[0].exists;
+  }
 
   async wishExists(id) {
     let exists = await pg.query(`SELECT EXISTS(SELECT 1 FROM wish_list WHERE id = $1);`, [id]);
