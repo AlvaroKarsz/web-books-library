@@ -301,6 +301,42 @@ module.exports = (app) => {
     res.send(JSON.stringify(output));
   });
 
+  /*route to search for books from same author*/
+  app.post('/search/sameAuthor/', async (req, res) => {
+    /*
+    get request body
+    should include author name
+    */
+    const requestBody = basic.trimAllFormData(req.body);
+
+    const author = requestBody.author;
+
+    /*if not present return empty response*/
+    if(!author) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for books from same author.\nMore data is needed.\nReceived Author: ${author}`
+      });
+
+      res.send(JSON.stringify(''));
+      return;
+    }
+
+    /*use goodreads module to fetch books*/
+    const output = JSON.stringify(
+      await goodReadsAPI.fetchBooksByAuthor(author)
+    );
+
+    /*log action*/
+    logger.log({
+      text: `Books by same author were fetched for author: ${author}.\nOutput: ${output}`
+    });
+
+    res.send(output);
+  });
+
 
 
   /*route to search for similar books*/

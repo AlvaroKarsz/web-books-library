@@ -7,6 +7,7 @@
   listenToCoverChange();
   listenToMarkBookAsReadButNotCompleted();
   listenToSimilarBooksSearch();
+  listenToBooksByAuthorSearch();
 })()
 
 function listenToMarkBookAsReadButNotCompleted() {
@@ -45,6 +46,61 @@ function listenToCoverChange() {
 
   div.onclick = () => {
     coverChanger.show();
+  };
+}
+
+function listenToBooksByAuthorSearch() {
+  /*if page has books-by-author-search element, listen to clicks*/
+  let div = document.getElementById("books-by-author-search");
+  if(!div) {
+    return;
+  }
+
+  //get author
+  let author = div.getAttribute('param-author');
+
+  if(!author) {
+    return;
+  }
+
+  let loader = new Loader(document.body, {
+    autoPost: true,
+    withOverlay: true,
+    overlayClass: 'main-overlay',
+    cssForceLoader: {
+      margin: '0',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%) scale(1.8)'
+    }
+  }),
+
+  messager =  new Messager(),
+
+  booksDisplyer = new BooksDisplayer({
+    title: 'Books by Same Author'
+  });
+
+  div.onclick = async () => {
+    loader.show();
+    let req = await doHttpRequest('/search/sameAuthor/', {
+      method:'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        author: author
+      })
+    });
+    loader.hide();
+
+    //error/nothing found - show msg and return
+    if(!req || (Array.isArray(req) && !req.length)) {
+      messager.setError('Nothing Found...');
+      return;
+    }
+    /*show books*/
+    booksDisplyer.display(req)
   };
 }
 
@@ -96,7 +152,7 @@ function listenToSimilarBooksSearch() {
     loader.hide();
 
     //error/nothing found - show msg and return
-    if(!req) {
+    if(!req || (Array.isArray(req) && !req.length)) {
       messager.setError('Nothing Found...');
       return;
     }

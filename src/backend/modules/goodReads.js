@@ -9,6 +9,8 @@ class GoodReads {
     this.KEY = config.GOOD_READS_KEY;
     this.RATINGS_URL = 'https://www.goodreads.com/book/review_counts.json';
     this.INFO_BY_TITLE_AND_AUTHOR_URL = 'https://www.goodreads.com/book/title.xml';
+    this.AUTHOR_ID_URL = 'https://www.goodreads.com/api/author_url/';
+    this.AUTHOR_BOOKS_URL = 'https://www.goodreads.com/author/list.xml';
     this.MAX_ISBNS_IN_HTTP_PAYLOAD = 500;
     this.XML_PARSER = new xml2js.Parser();
   }
@@ -577,6 +579,231 @@ class GoodReads {
       }
     }
 
+    return books;
+  }
+
+  async getAuthorID(authorName) {
+    /*get author's goodreads ID*/
+    let requestSettings = {
+      method:'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    },
+    url = this.AUTHOR_ID_URL + authorName + '?key=' + this.KEY;
+    /*fetch API*/
+    /*response should be XML, so ask from text and convert it*/
+    let response = await basicFunctions.doFetch(url , requestSettings, {timeout:5000, text:true});
+
+    /*not found/error*/
+    if(!response) {
+      return null;
+    }
+    /*parse XML*/
+
+    /*
+    response example
+    {GoodreadsResponse:{
+    author:
+    [{
+    '$': { id: 'some id' },
+    name: [ 'some name' ],
+    link: [
+    'some link'
+  ]}]}}
+  */
+  try {
+    response = await this.XML_PARSER.parseStringPromise(response);
+    if(!response) {/*error from parser*/
+      throw '';
+    }
+    if(!response['GoodreadsResponse']) {
+      throw '';
+    }
+    response = response['GoodreadsResponse'];
+    if(!response['author']) {
+      throw 'no author in GoodreadsResponse';
+    }
+    response = response['author'];
+    if(!Array.isArray(response)) {
+      throw 'author is not array';
+    }
+    response = response[0];
+    if(!response['$']) {
+      throw 'no $ in author';
+    }
+    response = response['$'];
+    if(!response['id']) {
+      throw 'no id in $';
+    }
+    response = response['id'];
+  } catch(err) {//error parsing xml
+    return null;
+  }
+  return response;
+}
+
+async fetchBooksByAuthor(author) {
+  /*
+  fetch books by author
+  first fetch author ID
+  */
+  let authorID = await this.getAuthorID(author);
+
+  /*no author ID found*/
+  if(!authorID) {
+    return null;
+  }
+
+
+  /*fetch books by author*/
+  let requestSettings = {
+    method:'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  },
+  url = this.AUTHOR_BOOKS_URL + '?key=' + this.KEY + '&id=' + authorID;
+
+  /*fetch API*/
+  /*response should be XML, so ask from text and convert it*/
+  let response = await basicFunctions.doFetch(url , requestSettings, {timeout:5000, text:true});
+  /*empty*/
+  if(!response) {
+    return null;
+  }
+  /*convert XML to json*/
+
+  try {
+    response = await this.XML_PARSER.parseStringPromise(response);
+    if(!response) {/*error from parser*/
+      throw '';
+    }
+    if(!response['GoodreadsResponse']) {
+      throw '';
+    }
+    response = response['GoodreadsResponse'];
+
+    if(!response['author']) {
+      throw 'no author in GoodreadsResponse';
+    }
+    response = response['author'];
+    if(!Array.isArray(response)) {
+      throw 'author is not array';
+    }
+    response = response[0];
+    if(!response['books']) {
+      throw 'no books in author';
+    }
+    response = response['books'];
+    if(!Array.isArray(response)) {
+      throw 'books is not array';
+    }
+    response = response[0];
+    if(!response['book']) {
+      throw 'no book in books';
+    }
+    response = response['book'];
+  } catch(err) {
+    return null;
+  }
+
+  let books = [];
+
+  /*iterate through response and save book elements*/
+  /*
+  after saving books into array,
+  we are going to  check if books exists in one of our DB tables.
+  in order to make it easier, add an unique ID to each book to indenity it by.
+  */
+  let uniqueId = 0, isbn = '';
+  for(let i = 0, l = response.length ; i < l ; i ++ ) {
+    isbn = '';//reset
+    /*priority for isbn13*/
+    isbn = response[i].isbn13 ? response[i].isbn13[0] : response[i].isbn10[0];
+
+    if(typeof isbn !== 'string') {
+      /*
+      ISBN may be: ${nil:true}, ignore these
+      */
+      isbn = '';//reset
+    }
+    /*if all required data exist - save book*/
+    if(
+      response[i].title && response[i].title[0] &&
+      isbn &&
+      response[i].authors
+    ) {
+
+      /*isbn may be an object*/
+
+      if (typeof isbn === 'object') {
+        isbn = isbn['$'];
+      }
+      /*data in arrays*/
+      books.push({
+        title: response[i].title[0],
+        isbn: isbn,
+        author: response[i].authors[0].author.map(a => a.name).join(' and '), /*join all authors into 1 string*/
+        cover: response[i].image_url && !/nophoto/.test(response[i].image_url[0]) ?/*ignore empty photos*/
+        response[i].image_url[0] :
+        response[i].small_image_url && !/nophoto/.test(response[i].small_image_url[0]) ?
+        response[i].small_image_url[0] : null, /*priority for bigger pictures*/
+        year: response[i].publication_year ? response[i].publication_year[0] : null,
+        rating: response[i].average_rating ? response[i].average_rating[0] : null,
+        rating_count: response[i].ratings_count ? response[i].ratings_count[0] : null,
+        unique: (++uniqueId).toString()
+      });
+
+    }
+  }
+
+  /*
+  Search for following additional data:
+  * Check if books exists in DB
+  * Search for covers (only books without covers)
+  do all these in parallel (async actions)
+  use google Api to search for covers
+  */
+
+  let dbCheck =  db.checkIfExistInDB(books); /*no await for now*/
+
+  const googleApi = require(settings.SOURCE_CODE_BACKEND_GOOGLE_API_MODULE_FILE_PATH);
+
+  books.forEach((bk) => {
+    if(!bk.cover) {
+      bk.cover = googleApi.fetchCoversByTitleAndAuthor(
+        bk.title.split('(')[0].//remove () if exists
+        split(':')[0]. //remove : if exists
+        replace(/\s+/g,' ').//remove multiple white space with one
+        trim()//remove whitespaces
+        ,bk.author, {limit:1})
+      }
+    });
+
+
+    /*wait for db check to resolve*/
+    dbCheck = await dbCheck;
+
+    /*wait for all covers to resolve*/
+    for(let i = 0 , l = books.length; i < l ; i ++ ) {
+      if(basicFunctions.isPromise(books[i].cover)) { /*only if this is a promise*/
+        books[i].cover = await books[i].cover;
+      }
+    }
+
+    /*
+    add DB data
+    output example:
+    {unique id 1: exists stamp 1, unique id 2, exists stamp 2 ...}
+    */
+    if(dbCheck) {
+      for(let i = 0 , l = books.length ; i < l ; i ++ ) {/*iterate through books*/
+        if(dbCheck[books[i].unique]) {//stamp exists
+          books[i].exist = dbCheck[books[i].unique];
+        }
+      }
+    }
     return books;
   }
 

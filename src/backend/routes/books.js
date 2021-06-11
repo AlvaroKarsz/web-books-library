@@ -84,7 +84,8 @@ module.exports = (app) => {
         Ebookmark: true,
         fetchAsin: true,
         fetchTags: true,
-        similarBooks: true
+        similarBooks: true,
+        booksByAuthor: true
       })
     }));
   });

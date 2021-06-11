@@ -517,6 +517,14 @@ class BookDisplayer {
       `</div>`;
     }
 
+    /*find more books by this author*/
+    if(actions.booksByAuthor) {
+      output += `<div title="Click to find more books by same author" id='books-by-author-search' param-author="${data.author}">` +
+      `<i class="fa fa-user"></i>` +
+      `<p>Books by Author</p>` +
+      `</div>`;
+    }
+
     /*option to refetch asin*/
     if(actions.fetchAsin) {
       output += `<div title="Click to reload ASIN">` +

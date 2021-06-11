@@ -79,7 +79,8 @@ module.exports = (app) => {
         fetchDescription: true,
         fetchAsin: true,
         fetchTags: true,
-        similarBooks: true
+        similarBooks: true,
+        booksByAuthor: true
       })
     }));
   });
