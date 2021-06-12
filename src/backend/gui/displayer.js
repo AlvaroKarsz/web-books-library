@@ -55,7 +55,23 @@ class BookDisplayer {
     output += this.addChronologicallyRelations(data, type);
 
     /*add serie details*/
-    output += this.buildSerieDataDisplayer({id: data.serie_id, serie: data.serie, number: data.serie_num, next:{num:data.serie_next_num ,id:data.serie_next_id, name: data.serie_next_name}, prev:{num:data.serie_prev_num, id:data.serie_prev_id, name: data.serie_prev_name}}, type);
+    output += this.buildSerieDataDisplayer({
+      id: data.serie_id,
+      serie: data.serie,
+      number: data.serie_num,
+      next: {
+        num:data.serie_next_num,
+        id:data.serie_next_id,
+        name: data.serie_next_name,
+        type: data.serie_next_type
+      },
+      prev: {
+        num:data.serie_prev_num,
+        id:data.serie_prev_id,
+        name: data.serie_prev_name,
+        type: data.serie_prev_type
+      }
+    }, type);
 
     /*add stories details*/
     output += this.buildCollectionDisplayer(data.stories);
@@ -86,11 +102,11 @@ class BookDisplayer {
     output += '<div class="general-holder-book-displayer">Related Books (chronologically)<div class = "folder-pictures-holder">';
     /*Preceded book if exists*/
     if(data.prev_id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>Preceded By:</p><p>${data.prev_name}</p><img src="/pic/${type}/${data.prev_id}" onclick = "${this.buildJSRedirector(data.prev_id)}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>Preceded By:</p><p>${data.prev_name}</p><img src="/pic/${type}/${data.prev_id}" onclick = "window.location='/${data.prev_type}/${data.prev_id}'"></div>`;
     }
     /*followed book if exists*/
     if(data.next_id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>Followed By:</p><p>${data.next_name}</p><img src="/pic/${type}/${data.next_id}" onclick = "${this.buildJSRedirector(data.next_id)}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>Followed By:</p><p>${data.next_name}</p><img src="/pic/${type}/${data.next_id}" onclick = "window.location='/${data.next_type}/${data.next_id}'"></div>`;
     }
     output += '</div></div>';
     return output;
@@ -263,8 +279,8 @@ class BookDisplayer {
     serie: serie name,
     number: location in serie,
     id: serie id,
-    next:{    id: next book in serie id,    name: next book in serie name  , num: next book number in serie },
-    prev:{    id: prev. book in serie id,    name: prev. book in serie name  , num: prev. book number in serie  }     }
+    next:{    id: next book in serie id,    name: next book in serie name  , num: next book number in serie, type: next book type(wish/purchased) },
+    prev:{    id: prev. book in serie id,    name: prev. book in serie name  , num: prev. book number in serie , type: prev book type(wish/purchased)}     }
     */
     let output = '';
     if(!data.serie || !data.number) {//isn't part of serie
@@ -281,12 +297,12 @@ class BookDisplayer {
 
     /*add previous book in series if exists*/
     if(data.prev.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Book: ${data.prev.name}</p><p>Number: ${data.prev.num}</p><img src="/pic/${type}/${data.prev.id}" onclick = "window.location = '${data.prev.id}'"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Book: ${data.prev.name}</p><p>Number: ${data.prev.num}</p><img src="/pic/${type}/${data.prev.id}" onclick = "window.location = '/${data.prev.type}/${data.prev.id}'"></div>`;
     }
 
     /*add next book in series if exists*/
     if(data.next.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Book: ${data.next.name}</p><p>Number: ${data.next.num}</p><img src="/pic/${type}/${data.next.id}" onclick = "window.location='${data.next.id}'"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Book: ${data.next.name}</p><p>Number: ${data.next.num}</p><img src="/pic/${type}/${data.next.id}" onclick = "window.location='/${data.next.type}/${data.next.id}'"></div>`;
     }
 
     /*close main divs*/
@@ -616,7 +632,7 @@ buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks) {
   if(purchasedBooks) {
     output += `<div class = "general-holder-book-displayer">${purchasedBooks.length} Purchased Books: <div class = "folder-pictures-holder">`
     purchasedBooks.forEach((book) => {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/wishlist/${book.id}" onclick = "window.location='/wishlist/' + ${book.id}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/wishlist/${book.id}" onclick = "window.location='/purchased/' + ${book.id}"></div>`;
     });
     /*close main div*/
     output += '</div></div>';
@@ -636,7 +652,7 @@ buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks) {
   if(booksRead) {
     output += `<div class = "general-holder-book-displayer">${booksRead.length} Books Read: <div class = "folder-pictures-holder">`
     booksRead.forEach((book) => {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/books/${book.id}" onclick = "window.location='/books/' + ${book.id}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/books/${book.id}" onclick = "window.location='/reads/' + ${book.id}"></div>`;
     });
     /*close main div*/
     output += '</div></div>';

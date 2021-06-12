@@ -2022,7 +2022,9 @@ class dbFunctions {
                             }
                           }
                         }
-                        /*if this book is part of serie, fetch next and prev. in serie*/
+                        /*
+                        if this book is part of serie, fetch next and prev. in serie
+                        */
                         if(result.serie) {
                           query = `SELECT
                           (
@@ -2047,7 +2049,23 @@ class dbFunctions {
 
                           (
                             SELECT serie_num FROM wish_list WHERE serie = $11 AND serie_num = $12
-                          ) AS serie_prev_num
+                          ) AS serie_prev_num,
+
+                          (
+                            SELECT CASE
+                            WHEN order_date IS NOT NULL THEN 'purchased'
+                            ELSE 'wishlist'
+                            END
+                            FROM wish_list WHERE serie = $13 AND serie_num = $14
+                          ) AS serie_prev_type,
+
+                          (
+                            SELECT CASE
+                            WHEN order_date IS NOT NULL THEN 'purchased'
+                            ELSE 'wishlist'
+                            END
+                            FROM wish_list WHERE serie = $15 AND serie_num = $16
+                          ) AS serie_next_type
                           ;`;
 
                           let seriesResult = await pg.query(query, [
@@ -2062,7 +2080,11 @@ class dbFunctions {
                             result.serie_id,
                             parseInt(result.serie_num,10) + 1,
                             result.serie_id,
-                            parseInt(result.serie_num,10) - 1
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) + 1
                           ]);
                           seriesResult = seriesResult.rows[0];
                           //merge results
@@ -2124,8 +2146,20 @@ class dbFunctions {
                         ) AS stories,
                         my_books_entry1.id AS next_id,
                         my_books_entry1.name AS next_name,
+
+                        CASE
+                        WHEN my_books_entry1.read_order IS NOT NULL THEN 'reads'
+                        ELSE 'books'
+                        END next_type,
+
                         my_books_entry2.id AS prev_id,
-                        my_books_entry2.name AS prev_name
+                        my_books_entry2.name AS prev_name,
+
+                        CASE
+                        WHEN my_books_entry2.read_order IS NOT NULL THEN 'reads'
+                        ELSE 'books'
+                        END prev_type
+
 
                         FROM my_books my_books_main
 
@@ -2245,7 +2279,23 @@ class dbFunctions {
 
                           (
                             SELECT serie_num FROM my_books WHERE serie = $11 AND serie_num = $12
-                          ) AS serie_prev_num;`;
+                          ) AS serie_prev_num,
+
+                          (
+                            SELECT CASE
+                            WHEN read_order IS NOT NULL THEN 'reads'
+                            ELSE 'books'
+                            END
+                            FROM my_books WHERE serie = $13 AND serie_num = $14
+                          ) AS serie_prev_type,
+
+                          (
+                            SELECT CASE
+                            WHEN read_order IS NOT NULL THEN 'reads'
+                            ELSE 'books'
+                            END
+                            FROM my_books WHERE serie = $15 AND serie_num = $16
+                          ) AS serie_next_type;`;
 
                           let seriesResult = await pg.query(query, [
                             result.serie_id,
@@ -2260,6 +2310,10 @@ class dbFunctions {
                             parseInt(result.serie_num,10) + 1,
                             result.serie_id,
                             parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) + 1
                           ]);
                           seriesResult = seriesResult.rows[0];
                           //merge results
