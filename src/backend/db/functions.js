@@ -2028,45 +2028,69 @@ class dbFunctions {
                         if(result.serie) {
                           query = `SELECT
                           (
-                            SELECT id FROM wish_list WHERE serie = $1 AND serie_num = $2
+                            SELECT id FROM my_books WHERE serie = $1 AND serie_num = $2
+                            UNION
+                            SELECT id FROM wish_list WHERE serie = $3 AND serie_num = $4
                           ) AS serie_next_id,
 
                           (
-                            SELECT name FROM wish_list WHERE serie = $3 AND serie_num = $4
+                            SELECT name FROM my_books WHERE serie = $5 AND serie_num = $6
+                            UNION
+                            SELECT name FROM wish_list WHERE serie = $7 AND serie_num = $8
                           ) AS serie_next_name,
 
                           (
-                            SELECT id FROM wish_list WHERE serie = $5 AND serie_num = $6
+                            SELECT id FROM my_books WHERE serie = $9 AND serie_num = $10
+                            UNION
+                            SELECT id FROM wish_list WHERE serie = $11 AND serie_num = $12
                           ) AS serie_prev_id,
 
                           (
-                            SELECT name FROM wish_list WHERE serie = $7 AND serie_num = $8
+                            SELECT name FROM my_books WHERE serie = $13 AND serie_num = $14
+                            UNION
+                            SELECT name FROM wish_list WHERE serie = $15 AND serie_num = $16
                           ) AS serie_prev_name,
 
                           (
-                            SELECT serie_num FROM wish_list WHERE serie = $9 AND serie_num = $10
+                            SELECT serie_num FROM my_books WHERE serie = $17 AND serie_num = $18
+                            UNION
+                            SELECT serie_num FROM wish_list WHERE serie = $19 AND serie_num = $20
                           ) AS serie_next_num,
 
                           (
-                            SELECT serie_num FROM wish_list WHERE serie = $11 AND serie_num = $12
+                            SELECT serie_num FROM my_books WHERE serie = $21 AND serie_num = $22
+                            UNION
+                            SELECT serie_num FROM wish_list WHERE serie = $23 AND serie_num = $24
+
                           ) AS serie_prev_num,
 
                           (
                             SELECT CASE
-                            WHEN order_date IS NOT NULL THEN 'purchased'
-                            ELSE 'wishlist'
+                            WHEN read_order IS NOT NULL THEN 'reads'
+                            ELSE 'books'
                             END
-                            FROM wish_list WHERE serie = $13 AND serie_num = $14
-                          ) AS serie_prev_type,
-
-                          (
+                            FROM my_books WHERE serie = $25 AND serie_num = $26
+                            UNION
                             SELECT CASE
                             WHEN order_date IS NOT NULL THEN 'purchased'
                             ELSE 'wishlist'
                             END
-                            FROM wish_list WHERE serie = $15 AND serie_num = $16
-                          ) AS serie_next_type
-                          ;`;
+                            FROM wish_list WHERE serie = $27 AND serie_num = $28
+                          ) AS serie_prev_type,
+
+                          (
+                            SELECT CASE
+                            WHEN read_order IS NOT NULL THEN 'reads'
+                            ELSE 'books'
+                            END
+                            FROM my_books WHERE serie = $29 AND serie_num = $30
+                            UNION
+                            SELECT CASE
+                            WHEN order_date IS NOT NULL THEN 'purchased'
+                            ELSE 'wishlist'
+                            END
+                            FROM wish_list WHERE serie = $31 AND serie_num = $32
+                          ) AS serie_next_type;`;
 
                           let seriesResult = await pg.query(query, [
                             result.serie_id,
@@ -2074,15 +2098,31 @@ class dbFunctions {
                             result.serie_id,
                             parseInt(result.serie_num,10) + 1,
                             result.serie_id,
-                            parseInt(result.serie_num,10) - 1,
-                            result.serie_id,
-                            parseInt(result.serie_num,10) - 1,
+                            parseInt(result.serie_num,10) + 1,
                             result.serie_id,
                             parseInt(result.serie_num,10) + 1,
                             result.serie_id,
                             parseInt(result.serie_num,10) - 1,
                             result.serie_id,
                             parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) + 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) + 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) + 1,
                             result.serie_id,
                             parseInt(result.serie_num,10) + 1
                           ]);
@@ -2259,26 +2299,39 @@ class dbFunctions {
                           query = `SELECT
                           (
                             SELECT id FROM my_books WHERE serie = $1 AND serie_num = $2
+                            UNION
+                            SELECT id FROM wish_list WHERE serie = $3 AND serie_num = $4
                           ) AS serie_next_id,
 
                           (
-                            SELECT name FROM my_books WHERE serie = $3 AND serie_num = $4
+                            SELECT name FROM my_books WHERE serie = $5 AND serie_num = $6
+                            UNION
+                            SELECT name FROM wish_list WHERE serie = $7 AND serie_num = $8
                           ) AS serie_next_name,
 
                           (
-                            SELECT id FROM my_books WHERE serie = $5 AND serie_num = $6
+                            SELECT id FROM my_books WHERE serie = $9 AND serie_num = $10
+                            UNION
+                            SELECT id FROM wish_list WHERE serie = $11 AND serie_num = $12
                           ) AS serie_prev_id,
 
                           (
-                            SELECT name FROM my_books WHERE serie = $7 AND serie_num = $8
+                            SELECT name FROM my_books WHERE serie = $13 AND serie_num = $14
+                            UNION
+                            SELECT name FROM wish_list WHERE serie = $15 AND serie_num = $16
                           ) AS serie_prev_name,
 
                           (
-                            SELECT serie_num FROM my_books WHERE serie = $9 AND serie_num = $10
+                            SELECT serie_num FROM my_books WHERE serie = $17 AND serie_num = $18
+                            UNION
+                            SELECT serie_num FROM wish_list WHERE serie = $19 AND serie_num = $20
                           ) AS serie_next_num,
 
                           (
-                            SELECT serie_num FROM my_books WHERE serie = $11 AND serie_num = $12
+                            SELECT serie_num FROM my_books WHERE serie = $21 AND serie_num = $22
+                            UNION
+                            SELECT serie_num FROM wish_list WHERE serie = $23 AND serie_num = $24
+
                           ) AS serie_prev_num,
 
                           (
@@ -2286,7 +2339,13 @@ class dbFunctions {
                             WHEN read_order IS NOT NULL THEN 'reads'
                             ELSE 'books'
                             END
-                            FROM my_books WHERE serie = $13 AND serie_num = $14
+                            FROM my_books WHERE serie = $25 AND serie_num = $26
+                            UNION
+                            SELECT CASE
+                            WHEN order_date IS NOT NULL THEN 'purchased'
+                            ELSE 'wishlist'
+                            END
+                            FROM wish_list WHERE serie = $27 AND serie_num = $28
                           ) AS serie_prev_type,
 
                           (
@@ -2294,7 +2353,13 @@ class dbFunctions {
                             WHEN read_order IS NOT NULL THEN 'reads'
                             ELSE 'books'
                             END
-                            FROM my_books WHERE serie = $15 AND serie_num = $16
+                            FROM my_books WHERE serie = $29 AND serie_num = $30
+                            UNION
+                            SELECT CASE
+                            WHEN order_date IS NOT NULL THEN 'purchased'
+                            ELSE 'wishlist'
+                            END
+                            FROM wish_list WHERE serie = $31 AND serie_num = $32
                           ) AS serie_next_type;`;
 
                           let seriesResult = await pg.query(query, [
@@ -2303,15 +2368,31 @@ class dbFunctions {
                             result.serie_id,
                             parseInt(result.serie_num,10) + 1,
                             result.serie_id,
-                            parseInt(result.serie_num,10) - 1,
-                            result.serie_id,
-                            parseInt(result.serie_num,10) - 1,
+                            parseInt(result.serie_num,10) + 1,
                             result.serie_id,
                             parseInt(result.serie_num,10) + 1,
                             result.serie_id,
                             parseInt(result.serie_num,10) - 1,
                             result.serie_id,
                             parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) + 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) + 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) - 1,
+                            result.serie_id,
+                            parseInt(result.serie_num,10) + 1,
                             result.serie_id,
                             parseInt(result.serie_num,10) + 1
                           ]);

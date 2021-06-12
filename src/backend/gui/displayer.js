@@ -297,12 +297,12 @@ class BookDisplayer {
 
     /*add previous book in series if exists*/
     if(data.prev.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Book: ${data.prev.name}</p><p>Number: ${data.prev.num}</p><img src="/pic/${type}/${data.prev.id}" onclick = "window.location = '/${data.prev.type}/${data.prev.id}'"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Book: ${data.prev.name}</p><p>Number: ${data.prev.num}</p><img src="/pic/${data.prev.type}/${data.prev.id}" onclick = "window.location = '/${data.prev.type}/${data.prev.id}'"></div>`;
     }
 
     /*add next book in series if exists*/
     if(data.next.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Book: ${data.next.name}</p><p>Number: ${data.next.num}</p><img src="/pic/${type}/${data.next.id}" onclick = "window.location='/${data.next.type}/${data.next.id}'"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Book: ${data.next.name}</p><p>Number: ${data.next.num}</p><img src="/pic/${data.next.type}/${data.next.id}" onclick = "window.location='/${data.next.type}/${data.next.id}'"></div>`;
     }
 
     /*close main divs*/
