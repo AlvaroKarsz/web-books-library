@@ -26,12 +26,12 @@ class dbFunctions {
       title = el.title.
       split('(')[0].//remove () if exists
       split(':')[0]. //remove : if exists
-      replace(/\s+/g,' ').//remove multiple white space with one
+      replace(/\s/g,'').//remove whitespaces
       trim().//remove whitespaces
       toLowerCase();//convert lower, used in query
 
       author = el.author.
-      replace(/\s+/g,' ').//remove multiple white space with one
+      replace(/\s/g,'').//remove whitespaces
       trim().//remove whitespaces
       toLowerCase();//convert lower, used in query
 
@@ -48,10 +48,10 @@ class dbFunctions {
             WHERE isbn = $${++counter} OR (
               --if ISBN doesn't match, check if title match, if so, check if title is big enough(at least 10 chars) or same author name
               --needed because sometimes author name us written differently
-              LOWER(name) = $${++counter} AND (
+              REPLACE(LOWER(name),' ','') = $${++counter} AND (
                 LENGTH(name) > 20
                 OR
-                LOWER(author) ~ $${++counter}
+                REPLACE(LOWER(author),' ','') = $${++counter}
               )
             ) LIMIT 1
           ),
@@ -62,10 +62,10 @@ class dbFunctions {
             WHERE isbn = $${++counter} OR (
               --if ISBN doesn't match, check if title match, if so, check if title is big enough(at least 20 chars) or same author name
               --needed because sometimes author name us written differently
-              LOWER(name) = $${++counter} AND (
+              REPLACE(LOWER(name),' ','') = $${++counter} AND (
                 LENGTH(name) > 20
                 OR
-                LOWER(author) ~ $${++counter}
+                REPLACE(LOWER(author),' ','') = $${++counter}
               )
             ) LIMIT 1
           ),
@@ -75,14 +75,14 @@ class dbFunctions {
             --story has no ISBN, so check match by title and author
             --if title matches and title is big enough, or same author
             --some stories have no author in stories table, in these cases check collection author
-            WHERE LOWER(name) = $${++counter} AND (
+            WHERE REPLACE(LOWER(name),' ','') = $${++counter} AND (
               LENGTH(name) > 20
               OR
-              LOWER(author) ~ $${++counter}
+              REPLACE(LOWER(author),' ','') = $${++counter}
               OR
               (
-                SELECT LOWER(author) FROM my_books WHERE id = entry_id.parent
-              ) ~ $${++counter}
+                SELECT REPLACE(LOWER(author),' ','') FROM my_books WHERE id = entry_id.parent
+              ) = $${++counter}
             ) LIMIT 1
           ),
           ''
@@ -106,6 +106,7 @@ class dbFunctions {
     query = query.replace(/\,$/, '') + ';';
     let res = await pg.query(query, args);
     res = res.rows[0];
+
     return res;
   }
 

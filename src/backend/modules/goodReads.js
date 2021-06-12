@@ -890,10 +890,9 @@ async fetchBooksByAuthor(author, vars = {}) {
     /*ignore some words in serie names*/
     const blackListSeriesWord = [
       'trilogy',
-      'serie',
-      'series',
-      'the ', /*white space is on purpose*/
-      'books of'
+      'series?', /*serie or series*/
+      'the\\s', /*white space is on purpose*/
+      'books\\sof'
     ];
 
 
