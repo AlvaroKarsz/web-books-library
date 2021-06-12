@@ -301,6 +301,59 @@ module.exports = (app) => {
     res.send(JSON.stringify(output));
   });
 
+
+  /*route to search for books from same series*/
+  app.post('/search/sameSerie/', async (req, res) => {
+    /*
+    get request body
+    should include author name
+    */
+    const requestBody = basic.trimAllFormData(req.body);
+
+    const serie = requestBody.serie;
+
+    /*if not present return empty response*/
+    if(!serie) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for books from same series.\nMore data is needed.\nReceived serie: ${serie}`
+      });
+
+      res.send(JSON.stringify(''));
+      return;
+    }
+
+    /*find serie name and author in DB*/
+    const serieInfo = await db.fetchSerieById(serie);
+
+    if(!serieInfo || !serieInfo.author || !serieInfo.name) {/*unknown serie ID*/
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for books from same series.\nNo serie with Received ID was found in DB.\nReceived serie: ${serie}`
+      });
+
+      res.send(JSON.stringify(''));
+      return;
+    }
+
+    /*use goodreads module to fetch books*/
+    const output = JSON.stringify(
+      await goodReadsAPI.getSeriesBook(serieInfo.author, serieInfo.name, serie)
+    );
+
+    /*log action*/
+    logger.log({
+      text: `Books from same serie were fetched for author: ${serieInfo.author}, serie name: ${serieInfo.name}.\nOutput: ${output}`
+    });
+
+    res.send(output);
+  });
+
+
+
   /*route to search for books from same author*/
   app.post('/search/sameAuthor/', async (req, res) => {
     /*

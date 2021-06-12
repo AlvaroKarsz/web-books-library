@@ -105,7 +105,8 @@ module.exports = (app) => {
       folder: settings.SERIES_FOLDER_NAME,
       displayer: entryDisplayer.build(serieData, settings.SERIES_FOLDER_NAME, {
         fetchCover: true,
-        delete: true
+        delete: true,
+        findFromSerie:true
       })
     }));
   });

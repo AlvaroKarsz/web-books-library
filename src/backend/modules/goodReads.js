@@ -487,7 +487,7 @@ class GoodReads {
 
     /*if all required data exist - save book*/
     if(
-      info[i].title && info[i].title[0] &&
+      info[i].title_without_series && info[i].title_without_series[0] &&
       (
         info[i].isbn13 && info[i].isbn13[0]
         || info[i].isbn && info[i].isbn[0]
@@ -497,7 +497,7 @@ class GoodReads {
 
       /*data in arrays*/
       books.push({
-        title: info[i].title[0],
+        title: info[i].title_without_series[0],
         isbn: info[i].isbn13 ? info[i].isbn13[0] : info[i].isbn[0], /*priority for isbn13*/
         author: info[i].authors[0].author.map(a => a.name).join(' and '), /*join all authors into 1 string*/
         cover: info[i].image_url && !/nophoto/.test(info[i].image_url[0]) ?/*ignore empty photos*/
@@ -643,12 +643,17 @@ class GoodReads {
   return response;
 }
 
-async fetchBooksByAuthor(author) {
+async fetchBooksByAuthor(author, vars = {}) {
   /*
   fetch books by author
   first fetch author ID
+
+  vars options:
+  isId: if true, author is ID, and function getAuthorID will not be called
+  page: option to add pagination to search
+  includingSerieTitle: pass title without serie as well
   */
-  let authorID = await this.getAuthorID(author);
+  let authorID = vars.isId ? author : await this.getAuthorID(author);
 
   /*no author ID found*/
   if(!authorID) {
@@ -664,6 +669,10 @@ async fetchBooksByAuthor(author) {
     }
   },
   url = this.AUTHOR_BOOKS_URL + '?key=' + this.KEY + '&id=' + authorID;
+
+  if(vars.page) { /*add pagination*/
+    url += '&page='  + vars.page;
+  }
 
   /*fetch API*/
   /*response should be XML, so ask from text and convert it*/
@@ -742,7 +751,8 @@ async fetchBooksByAuthor(author) {
       }
       /*data in arrays*/
       books.push({
-        title: response[i].title[0],
+        titleSerie: vars.includingSerieTitle && response[i].title ? response[i].title[0] : null,
+        title: response[i].title_without_series[0],
         isbn: isbn,
         author: response[i].authors[0].author.map(a => a.name).join(' and '), /*join all authors into 1 string*/
         cover: response[i].image_url && !/nophoto/.test(response[i].image_url[0]) ?/*ignore empty photos*/
@@ -808,5 +818,106 @@ async fetchBooksByAuthor(author) {
     return books;
   }
 
+  async getSeriesBook(author, serie, serieID) {
+    /*find serie's books*/
+
+    /*first, find author's ID*/
+    let authorID = await this.getAuthorID(author);
+
+    if(!authorID) { /*no author ID found*/
+      return null;
+    }
+
+    /*
+    fetch author's book using fetchBooksByAuthor
+    use the pagination option until no more books arrive, or until MAX is reached
+    */
+    const MAX_PAGINATION = 3; /*max number of fetches*/
+    let books = [], tmp;
+
+    for(let i = 1 ; i <= MAX_PAGINATION ; i ++ ) {
+      /*fetch data including title without serie, when title != title with no serie, this book is part of a serie*/
+      tmp = await this.fetchBooksByAuthor(authorID, {
+        isId: true,
+        page: i,/*pagination*/
+        includingSerieTitle: true /*pass title without serie as well*/
+      });
+
+      if(tmp && Array.isArray(tmp) && tmp.length) { /*more books received*/
+        books.push(...tmp);//save books
+      } else {//exit loop, no more books
+        break;
+      }
+    }
+
+    /*
+    filter books, keep series books only
+    when title != title with no serie, this book is part of a serie
+    */
+    for(let i = 0 , l = books.length ; i < l ; i ++ ) {
+      if(books[i].title === books[i].titleSerie) {
+        /*this is not a series book, remove it*/
+        books.splice(i, 1);
+        i--;
+        l--;
+      }
+    }
+
+    /*iterate through books, and find series name and number*/
+    tmp = '';//reset tmp, defined above
+
+    const bookLocationRGX = /\#[0-9\-\.]+/; //rgx to extract book location
+
+    for(let i = 0 , l = books.length ; i < l ; i ++ ) {
+      tmp = books[i].titleSerie.replace(books[i].title, '');//keep just the difference
+      /*
+      tmp example (series name, #location)
+      */
+      tmp = tmp.replace(/\(|\)/g,'');//remove ( and )
+      try {
+        books[i].serieLocation = tmp.match(bookLocationRGX)[0].replace('#','');
+        books[i].series = tmp.replace(bookLocationRGX,'').replace(/\,\s+?$/,'').trim();
+        books[i].serieID= serieID;
+      } catch(err) {//no match , ignore this book
+        books.splice(i, 1);
+        i--;
+        l--;
+      }
+    }
+
+    /*remove books from different series*/
+
+    /*ignore some words in serie names*/
+    const blackListSeriesWord = [
+      'trilogy',
+      'serie',
+      'series',
+      'the ', /*white space is on purpose*/
+      'books of'
+    ];
+
+
+    /*build a regexp with blackListSeriesWord words, it will help removing them from string*/
+    const blackListRGX = new RegExp("\\b" + blackListSeriesWord.join('|') + "\\b","gi");
+
+    for(let i = 0 , l = books.length ; i < l ; i ++ ) {
+      if(
+        books[i].series.
+        toLowerCase().
+        replace(/\s+/, ' '). //replace multiple whitespaces with one
+        replace(blackListRGX, '').
+        trim() !== serie.
+        toLowerCase().
+        replace(blackListRGX, '').
+        trim()
+      ) {//no series match
+        books.splice(i, 1);
+        i--;
+        l--;
+      }
+    }
+
+    return books;
+  }
 };
 module.exports = new GoodReads();

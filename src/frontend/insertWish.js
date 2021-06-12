@@ -107,6 +107,12 @@
     if(params.title) {
       addValueToInput(params.title, els.titleInp);
     }
+    if(params.serie) {
+      serieE.set({
+        value: params.serie,
+        number: params.location.match(/[0-9]+/)[0] || ''
+      });
+    }
     //trigger auto search
     autoFill.manualTrigger();
     //trigger cover search

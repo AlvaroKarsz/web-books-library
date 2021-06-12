@@ -541,6 +541,22 @@ class BookDisplayer {
       `</div>`;
     }
 
+    /*find more books from same seires*/
+    if(actions.findFromSerie) {
+      /*
+      2 options, this is a serie, or a book
+      if this is a book, check if book is part of serie, if not ignore this part
+      */
+      if(type === 'series' || data.serie_id) {
+        output += `<div title="Click to find more books from same series" id='books-from-same-series' param-serie="` +
+        /*if this is a series, just pass id, if this is a book, pass serie_id*/
+        `${type === 'series' ? data.id : data.serie_id}">` +
+        `<i class="fa fa-arrows"></i>` +
+        `<p>Books from Series</p>` +
+        `</div>`;
+      }
+    }
+
     /*option to refetch asin*/
     if(actions.fetchAsin) {
       output += `<div title="Click to reload ASIN">` +

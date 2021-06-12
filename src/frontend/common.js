@@ -1877,6 +1877,15 @@ class BooksDisplayer {
       content.innerHTML += 'Author: ' + bookEl.author + '<br>';
     }
 
+    if(bookEl.series) {
+      content.innerHTML += 'Serie: <b>' + bookEl.series;
+      if(bookEl.serieLocation) {
+        content.innerHTML += ' (' + bookEl.serieLocation + ')<b><br>';
+      } else {
+        content.innerHTML += '<b><br>';
+      }
+    }
+
     if(bookEl.isbn) {
       content.innerHTML += 'ISBN: ' + bookEl.isbn + '<br>';
     }
@@ -1969,7 +1978,13 @@ class BooksDisplayer {
     } else { //not exists - option to save
       icon.className = 'fa fa-plus';
       p.innerHTML = 'Add to Wishlist';
-      holder.setAttribute('onclick', 'window.location = "/insert/wishlist?isbn=' + encodeURIComponent(data.isbn) + '&title=' + encodeURIComponent(data.title.split('(')[0].split('#')[0].trim()) + '&author=' + encodeURIComponent(data.author.trim()) + '"');
+      holder.setAttribute('onclick', 'window.location = "/insert/wishlist?isbn=' +
+      encodeURIComponent(data.isbn) +
+      '&title=' + encodeURIComponent(data.title.split('(')[0].split('#')[0].trim()) +
+      '&author=' + encodeURIComponent(data.author.trim()) +
+      (data.serieID ? '&serie=' + encodeURIComponent(data.serieID) : '') +
+      (data.serieLocation ? '&location=' + encodeURIComponent(data.serieLocation) : '') +
+      '"');
     }
     parent.appendChild(holder);
   }
