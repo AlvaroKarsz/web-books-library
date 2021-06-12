@@ -752,6 +752,7 @@ async fetchBooksByAuthor(author) {
         year: response[i].publication_year ? response[i].publication_year[0] : null,
         rating: response[i].average_rating ? response[i].average_rating[0] : null,
         rating_count: response[i].ratings_count ? response[i].ratings_count[0] : null,
+        description: response[i].description ? response[i].description[0] : null,
         unique: (++uniqueId).toString()
       });
 

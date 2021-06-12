@@ -1869,6 +1869,8 @@ class BooksDisplayer {
     this.buildRedirector(body, bookEl);
     let title = document.createElement('DIV');
     title.innerHTML = bookEl.title;
+    body.appendChild(title);
+
     let content = document.createElement('DIV');
     content.className = this.singleBookContentClass;
     if(bookEl.author) {
@@ -1885,56 +1887,63 @@ class BooksDisplayer {
 
     let img = document.createElement('IMG');
     img.src = bookEl.cover ? bookEl.cover : '/pic/blank';//blank picture if no cover received
-
-    //add description searcher
-    let descSearcher = document.createElement('BUTTON');
-    descSearcher.className = this.descButtonClass;
-    descSearcher.innerHTML = 'Search Description';
-
-    body.appendChild(title);
     body.appendChild(img);
     this.buildRatingElement(body, bookEl.rating, bookEl.rating_count);
     body.appendChild(content);
-    body.appendChild(descSearcher);
-    this.bodyHolder.appendChild(body);
-    //search description onclick
-    descSearcher.onclick = async () => {
-      descSearcher.style.display = 'none';//hide button
-      descSearcher.onclick = null;//remove search listener
 
-      //make a loader
-      let loader = new Loader(body, {
-        autoPost: true,
-        autoShow: true,
-        noMessage: true,
-        cssForceLoader: {
-          transform: 'scale(0.6)',
-          margin: '0 auto'
-        }
-      });
-      //fetch description searcher route
-      let req = await doHttpRequest('/search/description/', {
-        method: 'POST',
-        body: JSON.stringify({
-          isbn: bookEl.isbn,
-          title: bookEl.title.split('(')[0].split('#')[0].trim(),
-          author: bookEl.author
-        }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      //kill loader
-      loader.delete();
-      //show description
-      let descriptionInp = document.createElement('DIV');
-      descriptionInp.className = this.singleBookDescClass;
-      if(req) {
-        descriptionInp.innerHTML = 'Description<br><br>' + req;
-      } else {//nothing found
-        descriptionInp.innerHTML = 'No Description';
-      }
+    //if description exists, show it, else add option to search for description
+    let descriptionInp = document.createElement('DIV');
+    descriptionInp.className = this.singleBookDescClass;
+
+    if(bookEl.description) {
+      descriptionInp.innerHTML = 'Description<br><br>' + bookEl.description;
       body.appendChild(descriptionInp);
-      descSearcher.remove();//remove search button
-    };
+    } else {
+      //add description searcher
+      let descSearcher = document.createElement('BUTTON');
+      descSearcher.className = this.descButtonClass;
+      descSearcher.innerHTML = 'Search Description';
+
+      body.appendChild(descSearcher);
+
+      //search description onclick
+      descSearcher.onclick = async () => {
+        descSearcher.style.display = 'none';//hide button
+        descSearcher.onclick = null;//remove search listener
+
+        //make a loader
+        let loader = new Loader(body, {
+          autoPost: true,
+          autoShow: true,
+          noMessage: true,
+          cssForceLoader: {
+            transform: 'scale(0.6)',
+            margin: '0 auto'
+          }
+        });
+        //fetch description searcher route
+        let req = await doHttpRequest('/search/description/', {
+          method: 'POST',
+          body: JSON.stringify({
+            isbn: bookEl.isbn,
+            title: bookEl.title.split('(')[0].split('#')[0].trim(),
+            author: bookEl.author
+          }),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        //kill loader
+        loader.delete();
+        //show description
+        if(req) {
+          descriptionInp.innerHTML = 'Description<br><br>' + req;
+        } else {//nothing found
+          descriptionInp.innerHTML = 'No Description';
+        }
+        body.appendChild(descriptionInp);
+        descSearcher.remove();//remove search button
+      };
+    }
+    this.bodyHolder.appendChild(body);
   }
 
   buildRedirector(parent, data) {
