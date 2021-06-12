@@ -42,7 +42,8 @@ module.exports = (app) => {
       urlParams: urlParams,
       type: "Stories",
       route: 'stories',
-      imageHref: '/stories/'
+      imageHref: '/stories/',
+      htmlTitle: 'My Stories'
     }));
   });
 
@@ -92,6 +93,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.STORIES_FOLDER_NAME,
+      htmlTitle: 'My Stories | ' + storyData.name,
       displayer: entryDisplayer.build(storyData, settings.STORIES_FOLDER_NAME, {
         storyRead: true,
         fetchCover: true,

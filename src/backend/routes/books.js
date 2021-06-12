@@ -44,7 +44,8 @@ module.exports = (app) => {
       urlParams: urlParams,
       type: "Books",
       route: 'books',
-      imageHref: '/books/'
+      imageHref: '/books/',
+      htmlTitle: 'My Books'
     }));
   });
 
@@ -75,6 +76,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.BOOKS_FOLDER_NAME,
+      htmlTitle: 'My Books | ' + bookData.name,
       displayer: entryDisplayer.build(bookData, settings.BOOKS_FOLDER_NAME, {
         bookRead:true,
         openPdf:true,

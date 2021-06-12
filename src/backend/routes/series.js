@@ -42,7 +42,8 @@ module.exports = (app) => {
       urlParams: urlParams,
       type: "Series",
       route: 'series',
-      imageHref: '/series/'
+      imageHref: '/series/',
+      htmlTitle: 'My Series'
     }));
   });
 
@@ -103,6 +104,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.SERIES_FOLDER_NAME,
+      htmlTitle: 'My Series | ' + serieData.name,
       displayer: entryDisplayer.build(serieData, settings.SERIES_FOLDER_NAME, {
         fetchCover: true,
         delete: true,

@@ -43,7 +43,8 @@ module.exports = (app) => {
       urlParams: urlParams,
       type: "Wish List",
       route: 'wishlist',
-      imageHref: '/wishlist/'
+      imageHref: '/wishlist/',
+      htmlTitle: 'My Wishlist'
     }));
   });
 
@@ -80,6 +81,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.WISH_LIST_FOLDER_NAME,
+      htmlTitle: 'My Wishlist | ' + wishData.name,
       displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {
         buy:true,
         received:true,

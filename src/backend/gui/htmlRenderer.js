@@ -19,6 +19,7 @@ IMAGES: post listing images
 LOADER_IF_BOOKS: add loader if there are more books to fetch
 FILTER_VAL_TITLE: adds current title filder value to filter input
 FILTER_VAL_AUTHOR: adds current author filder value to filter input
+HTML_TITLE: add page title
 */
 
 
@@ -76,7 +77,8 @@ class HtmlRender {
       LOADER_IF_BOOKS: "this.createMainLoaderIfBooksFound(params.totalCount)",
       TOP_NAV: "topNav.build()",
       DISPLAYER:"params.displayer",
-      INSERTION_TITLE: "params.pageTitle"
+      INSERTION_TITLE: "params.pageTitle",
+      HTML_TITLE: "params.htmlTitle"
     };
 
     /*fetch html content*/

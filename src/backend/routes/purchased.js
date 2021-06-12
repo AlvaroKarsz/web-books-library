@@ -43,7 +43,8 @@ module.exports = (app) => {
       urlParams: urlParams,
       type: "Purchased List",
       route: 'purchased',
-      imageHref: '/purchased/'
+      imageHref: '/purchased/',
+      htmlTitle: 'Purchased from Wishlist'
     }));
   });
 
@@ -76,6 +77,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.WISH_LIST_FOLDER_NAME,
+      htmlTitle: 'Purchased from Wishlist | ' + wishData.name,
       displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {
         received:true,
         cancelPurchase: true,

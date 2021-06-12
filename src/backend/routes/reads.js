@@ -40,7 +40,8 @@ module.exports = (app) => {
       urlParams: urlParams,
       type: "Read List",
       route: 'reads',
-      imageHref: '/reads/'
+      imageHref: '/reads/',
+      htmlTitle: 'My Read Books'
     }));
   });
 
@@ -73,6 +74,7 @@ module.exports = (app) => {
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.BOOKS_FOLDER_NAME,
+      htmlTitle: 'My Read Books | ' + readData.name,
       displayer: entryDisplayer.build(readData, settings.BOOKS_FOLDER_NAME, {
         fetchRating: true,
         fetchCover: true,
