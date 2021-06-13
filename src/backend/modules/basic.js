@@ -5,6 +5,12 @@ const fs = require('fs');
 const ip = require("ip");
 
 class Basic {
+
+  hasHeb(str) {
+    /*check if str has Hebrew chars*/
+    return /[\u05D0-\u05EA]/.test(str);
+  }
+
   toInt(num, base=10) {
     return parseInt(num, base);
   }

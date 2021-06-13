@@ -200,7 +200,11 @@ class BookDisplayer {
     }
 
     let output = '<div class="general-holder-book-displayer">Description:</div>';
-    output += '<div class = "description-holder">';
+    output += '<div class = "description-holder"';
+    if(basic.hasHeb(desc)) {/*if description is in hebrew, make right to left align*/
+      output += ' style="text-align: right;"';
+    }
+    output += '>';
     output += desc.replace(/[\n]/g,'<br>');//add html line breakers
     output += '</div>';
     return output;
