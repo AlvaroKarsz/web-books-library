@@ -419,7 +419,7 @@ module.exports = (app) => {
         res.send(JSON.stringify({status:false, message:'Invalid following book ID.'}));
         return;
       }
-      if(!await db.checkIfBookIdExists(requestBody.next.value)) {
+      if(!await db.bookExists(requestBody.next.value)) {
 
         /*log error*/
         logger.log({
@@ -453,7 +453,7 @@ module.exports = (app) => {
         return;
       }
 
-      if(!await db.checkIfBookIdExists(requestBody.prev.value)) {
+      if(!await db.bookExists(requestBody.prev.value)) {
 
         /*log error*/
         logger.log({
