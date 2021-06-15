@@ -287,13 +287,15 @@ class GoodReads {
   async fetchTags(vars = {}) {
     /*
     vars options:
-    title, author, isbn
+    title, author, isbn, bookData
+    bookData is the result of calling "fetchBookInfo", if a function called it already, the output can be passed, so the call in this function will be avoided
     */
 
     /*no need to check if all are empty, this will be checked in fetchBookInfo*/
-    const title = vars.title || null,
+    let title = vars.title || null,
     author = vars.author || null,
-    isbn = vars.isbn || null;
+    isbn = vars.isbn || null,
+    bookData = vars.bookData || null;
 
 
     /*
@@ -302,15 +304,17 @@ class GoodReads {
     In order to fetch the HTML page, the page's URL is needed, and is fetched from the INFO_BY_TITLE_AND_AUTHOR_URL API's endpoint
     */
 
-    /* get the URL using fetchBookInfo function */
-    const bookInfo = await this.fetchBookInfo({
-      title: title,
-      author: author,
-      isbn: isbn
-    });
+    /* get the URL using fetchBookInfo function, if data wasn't received as argument */
+    if(!bookData) {
+      bookData = await this.fetchBookInfo({
+        title: title,
+        author: author,
+        isbn: isbn
+      });
+    }
 
     /*no data found*/
-    if(!bookInfo) {
+    if(!bookData) {
       return null;
     }
 
@@ -329,10 +333,10 @@ class GoodReads {
 
     let url = '';
 
-    if(bookInfo.url && Array.isArray(bookInfo.url) && bookInfo.url.length) {
-      url = bookInfo.url[0];
-    } else if (bookInfo.link && Array.isArray(bookInfo.link) && bookInfo.link.length) {
-      url = bookInfo.link[0];
+    if(bookData.url && Array.isArray(bookData.url) && bookData.url.length) {
+      url = bookData.url[0];
+    } else if (bookData.link && Array.isArray(bookData.link) && bookData.link.length) {
+      url = bookData.link[0];
     } else {
       /*no link , can't fetch html page*/
       return null;
@@ -917,6 +921,76 @@ async fetchBooksByAuthor(author, vars = {}) {
     }
 
     return books;
+  }
+
+
+  async fetchAllBookData(vars = {}) {
+    /*
+    get all saved info in a book
+    title, author, isbn, description, tags, publication year, number of pages
+    */
+
+    /*this self function does the actual fetch, it will check for "vars" validity so no need to check again here*/
+    let info = await this.fetchBookInfo(vars);
+
+    /*nothing found*/
+    if(!info) {
+      return null;
+    }
+
+    let output = {};
+
+    //save relevant info in output
+
+    if(info.title) {
+      output.title = info.title[0];
+    }
+
+    /*priority to isbn 13*/
+    if(info.isbn13) {
+      output.isbn = info.isbn13[0];
+    } else if (info.isbn) {
+      output.isbn = info.isbn[0];
+    }
+
+    if(info.publication_year) {
+      output.year = info.publication_year[0];
+    }
+
+    if(info.description) {
+      output.description = info.description[0];
+    }
+
+    if(info.num_pages) {
+      output.pages = info.num_pages[0];
+    }
+
+    if(info.format) {
+      output.format = info.format[0];
+    }
+
+    if(info.authors && info.authors[0] && info.authors[0].author && info.authors[0].author[0] && info.authors[0].author[0].name) {
+      output.author = info.authors[0].author[0].name[0];
+    }
+
+    if(info.work && info.work[0] && info.work[0].original_publication_year && info.work[0].original_publication_year[0] && info.work[0].original_publication_year[0]._) {
+      output.original_year = info.work[0].original_publication_year[0]._;
+    }
+
+    /*
+    in order to fetch tags, call the function fetchTags
+    the function will call fetchBookInfo to get the book's url, but since we have called it already, we can pass is as a variable
+    */
+
+    vars.bookData = info;
+
+    const tags = await this.fetchTags(vars);
+
+    if(tags) {
+      output.tags = tags;
+    }
+
+    return output;
   }
 };
 module.exports = new GoodReads();

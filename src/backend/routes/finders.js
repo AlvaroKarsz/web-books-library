@@ -80,7 +80,7 @@ module.exports = (app) => {
 
   /*
   route to find book details based on ISBN or author and title
-  the actual search is based on ISBN, so if author and title are received, an API is used to retrieve the ISBN based on these parameters
+  ISBN or Title are required, just author won't be enough
   */
   app.post('/search/book/', async (req, res) => {
     /*get request body*/
@@ -106,82 +106,40 @@ module.exports = (app) => {
       return;
     }
 
-    /*
-    the fetch is based on isbn
-    so if isbn is not present, use title and author to retrieve isbn
-    */
-    if(!isbn) {
-      /*get isbn using goodreads API*/
-      isbn = await goodReadsAPI.fetchIsbnFromTitleAndAuthor(title, author || '');
-      if(!isbn) {
-        /*
-        isbn not found - return empty object
-        */
+    /*fetch book info from goodreads API*/
+    let info = await goodReadsAPI.fetchAllBookData({
+      isbn: isbn,
+      author: author,
+      title: title
+    });
 
-        /*log error*/
-        logger.log({
-          type: 'error',
-          text: `Error while searching for book details.\nISBN not received from user, so ISBN was searched based on title (${title}) and author (${author}).\nNo ISBN found.`
-        });
-
-        res.send(JSON.stringify({}));
-        return;
-      }
+    /*if nothing found, make an empty object to insert data*/
+    if(!info) {
+      info = {};
     }
 
-    /*get data by isbn from openlibrary API + description & tags from goodreads*/
-    let output = await Promise.all([
-      openLibraryApi.getDataByISBN(isbn),
-      goodReadsAPI.fetchDescription({
-        isbn: isbn,
-        title: title,
-        author: author
-      }),
-      goodReadsAPI.fetchTags({
-        isbn: isbn,
-        title: title,
-        author: author
-      }),
-    ]);
-
-    let openLibraryOutput = output[0],
-    goodReadsDescription = output[1],
-    goodReadsTags = output[2];
 
     /*if title and author were found, search for asin based on these parameters*/
     let asin = '';
-    if(openLibraryOutput && openLibraryOutput.title && openLibraryOutput.author) {
-      asin = await googleSearcher.getAsin(openLibraryOutput.title, openLibraryOutput.author);
+    if(info.title && info.author) {
+      asin = await googleSearcher.getAsin(info.title, info.author);
     }
 
-    output = {};
-
-    if(openLibraryOutput) {
-      output = { ...output, ...openLibraryOutput }  ;
-    }
-
-    if(goodReadsDescription) {
-      output.description = goodReadsDescription;
-    }
-
-    if(goodReadsTags) {
-      output.tags = goodReadsTags.join(", ");
-    }
 
     /*if asin found add it to output data*/
     if(asin) {
-      output.asin = asin;
+      info.asin = asin;
     }
 
-    output = JSON.stringify(output);
+    info = JSON.stringify(info);
 
     /*log action*/
     logger.log({
-      text: `Book details were fetched.\nReceived ISBN: ${isbn}, Author: ${author}, Title: ${title}.\nOutput: ${output}`
+      text: `Book details were fetched.\nReceived ISBN: ${isbn}, Author: ${author}, Title: ${title}.\nOutput: ${info}`
     });
 
     /*send data to frontend*/
-    res.send(output);
+    res.send(info);
   });
 
   /*
