@@ -534,10 +534,14 @@ module.exports = (app) => {
     so fetch stories list
     */
     let oldStoriesList = [];
+
+    let newBookId = '';//save here book id
     if(existingBookId) {
       oldStoriesList = await db.fetchCollectionStories(existingBookId);
       /*existing book - alter it*/
       await db.alterBookById(existingBookId, requestBody);
+
+      newBookId = existingBookId;/*no new book ID*/
 
       /*log action*/
       logger.log({
@@ -548,6 +552,8 @@ module.exports = (app) => {
       /*new book to save*/
       await db.saveBook(requestBody);
 
+      /*get new book ID from DB*/
+      newBookId = await db.getBookIdFromISBN(requestBody.isbn);
       /*log action*/
       logger.log({
         text: `New book was saved.\nTitle: ${requestBody.title}\nAuthor: ${requestBody.author}\nISBN: ${requestBody.isbn}`
@@ -583,8 +589,6 @@ module.exports = (app) => {
         });
 
       } else { /*user is using wish cover as book cover, move the picture and save the md5sum in DB*/
-        /*get inserted book ID*/
-        let newInsertedBookId = await db.getBookIdFromISBN(requestBody.isbn);
 
         /*move picture*/
         imagesHandler.moveImage({
@@ -592,20 +596,20 @@ module.exports = (app) => {
           id: existingWishId
         }, {
           folder: settings.BOOKS_FOLDER_NAME,
-          id: newInsertedBookId
+          id: newBookId
         });
 
         /*log action*/
         logger.log({
-          text: `Book from WishList was registered as a owned book.\nWishlist picture was used as book's picture.\nWishlist ID: ${existingWishId}.\nNew book ID :${newInsertedBookId}`
+          text: `Book from WishList was registered as a owned book.\nWishlist picture was used as book's picture.\nWishlist ID: ${existingWishId}.\nNew book ID :${newBookId}`
         });
 
         /*save md5hash*/
         await db.savePictureHashes({
-          id: newInsertedBookId,
+          id: newBookId,
           folder: settings.BOOKS_FOLDER_NAME,
           md5: imagesHandler.calculateMD5(
-            imagesHandler.getFullPath(settings.BOOKS_FOLDER_NAME, newInsertedBookId)
+            imagesHandler.getFullPath(settings.BOOKS_FOLDER_NAME, newBookId)
           )
         });
 
@@ -620,7 +624,7 @@ module.exports = (app) => {
     if(covers.length) {
       covers = await Promise.all(covers.map(async (cvr) => {
         if(cvr.type === 'book') {//main cover for book
-          cvr.id = await db.getBookIdFromISBN(cvr.isbn);
+          cvr.id = newBookId;
         } else { //cover for story
           cvr.id = await db.getStoryIdFromAuthorAndTitleAndParentISBN(cvr.title, cvr.author, requestBody.isbn);
         }
@@ -674,26 +678,24 @@ module.exports = (app) => {
 
     /*if this is a E-Book, save ebook in relevant folder and save ebook hash in cache table*/
     if(eBook) {
-      /*get book ID*/
-      const bookID = existingBookId ? existingBookId : await db.getBookIdFromISBN(requestBody.isbn);
       /*save E-Book*/
-      const eBookFullPath = await imagesHandler.saveImage(eBook,settings.E_BOOKS_PATH , bookID, {noModification:true, mime: 'pdf'});
+      const eBookFullPath = await imagesHandler.saveImage(eBook,settings.E_BOOKS_PATH , newBookId, {noModification:true, mime: 'pdf'});
       /*save md5sum hash*/
       await db.savePictureHashes([{
-        id: bookID,
+        id: newBookId,
         folder: settings.E_BOOKS_FOLDER_NAME,
         md5: imagesHandler.calculateMD5(eBookFullPath)
       }]);
 
       /*log action*/
       logger.log({
-        text: `New E-book file was received\nBook ID ${bookID}`
+        text: `New E-book file was received\nBook ID ${newBookId}`
       });
 
     }
 
-    //return sucess message
-    res.send(JSON.stringify({status:true}));
+    //return sucess message, and the new book's link
+    res.send(JSON.stringify({status:true, redirect:`/books/${newBookId}`}));
   });
 
   app.get('/bookList', async (req, res) => {

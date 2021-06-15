@@ -265,9 +265,14 @@ module.exports = (app) => {
     }
 
     //save data in DB
+
+    let newStoryId = '';//save here story id
+
     if(existingStoryId) {
       /*existing story - alter it*/
       await db.alterStoryById(existingStoryId, requestBody);
+
+      newStoryId = existingStoryId;/*no new wish ID*/
 
       /*log action*/
       logger.log({
@@ -277,6 +282,9 @@ module.exports = (app) => {
     }  else {
       /*new story to save*/
       await db.saveStory(requestBody);
+
+      /*get new story ID from DB*/
+      newStoryId = await db.getStoryIdFromDetails(requestBody);
 
       /*log action*/
       logger.log({
@@ -291,16 +299,17 @@ module.exports = (app) => {
     if a wish is been altered - the old picture may be overwrited
     */
     if(cover) {
-      storyId = await db.getStoryIdFromDetails(requestBody),/*get new id, received when story saved in DB*/
-      picPath = await imagesHandler.saveImage(cover,settings.STORIES_PATH, storyId);/*save picture and get the full path (in order to get picture md5)*/
+      let picPath = await imagesHandler.saveImage(cover,settings.STORIES_PATH, newStoryId);/*save picture and get the full path (in order to get picture md5)*/
       //now save md5 in DB
       await db.savePictureHashes({
-        id: storyId,
+        id: newStoryId,
         folder: settings.STORIES_FOLDER_NAME,
         md5: imagesHandler.calculateMD5(picPath)
       });
     }
-    res.send(JSON.stringify({status:true}));
+
+    //return sucess message, and the new story's link
+    res.send(JSON.stringify({status:true, redirect:`/stories/${newStoryId}`}));
   });
 
   app.post('/stories/read/:id', async (req, res) => {

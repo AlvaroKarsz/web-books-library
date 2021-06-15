@@ -1988,7 +1988,9 @@ async function saveBook(opts) {
     opts.messager.setError(response.message);
     return;
   }
+  //status is true, book was saved successfully
   opts.messager.setMessage("Book Saved");
-  await sleep(3000);
-  window.location = '/insert/books';//reload in order to clear inputs
+  await sleep(2000);
+  //if redirect link was received, change location to it, if not just reload
+  window.location = response.redirect || '/insert/books';
 }

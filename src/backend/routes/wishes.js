@@ -289,10 +289,13 @@ module.exports = (app) => {
     }
 
     //save data in DB
+    let newWishId = '';//save here wish id
 
     if(existingWishId) {
       /*existing book - alter it*/
       await db.alterWishById(existingWishId, requestBody);
+
+      newWishId = existingWishId;/*no new wish ID*/
 
       /*log action*/
       logger.log({
@@ -302,6 +305,9 @@ module.exports = (app) => {
     }  else {
       /*new wish to save*/
       await db.saveWish(requestBody);
+
+      /*get new wish ID from DB*/
+      newWishId = await db.getWishIdFromISBN(requestBody.isbn);
 
       /*log action*/
       logger.log({
@@ -316,16 +322,17 @@ module.exports = (app) => {
     if a wish is been altered - the old picture may be overwrited
     */
     if(cover) {
-      wishId = await db.getWishIdFromISBN(requestBody.isbn),/*get new id, received when wish saved in DB*/
-      picPath = await imagesHandler.saveImage(cover,settings.WISH_LIST_PATH , wishId);/*save picture and get the full path (in order to get picture md5)*/
+      let picPath = await imagesHandler.saveImage(cover,settings.WISH_LIST_PATH , newWishId);/*save picture and get the full path (in order to get picture md5)*/
       //now save md5 in DB
       await db.savePictureHashes({
-        id: wishId,
+        id: newWishId,
         folder: settings.WISH_LIST_FOLDER_NAME,
         md5: imagesHandler.calculateMD5(picPath)
       });
     }
-    res.send(JSON.stringify({status:true}));
+
+    //return sucess message, and the new wish's link
+    res.send(JSON.stringify({status:true, redirect: `/wishlist/${newWishId}`}));
   });
 
   /*fetch book data by book id*/

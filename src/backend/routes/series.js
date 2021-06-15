@@ -182,10 +182,13 @@ module.exports = (app) => {
     }
 
     //save data in DB
+    let newSerieId = '';//save here serie id
 
     if(existingId) {
       /*existing serie - alter it*/
       await db.alterSerieById(existingId, requestBody);
+
+      newSerieId = existingId;/*no new book ID*/
 
       /*log action*/
       logger.log({
@@ -195,6 +198,9 @@ module.exports = (app) => {
     }  else {
       /*new serie to save*/
       await db.saveSerie(requestBody);
+
+      /*get new serie ID from DB*/
+      newSerieId = await db.getSerieIdFromTitleAndAuthor(requestBody.title, requestBody.author);
 
       /*log action*/
       logger.log({
@@ -209,16 +215,17 @@ module.exports = (app) => {
     if a serie is been altered - the old picture may be overwrited
     */
     if(cover) {
-      serieId = await db.getSerieIdFromTitleAndAuthor(requestBody.title, requestBody.author),/*get new id, received when serie saved in DB*/
-      picPath = await imagesHandler.saveImage(cover, settings.SERIES_PATH, serieId);/*save picture and get the full path (in order to get picture md5)*/
+      let picPath = await imagesHandler.saveImage(cover, settings.SERIES_PATH, newSerieId);/*save picture and get the full path (in order to get picture md5)*/
       //now save md5 in DB
       await db.savePictureHashes({
-        id: serieId,
+        id: newSerieId,
         folder: settings.SERIES_FOLDER_NAME,
         md5: imagesHandler.calculateMD5(picPath)
       });
     }
-    res.send(JSON.stringify({status:true}));
+
+    //return sucess message, and the new serie's link
+    res.send(JSON.stringify({status:true, redirect:`/series/${newSerieId}`}));
   });
 
   /*route to change picture*/

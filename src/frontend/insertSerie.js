@@ -81,6 +81,7 @@ async function saveWish(opts) {
     return;
   }
   opts.messager.setMessage("Serie Saved");
-  await sleep(3000);
-  window.location = '/insert/series';//reload in order to clear inputs
+  await sleep(2000);
+  //if redirect link was received, change location to it, if not just reload
+  window.location = response.redirect || '/insert/series';
 }
