@@ -2,6 +2,10 @@ function validValue(val) {
   return isString(validValue) ? val.trim() : val;
 }
 
+function isElement(element) {
+  return element instanceof Element || element instanceof HTMLDocument;
+}
+
 function isString(a) {
   return typeof a === 'string';
 }
@@ -1622,9 +1626,18 @@ class AutoFill {
   }
 
   fillInputs(values) {
+    /*
+    there are 2 input types
+    1. normal HTML element, input/select/textare, just add value to it
+    2. something like: {object: class pointer, prototype: class prototype} call the class prototype with value
+    */
     for(let val in this.inputsToFill) {
       if(val in values) {
-        this.inputsToFill[val].value = values[val];
+        if(isElement(this.inputsToFill[val])) {//if this is a DOM, just add to it value
+          this.inputsToFill[val].value = values[val];
+        } else if (typeof this.inputsToFill[val] === 'object' && this.inputsToFill[val].object && this.inputsToFill[val].prototype) { //class
+          this.inputsToFill[val].object[this.inputsToFill[val].prototype](values[val]);
+        }
       }
     }
 

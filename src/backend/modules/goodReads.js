@@ -2,6 +2,7 @@ const settings = require('../settings.js');
 const basicFunctions = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 const config = require(settings.SOURCE_CODE_BACKEND_CONFIG_FILE_PATH);
 const db = require(settings.SOURCE_CODE_BACKEND_FUNCTIONS_DATABASE_FILE_PATH);
+const logger = require(settings.SOURCE_CODE_BACKEND_LOGGER_MODULE_FILE_PATH);
 const xml2js = require('xml2js');
 
 class GoodReads {
@@ -966,7 +967,26 @@ async fetchBooksByAuthor(author, vars = {}) {
     }
 
     if(info.format) {
-      output.format = info.format[0];
+      /*get format code*/
+
+      switch(info.format[0].replace(/\s/g,'').toLowerCase()) {//remove whitespaces
+        case 'paperback':
+        case 'tradepaperback':
+        output.format = 'P';
+        break;
+        case 'hardcover':
+        output.format = 'H';
+        break;
+        case 'ebook':
+        output.format = 'E';
+        break;
+        default:
+        /*unknown - log it */
+        logger.log({
+          type: 'error',
+          text: "Unknown book format - " + info.format[0]
+        });
+      }
     }
 
     if(info.authors && info.authors[0] && info.authors[0].author && info.authors[0].author[0] && info.authors[0].author[0].name) {

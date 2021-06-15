@@ -881,7 +881,7 @@ class Story {
     if(!cover) {
       cover = this.coverSelector.getDefault();
     }
-      this.permanentCover.src = cover ? cover : this.defaultStoryPicSrc;
+    this.permanentCover.src = cover ? cover : this.defaultStoryPicSrc;
     this.permanentCover.className = this.permanentCoverClass;
     this.body.appendChild(this.permanentCover);
   }
@@ -1590,6 +1590,12 @@ class CheckboxGroup {
     }
   }
 
+  uncheckAll() {
+    for(let i in this.checkboxes) {
+      this.checkboxes[i].checked = false;
+    }
+  }
+
   runCallback(type, code) {
     if(this.callbacks[code] && this.callbacks[code][type]) {
       this.callbacks[code][type]();
@@ -1609,6 +1615,8 @@ class CheckboxGroup {
   set(code) {
     if(this.checkboxes[code]) {
       this.checkboxes[code].click();
+    } else {//clear all checkboxes, nothing selected
+      this.uncheckAll();
     }
   }
 
@@ -1773,7 +1781,11 @@ class CheckboxGroup {
       year: els.yearInp,
       description: els.descriptionInp,
       asin: els.asinInp,
-      tags: els.tagsInp
+      tags: els.tagsInp,
+      format: {
+        object: bookTypeE,
+        prototype: 'set'
+      }
     }
   }),
 
