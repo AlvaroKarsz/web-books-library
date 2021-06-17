@@ -54,7 +54,7 @@ module.exports = (className) => {
               REPLACE(LOWER(name),' ','') = $${++counter} AND (
                 LENGTH(name) > 20
                 OR
-                REPLACE(LOWER(author),' ','') = $${++counter}
+                REPLACE(LOWER(author),' ','') LIKE $${++counter}
               )
             ) LIMIT 1
           ),
@@ -68,7 +68,7 @@ module.exports = (className) => {
               REPLACE(LOWER(name),' ','') = $${++counter} AND (
                 LENGTH(name) > 20
                 OR
-                REPLACE(LOWER(author),' ','') = $${++counter}
+                REPLACE(LOWER(author),' ','') LIKE $${++counter}
               )
             ) LIMIT 1
           ),
@@ -81,11 +81,11 @@ module.exports = (className) => {
             WHERE REPLACE(LOWER(name),' ','') = $${++counter} AND (
               LENGTH(name) > 20
               OR
-              REPLACE(LOWER(author),' ','') = $${++counter}
+              REPLACE(LOWER(author),' ','') LIKE $${++counter}
               OR
               (
                 SELECT REPLACE(LOWER(author),' ','') FROM my_books WHERE id = entry_id.parent
-              ) = $${++counter}
+              ) LIKE $${++counter}
             ) LIMIT 1
           ),
           ''
@@ -95,13 +95,13 @@ module.exports = (className) => {
       args.push(
         isbn,
         title,
-        author,
+        `%${author}%`,
         isbn,
         title,
-        author,
+        `%${author}%`,
         title,
-        author,
-        author
+        `%${author}%`,
+        `%${author}%`
       );
     });
 
