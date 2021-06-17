@@ -2347,9 +2347,20 @@ async function doBackUp(folder) {
     }
 
     activate() {
-      this.popupClose.onclick =
+      //close button click - remove popup
+      this.popupClose.onclick = () => {
+        this.kill();
+      };
+      //popup button click - remove popup
       this.popupButton.onclick = () => {
         this.kill();
+      };
+      //html body click - close popup if click is outside popup
+      document.body.onclick = (clkEvt) => {
+        if(clkEvt.target !== this.popup && !this.popup.contains(clkEvt.target)) {
+          document.body.onclick = null;//remove event listener
+          this.kill();
+        }
       };
     }
 
