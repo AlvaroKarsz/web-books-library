@@ -1851,3 +1851,99 @@ img:hover {
   font-size: 15px;
   margin: 0 auto;
 }
+
+.general-popup {
+  width: 80%;
+  background-color: rgba(0,0,0);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  position: absolute;
+  text-align: center;
+  height: 475px;
+  border-radius: 20px;
+  padding: 20px;
+  border: 2px solid white;
+  color: white;
+}
+
+.general-popup-title {
+  font-size: 33px;
+  margin-bottom: 27px;
+}
+
+.general-popup-body {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  height: 70%;
+  padding: 10px;
+}
+
+.general-popup-close {
+  margin: 0px 15px;
+  padding: 2px 15px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 32px;
+  font-weight: 100;
+  cursor: pointer;
+  outline: none;
+  right: 0;
+  position: absolute;
+}
+
+.general-popup-close:hover {
+  transform: scale(1.1);
+}
+
+.prices-display {
+  display: block;
+  max-height: 450px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  width: 98%;
+  margin: 0 auto;
+}
+
+.prices-display-element {
+  display: inline-block;
+  border: 2px solid white;
+  border-radius: 10px;
+  margin: 10px;
+  padding: 8px;
+  height: 240px;
+  width: 230px;
+  overflow: auto;
+}
+
+.prices-display-element:hover {
+  transform: scale(1.05);
+}
+
+.prices-display-element img[tp='icon'] {
+  width: 55px;
+  height: 55px;
+  display: inline-block;
+  float: left;
+  margin-right: 8px;
+}
+
+.prices-display-element div[tp='topnav'] {
+  position: relative;
+  display: block;
+  top: -10px;
+}
+
+.prices-display-element p[tp='title'] {
+  font-size: 18px;
+  line-height: 50px;
+  text-align: left;
+  width: max-content;
+}
+
+.prices-display-element a, .prices-display-element a.active{
+  color: rgba(52,107,189,1);
+}

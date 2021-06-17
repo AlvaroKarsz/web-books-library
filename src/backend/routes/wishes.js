@@ -86,6 +86,7 @@ module.exports = (app) => {
         buy:true,
         received:true,
         search:true,
+        searchCheapest: true,
         delete: true,
         fetchCover: true,
         fetchDescription: true,

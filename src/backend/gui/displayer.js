@@ -409,13 +409,21 @@ class BookDisplayer {
       `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'search-book'>` +
       `<p>Search Book Online</p>` +
       `<form id = 'web-stores-holder'>` +
-      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'betterworldbooks')}"><img src='/pic/icon/betterworldbooks'></a>` +
-      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'thriftbooks')}"><img src='/pic/icon/thriftbooks'></a>` +
-      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'abebooks')}"><img src='/pic/icon/abebooks'></a>` +
-      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'bookdepository')}"><img src='/pic/icon/bookdepository'></a>` +
-      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'ebay')}"><img src='/pic/icon/ebay'></a>` +
-      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'amazon')}"><img src='/pic/icon/amazon'></a>` +
+      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'betterworldbooks')}"><img src="${webStoreSearcher.icon('betterworldbooks')}"></a>` +
+      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'thriftbooks')}"><img src="${webStoreSearcher.icon('thriftbooks')}"></a>` +
+      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'abebooks')}"><img src="${webStoreSearcher.icon('abebooks')}"></a>` +
+      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'bookdepository')}"><img src="${webStoreSearcher.icon('bookdepository')}"></a>` +
+      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'ebay')}"><img src="${webStoreSearcher.icon('ebay')}"></a>` +
+      `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'amazon')}"><img src="${webStoreSearcher.icon('amazon')}"></a>` +
       `</form>` +
+      `</div>`;
+    }
+
+    /*option to search cheapest book in stores automatically*/
+    if(actions.searchCheapest) {
+      output += `<div title="Click to Search for the cheapest book in stores" id='books-cheapest-search' param-isbn="${data.isbn}">` +
+      `<i class="fa fa-usd"></i>` +
+      `<p>Search Cheapest</p>` +
       `</div>`;
     }
 

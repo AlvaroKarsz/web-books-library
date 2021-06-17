@@ -2323,6 +2323,75 @@ async function doBackUp(folder) {
     });
   }
 
+  class PopUp {
+    constructor(ops = {}) {
+      this.isHtml = ops.html || false;
+      this.parent = ops.parent || document.body;
+      this.title = ops.title || 'Title';
+      this.body = ops.body || 'body';
+      this.buttonText = ops.buttonText || 'OK';
+      this.overlayClass = ops.overlayClass || 'main-overlay';
+      this.popupClass = ops.popupClass || 'general-popup';
+      this.popupTitleClass = ops.popupTitleClass || 'general-popup-title';
+      this.bodyClass = ops.bodyClass || 'general-popup-body';
+      this.popupCloseClass = ops.popupCloseClass || 'general-popup-close';
+      this.popupButtonClass = ops.popupButtonClass || 'black-white-button';
+      this.build();
+      this.activate();
+    }
+
+    build() {
+      this.buildSkeleton();
+      this.setTitle();
+      this.setBody();
+    }
+
+    activate() {
+      this.popupClose.onclick =
+      this.popupButton.onclick = () => {
+        this.kill();
+      };
+    }
+
+    kill() {
+      this.overlay.remove();
+    }
+
+    setTitle() {
+      this.popupTitle.innerHTML = this.title;
+    }
+
+    setBody() {
+      if(this.isHtml) {
+        this.popupBody.innerHTML = this.body;
+      } else {
+        this.popupBody.textContent = this.body;
+      }
+    }
+
+    buildSkeleton() {
+      this.overlay = document.createElement('DIV');
+      this.overlay.className = this.overlayClass;
+      this.popup = document.createElement('DIV');
+      this.popup.className = this.popupClass;
+      this.popupTitle = document.createElement('DIV');
+      this.popupTitle.className = this.popupTitleClass;
+      this.popupClose = document.createElement('BUTTON');
+      this.popupClose.className = this.popupCloseClass;
+      this.popupClose.innerHTML = 'X';
+      this.popupBody = document.createElement('DIV');
+      this.popupBody.className = this.bodyClass;
+      this.popupButton = document.createElement('BUTTON');
+      this.popupButton.className = this.popupButtonClass;
+      this.popupButton.innerHTML = this.buttonText;
+      this.popup.appendChild(this.popupClose);
+      this.popup.appendChild(this.popupTitle);
+      this.popup.appendChild(this.popupBody);
+      this.popup.appendChild(this.popupButton);
+      this.overlay.appendChild(this.popup);
+      this.parent.appendChild(this.overlay);
+    }
+  }
 
   class BackupDialog {
     constructor(ops = {}) {

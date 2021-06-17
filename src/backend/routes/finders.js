@@ -8,6 +8,7 @@ const logger = require(settings.SOURCE_CODE_BACKEND_LOGGER_MODULE_FILE_PATH);
 const wikiApi = require(settings.SOURCE_CODE_BACKEND_WIKI_MODULE_FILE_PATH);
 const goodReadsAPI = require(settings.SOURCE_CODE_BACKEND_GOOD_READS_MODULE_FILE_PATH);
 const googleSearcher = require(settings.SOURCE_CODE_BACKEND_GOOGLE_SEARCH_MODULE_FILE_PATH);
+const webStoreSearcher = require(settings.SOURCE_CODE_BACKEND_WEB_STORE_SEARCHER_MODULE_FILE_PATH);
 
 const fs = require('fs');
 
@@ -430,6 +431,36 @@ module.exports = (app) => {
     });
 
     res.send(output);
+  });
+
+
+
+
+  /*route to search for a description*/
+  app.get('/search/cheap/:isbn', async (req, res) => {
+    const isbn =  req.params.isbn;
+
+    if(!isbn) {/*no isbn received - exit*/
+      logger.log({
+        type: 'error',
+        text: "Error searching for book prices in web, no ISBN received"
+      });
+      res.send(JSON.stringify(''));
+      return;
+    }
+    /*search for prices*/
+    let prices = JSON.stringify(
+      await webStoreSearcher.findPrices(isbn)
+    );
+
+    /*log action*/
+    logger.log({
+      text: `Book prices search result:\nISBN: ${isbn}\nPrices: ${prices}`
+    });
+
+    /*echo response*/
+    res.send(prices);
+    
   });
 
   /*route to search for a description*/

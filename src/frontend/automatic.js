@@ -9,6 +9,7 @@
   listenToSimilarBooksSearch();
   listenToBooksByAuthorSearch();
   listenToBooksFromSerieSearch();
+  listenToCheapestSearch();
 })()
 
 function listenToMarkBookAsReadButNotCompleted() {
@@ -47,6 +48,79 @@ function listenToCoverChange() {
 
   div.onclick = () => {
     coverChanger.show();
+  };
+}
+
+function listenToCheapestSearch() {
+  /*if page has books-cheapest-search element, listen to clicks*/
+  let div = document.getElementById("books-cheapest-search");
+  if(!div) {
+    return;
+  }
+  //get isbn
+  let isbn = div.getAttribute('param-isbn');
+  if(!isbn) {
+    return;
+  }
+
+  let loader = new Loader(document.body, {
+    autoPost: true,
+    withOverlay: true,
+    overlayClass: 'main-overlay',
+    cssForceLoader: {
+      margin: '0',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%) scale(1.8)'
+    }
+  }),
+
+  messager =  new Messager();
+
+  div.onclick = async () => {
+    loader.show();
+    let req = await doHttpRequest('/search/cheap/' + isbn, {
+      method:'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    loader.hide();
+    //error/nothing found - show msg and return
+    if(!req) {
+      messager.setError('Error while searching for prices...');
+      return;
+    }
+
+    //build html string from prices
+    let htmlStr = '<div class = "prices-display">';
+
+    for(let store in req) {
+      htmlStr += `<div class = "prices-display-element">` +
+      `<div tp='topnav'>`;
+
+      if(req[store].icon) {
+        htmlStr += `<img src="${req[store].icon}" tp='icon'>`;
+      }
+      htmlStr +=`<p tp='title'>${store}</p>` +
+      `</div>` +
+      `<p>Price: <b>${req[store].price}</b></p>`;
+      if(req[store].shipping) {
+        htmlStr += `<p>Shipping: <b>${req[store].shipping}</b></p>`;
+      }
+      if(req[store].link) {
+        htmlStr +=`<p><a href="${req[store].link}" target="blank">Go to Book</a></p>`;
+      }
+      htmlStr += `</div>`;
+    }
+
+    //show result
+    new PopUp({
+      html: true,
+      title: 'Prices',
+      body: htmlStr
+    });
+
   };
 }
 
