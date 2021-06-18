@@ -944,7 +944,7 @@ module.exports = (className) => {
   /*fetch all book (marked as "read") data*/
   _THIS.fetchReadById = async (id, filters, type) => {
     /*same as "fetch book by id, just different type"*/
-    return _THIS.fetchBookById(...arguments);
+    return _THIS.fetchBookById(id, filters, type);
   }
 
   /*search and save ratings for a book*/
