@@ -778,6 +778,10 @@ class DriveBackup {
     for(let folderName in this.LOCAL_FILES) {
       this.sendMessage(`Folder ${folderName}`);
       for(let i = 0 , l = this.LOCAL_FILES[folderName].length ; i < l ; i ++ ) {
+        if(this.STOP) {/*stop message received - stop backup*/
+          this.IS_WORKING = false;
+          return null;
+        }
         foundFlag = false;//reset
         this.sendMessage(`File ${this.LOCAL_FILES[folderName][i].name}`);
         /*iterate through drive files and look for match*/
