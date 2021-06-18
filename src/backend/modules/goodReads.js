@@ -589,6 +589,13 @@ class GoodReads {
 
   async getAuthorID(authorName) {
     /*get author's goodreads ID*/
+
+    /*
+    if this is a pseudonym, use the real name
+    A as B, in this case use A
+    */
+    authorName = authorName.split(/\sas\s/i)[0].trim();
+
     let requestSettings = {
       method:'GET',
       headers: {
