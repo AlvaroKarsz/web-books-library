@@ -109,7 +109,15 @@ module.exports = (className) => {
     /********************************************************************************************
     SAVE WISH RATING IN DB
     *********************************************************************************************/
-    _THIS.saveRating(wishId, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
+    _THIS.saveRating(wishId, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list').then((res) => {
+      /*
+      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings.
+      IMPORTANT: this action is done AFTER "saveRating" finishes, it may take some time since it search for ratings in external APIs
+      */
+      if(bookJson.serie && typeof bookJson.serie.value !== 'undefined') {
+        _THIS.saveSerieRating(bookJson.serie.value);
+      }
+    });
   }
 
   /*alter a wish that already exist in DB wishlist*/
@@ -141,7 +149,15 @@ module.exports = (className) => {
     /********************************************************************************************
     SAVE WISH RATING IN DB - IN CASE THAT THE NEW MODIFICATION IS A CHANGE IN ISBN/TITLE/AUTHOR -> THIS MAY LEAD TO A DIFFERENT RATING
     *********************************************************************************************/
-    _THIS.saveRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list');
+    _THIS.saveRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list').then((res) => {
+      /*
+      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings.
+      IMPORTANT: this action is done AFTER "saveRating" finishes, it may take some time since it search for ratings in external APIs
+      */
+      if(bookJson.serie && typeof bookJson.serie.value !== 'undefined') {
+        _THIS.saveSerieRating(bookJson.serie.value);
+      }
+    });
   }
 
   /*fetch all wishlist that are not marked as purchased, option to pass filters*/
@@ -443,7 +459,20 @@ module.exports = (className) => {
 
   /*delete a book from wishlist*/
   _THIS.deleteWish = async (id) => {
+    /*
+    before the wish is deleted from wishlist, check if wish is part of a series.
+    Since serie ratings is just it books av. ratings. calculate the new serie ratings.
+    */
+    let serie = await pg.query(`SELECT serie FROM wish_list WHERE id = $1;`, [id]);
+    serie = serie.rows[0].serie;
+
+    /*delete the wish from wishlist*/
     await pg.query(`DELETE FROM wish_list WHERE id = $1;`, [id]);
+
+    /*is wish is part of serie  -calculate new ratings for serie*/
+    if(serie) {
+      _THIS.saveSerieRating(serie);
+    }
   }
 
   /*count how many books in wishlist are part of this serie*/

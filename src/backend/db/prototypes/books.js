@@ -315,7 +315,15 @@ module.exports = (className) => {
     /********************************************************************************************
     SAVE BOOK RATING IN DB
     *********************************************************************************************/
-    _THIS.saveRating(bookId, bookJson.isbn, bookJson.title, bookJson.author, 'my_books');
+    _THIS.saveRating(bookId, bookJson.isbn, bookJson.title, bookJson.author, 'my_books').then((res) => {
+      /*
+      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings.
+      IMPORTANT: this action is done AFTER "saveRating" finishes, it may take some time since it search for ratings in external APIs
+      */
+      if(bookJson.serie && typeof bookJson.serie.value !== 'undefined') {
+        _THIS.saveSerieRating(bookJson.serie.value);
+      }
+    });
 
     /********************************************************************************************
     SAVE STORIES RATING IF COLLECTION
@@ -586,7 +594,15 @@ module.exports = (className) => {
     /********************************************************************************************
     ALTER BOOK RATING IN DB , CHANGES IN ISBN/AUTHOR/TITLE MAY LEAD TO A DIFFERENT RATING
     *********************************************************************************************/
-    _THIS.saveRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'my_books');
+    _THIS.saveRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'my_books').then((res) => {
+      /*
+      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings.
+      IMPORTANT: this action is done AFTER "saveRating" finishes, it may take some time since it search for ratings in external APIs
+      */
+      if(bookJson.serie && typeof bookJson.serie.value !== 'undefined') {
+        _THIS.saveSerieRating(bookJson.serie.value);
+      }
+    });
 
     /********************************************************************************************
     ALTER STORIES RATING IF COLLECTION
