@@ -6,12 +6,25 @@
     coverHolder: document.getElementById('cover-element-holder'),
     collectionHolder: document.getElementById('collection-holder'),
     asinInp: document.getElementById('book-asin'),
+    seriesHolder: document.getElementById('series-holder'),
     descriptionInp: document.getElementById('story-description'),
     autoFillHolder: document.getElementById('auto-fill'),
     saveBtn: document.getElementById('save')
   };
 
-  let collectionE = new Selector(els.collectionHolder, {
+  let serieE = new Selector(els.seriesHolder, {
+    additionalInputs: [{
+      name: 'Number',
+      type: 'number',
+      returnName: 'number'
+    }],
+    withFilter: true,
+    title: 'Part of Serie:',
+    selectName: 'Serie',
+    actionScript: '/serieList'
+  }),
+
+  collectionE = new Selector(els.collectionHolder, {
     withFilter: true,
     ignoreCheckBox: true,
     selectName: 'Collection',
@@ -68,6 +81,15 @@
       addValueToInput(currentData.asin, els.asinInp);
       addValueToInput(currentData.story_author ? currentData.story_author : currentData.author , els.authorInp);
       addValueToInput(currentData.pages, els.pagesInp);
+
+      //add serie if exists
+      if(currentData.serie_id) {
+        serieE.set({
+          value: currentData.serie_id,
+          number: currentData.serie_num
+        });
+      }
+
       //add collection
       if(currentData.collection_id) {
         collectionE.set({
@@ -90,6 +112,7 @@
         asin: els.asinInp.value,
         description: els.descriptionInp.value,
         collectionId: collectionE.get(),
+        serie: serieE.get(),
         cover: coverEl.getSelected()
       },
       messager: messager,
@@ -111,6 +134,16 @@ async function saveStory(opts) {
   if(!validValue(opts.values.collectionId.value)) {
     opts.messager.setError("Please select Collection");
     return;
+  }
+  if(opts.values.serie) {
+    if(!validValue(opts.values.serie.value)) {
+      opts.messager.setError("Please select Serie");
+      return;
+    }
+    if(!validValue(opts.values.serie.number)) {
+      opts.messager.setError("Please select number in Serie");
+      return;
+    }
   }
   opts.saveButton.disabled = true;//disable until http request finish
   opts.loaderEl.show('Saving Story');

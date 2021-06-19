@@ -20,37 +20,48 @@ module.exports = (className) => {
       SELECT id FROM my_books WHERE serie = $1 AND serie_num = $2
       UNION
       SELECT id FROM wish_list WHERE serie = $3 AND serie_num = $4
+      UNION
+      SELECT id FROM stories WHERE serie = $5 AND serie_num = $6
     ) AS serie_next_id,
 
     (
-      SELECT name FROM my_books WHERE serie = $5 AND serie_num = $6
+      SELECT name FROM my_books WHERE serie = $7 AND serie_num = $8
       UNION
-      SELECT name FROM wish_list WHERE serie = $7 AND serie_num = $8
+      SELECT name FROM wish_list WHERE serie = $9 AND serie_num = $10
+      UNION
+      SELECT name FROM stories WHERE serie = $11 AND serie_num = $12
     ) AS serie_next_name,
 
     (
-      SELECT id FROM my_books WHERE serie = $9 AND serie_num = $10
+      SELECT id FROM my_books WHERE serie = $13 AND serie_num = $14
       UNION
-      SELECT id FROM wish_list WHERE serie = $11 AND serie_num = $12
+      SELECT id FROM wish_list WHERE serie = $15 AND serie_num = $16
+      UNION
+      SELECT id FROM stories WHERE serie = $17 AND serie_num = $18
     ) AS serie_prev_id,
 
     (
-      SELECT name FROM my_books WHERE serie = $13 AND serie_num = $14
+      SELECT name FROM my_books WHERE serie = $19 AND serie_num = $20
       UNION
-      SELECT name FROM wish_list WHERE serie = $15 AND serie_num = $16
+      SELECT name FROM wish_list WHERE serie = $21 AND serie_num = $22
+      UNION
+      SELECT name FROM stories WHERE serie = $23 AND serie_num = $24
     ) AS serie_prev_name,
 
     (
-      SELECT serie_num FROM my_books WHERE serie = $17 AND serie_num = $18
+      SELECT serie_num FROM my_books WHERE serie = $25 AND serie_num = $26
       UNION
-      SELECT serie_num FROM wish_list WHERE serie = $19 AND serie_num = $20
+      SELECT serie_num FROM wish_list WHERE serie = $27 AND serie_num = $28
+      UNION
+      SELECT serie_num FROM stories WHERE serie = $29 AND serie_num = $30
     ) AS serie_next_num,
 
     (
-      SELECT serie_num FROM my_books WHERE serie = $21 AND serie_num = $22
+      SELECT serie_num FROM my_books WHERE serie = $31 AND serie_num = $32
       UNION
-      SELECT serie_num FROM wish_list WHERE serie = $23 AND serie_num = $24
-
+      SELECT serie_num FROM wish_list WHERE serie = $33 AND serie_num = $34
+      UNION
+      SELECT serie_num FROM stories WHERE serie = $35 AND serie_num = $36
     ) AS serie_prev_num,
 
     (
@@ -58,13 +69,15 @@ module.exports = (className) => {
       WHEN read_order IS NOT NULL THEN 'reads'
       ELSE 'books'
       END
-      FROM my_books WHERE serie = $25 AND serie_num = $26
+      FROM my_books WHERE serie = $37 AND serie_num = $38
       UNION
       SELECT CASE
       WHEN order_date IS NOT NULL THEN 'purchased'
       ELSE 'wishlist'
       END
-      FROM wish_list WHERE serie = $27 AND serie_num = $28
+      FROM wish_list WHERE serie = $39 AND serie_num = $40
+      UNION
+      SELECT 'stories' FROM stories WHERE serie = $41 AND serie_num = $42
     ) AS serie_prev_type,
 
     (
@@ -72,13 +85,15 @@ module.exports = (className) => {
       WHEN read_order IS NOT NULL THEN 'reads'
       ELSE 'books'
       END
-      FROM my_books WHERE serie = $29 AND serie_num = $30
+      FROM my_books WHERE serie = $43 AND serie_num = $44
       UNION
       SELECT CASE
       WHEN order_date IS NOT NULL THEN 'purchased'
       ELSE 'wishlist'
       END
-      FROM wish_list WHERE serie = $31 AND serie_num = $32
+      FROM wish_list WHERE serie = $45 AND serie_num = $46
+      UNION
+      SELECT 'stories' FROM stories WHERE serie = $47 AND serie_num = $48
     ) AS serie_next_type;`;
 
     let seriesResult = await pg.query(query, [
@@ -91,6 +106,14 @@ module.exports = (className) => {
       serie,
       parseInt(num,10) + 1,
       serie,
+      parseInt(num,10) + 1,
+      serie,
+      parseInt(num,10) + 1,
+      serie,
+      parseInt(num,10) - 1,
+      serie,
+      parseInt(num,10) - 1,
+      serie,
       parseInt(num,10) - 1,
       serie,
       parseInt(num,10) - 1,
@@ -103,6 +126,12 @@ module.exports = (className) => {
       serie,
       parseInt(num,10) + 1,
       serie,
+      parseInt(num,10) + 1,
+      serie,
+      parseInt(num,10) - 1,
+      serie,
+      parseInt(num,10) - 1,
+      serie,
       parseInt(num,10) - 1,
       serie,
       parseInt(num,10) - 1,
@@ -110,11 +139,14 @@ module.exports = (className) => {
       parseInt(num,10) - 1,
       serie,
       parseInt(num,10) - 1,
+      serie,
+      parseInt(num,10) + 1,
       serie,
       parseInt(num,10) + 1,
       serie,
       parseInt(num,10) + 1
     ]);
+
     seriesResult = seriesResult.rows[0];
     return seriesResult;
   }
@@ -130,14 +162,30 @@ module.exports = (className) => {
     main.id,
     main.name,
     (
-      SELECT COUNT(1)
-      FROM my_books
-      WHERE serie = main.id
+      (
+        SELECT COUNT(1)
+        FROM my_books
+        WHERE serie = main.id
+      )
+      +
+      (
+        SELECT COUNT(1)
+        FROM stories
+        WHERE serie = main.id
+      )
     ) AS owned_books,
     (
-      SELECT COUNT(1)
-      FROM my_books
-      WHERE serie = main.id AND read_order IS NOT NULL
+      (
+        SELECT COUNT(1)
+        FROM my_books
+        WHERE serie = main.id AND read_order IS NOT NULL
+      )
+      +
+      (
+        SELECT COUNT(1)
+        FROM stories
+        WHERE serie = main.id AND read_order IS NOT NULL
+      )
     ) AS readed_books,
     (
       SELECT COUNT(1)
@@ -260,9 +308,45 @@ module.exports = (className) => {
           )
           ORDER BY serie_num
         )
+      ) FROM stories
+      WHERE serie = $1
+    ) AS stories_list,
+
+    (
+      SELECT
+      JSON_STRIP_NULLS(
+        JSON_AGG(
+          JSONB_BUILD_OBJECT(
+            'name',
+            name,
+            'id',
+            id::TEXT,
+            'number',
+            serie_num::TEXT
+          )
+          ORDER BY serie_num
+        )
       )  FROM my_books
       WHERE serie = $1 AND read_order IS NOT NULL
     ) AS books_read,
+
+    (
+      SELECT
+      JSON_STRIP_NULLS(
+        JSON_AGG(
+          JSONB_BUILD_OBJECT(
+            'name',
+            name,
+            'id',
+            id::TEXT,
+            'number',
+            serie_num::TEXT
+          )
+          ORDER BY serie_num
+        )
+      )  FROM stories
+      WHERE serie = $1 AND read_order IS NOT NULL
+    ) AS stories_read,
 
     (
       SELECT
@@ -417,9 +501,20 @@ module.exports = (className) => {
     google_rating_count,
     amazon_rating,
     amazon_rating_count
-    FROM wish_list WHERE serie = $2;`
+    FROM wish_list WHERE serie = $2
 
-    let res = await pg.query(query, [id, id]);
+    UNION
+
+    SELECT
+    goodreads_rating,
+    goodreads_rating_count,
+    google_rating,
+    google_rating_count,
+    amazon_rating,
+    amazon_rating_count
+    FROM stories WHERE serie = $3;`
+
+    let res = await pg.query(query, [id, id, id]);
     res = res.rows;
 
     /*vars to save ratings*/
@@ -489,4 +584,33 @@ module.exports = (className) => {
     /*success*/
     return true;
   }
+
+  /*check if a book in serie's location already exist*/
+  _THIS.serieNumExist = async (serieId, serieNum) => {
+    const query = `SELECT
+    id as id,
+    'book' AS type
+    FROM my_books
+    WHERE serie=$1 AND serie_num = $2
+
+    UNION
+
+    SELECT
+    id as id,
+    'wish' AS type
+    FROM wish_list
+    WHERE serie=$3 AND serie_num = $4
+
+    UNION
+
+    SELECT
+    id as id,
+    'story' AS type
+    FROM stories
+    WHERE serie=$5 AND serie_num = $6;`;
+
+    let result = await pg.query(query, [serieId, serieNum,serieId, serieNum,serieId, serieNum]);
+    return result.rows[0];
+  }
+
 };

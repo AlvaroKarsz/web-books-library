@@ -230,14 +230,18 @@ module.exports = (className) => {
       parent,
       description,
       asin,
-      author
+      author,
+      serie,
+      serie_num
     ) VALUES (
       $${++coutner},
       $${++coutner},
       $${++coutner},
       $${++coutner},
       ${storyJson.asin ? `$${++coutner}` : 'NULL' },
-      ${storyJson.author ? `$${++coutner}` : 'NULL' }
+      ${storyJson.author ? `$${++coutner}` : 'NULL' },
+      ${storyJson.serie && storyJson.serie.value ? `$${++coutner}` : 'NULL' },
+      ${storyJson.serie && storyJson.serie.value ? `$${++coutner}` : 'NULL' }
     )
     RETURNING id;`;//if author is empty, insert NULL insted - indicated to use collection's author
 
@@ -249,6 +253,10 @@ module.exports = (className) => {
       queryArguments.push(storyJson.author);
     }
 
+    if(storyJson.serie && storyJson.serie.value) {
+      queryArguments.push(storyJson.serie.value, storyJson.serie.number);
+    }
+
     /*send query and get story ID*/
     let storyId = await pg.query(query, queryArguments);
     storyId = storyId.rows[0].id;
@@ -256,7 +264,15 @@ module.exports = (className) => {
     /********************************************************************************************
     SAVE STORY RATING IN DB
     *********************************************************************************************/
-    _THIS.saveRating(storyId, '', storyJson.title, storyJson.actualAuthor, 'stories');
+    _THIS.saveRating(storyId, '', storyJson.title, storyJson.actualAuthor, 'stories').then((res) => {
+      /*
+      if this story is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings.
+      IMPORTANT: this action is done AFTER "saveRating" finishes, it may take some time since it search for ratings in external APIs
+      */
+      if(storyJson.serie && typeof storyJson.serie.value !== 'undefined') {
+        _THIS.saveSerieRating(storyJson.serie.value);
+      }
+    });
   }
 
   /*alter a story that already exist in DB*/
@@ -269,8 +285,20 @@ module.exports = (className) => {
     ALTER STORY IN DB
     *********************************************************************************************/
     let paramsCounter = 0;
-    let query = `UPDATE stories SET description=$${++paramsCounter}, name = $${++paramsCounter}, pages = $${++paramsCounter}, asin = $${++paramsCounter} ,parent = $${++paramsCounter}, author `;
+    let query = `UPDATE stories
+    SET description=$${++paramsCounter},
+    name = $${++paramsCounter},
+    pages = $${++paramsCounter},
+    asin = $${++paramsCounter},
+    parent = $${++paramsCounter},
+    serie = ${storyJson.serie && storyJson.serie.value ? `$${++paramsCounter}` : 'NULL'},
+    serie_num = ${storyJson.serie && storyJson.serie.value ? `$${++paramsCounter}` : 'NULL'},
+    author `;
     let queryArguments = [storyJson.description, storyJson.title, storyJson.pages,storyJson.asin, storyJson.collectionId.value];
+
+    if(storyJson.serie && storyJson.serie.value) {
+      queryArguments.push(storyJson.serie.value, storyJson.serie.number);
+    }
 
     if(storyJson.author) {/*different author than collection*/
       query += `=$${++paramsCounter} `;
@@ -287,6 +315,12 @@ module.exports = (className) => {
     CHANGE RATING IN DB
     *********************************************************************************************/
     await _THIS.saveRating(id, '', storyJson.title, storyJson.actualAuthor, 'stories');
+    /*
+    if this story is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings.
+    */
+    if(storyJson.serie && typeof storyJson.serie.value !== 'undefined') {
+      _THIS.saveSerieRating(storyJson.serie.value);
+    }
 
     /********************************************************************************************
     IF COLLECTION WAS CHANGED - MAKE NEEDED CHANGES
@@ -425,8 +459,11 @@ module.exports = (className) => {
     my_stories_main.author AS story_author,
     my_stories_main.read_date AS read_date,
     my_stories_main.read_order AS read_order,
+    my_stories_main.serie AS serie_id,
+    my_stories_main.serie_num AS serie_num,
     my_stories_main.completed AS read_completed,
     my_stories_main.asin AS asin,
+    series_table.name AS serie,
     my_stories_main.description AS description,
     my_books_main.year AS year,
     my_books_main.name AS collection_name,
@@ -464,6 +501,9 @@ module.exports = (className) => {
     LEFT JOIN  my_books my_books_main
     ON my_stories_main.parent = my_books_main.id
 
+    LEFT JOIN series series_table
+    ON my_stories_main.serie = series_table.id
+
     LEFT JOIN stories my_stories_entry1
     ON my_stories_entry1.id = (
       SELECT id FROM stories temp_stories
@@ -500,10 +540,13 @@ module.exports = (className) => {
     my_stories_main.completed,
     my_books_main.original_language,
     my_books_main.read_order,
+    series_table.name,
     my_stories_entry1.id,
     my_stories_entry1.name,
     my_stories_main.asin,
     my_stories_entry2.id,
+    my_stories_main.serie,
+    my_stories_main.serie_num,
     my_stories_entry2.name,
     my_stories_main.google_rating,
     my_stories_main.goodreads_rating_count,
@@ -542,6 +585,13 @@ module.exports = (className) => {
         }
       }
     }
+
+    /*if this book is part of serie, fetch next and prev. in serie*/
+    if(result.serie) {
+      //merge results with serie results
+      result = {...result, ... await _THIS.getAdjacentInSeries(result.serie_id, result.serie_num)};
+    }
+
     return result;
   }
 
@@ -567,7 +617,7 @@ module.exports = (className) => {
     return saveRating
     It will return true only in case of success
     */
-    return await _THIS.saveRating(id, '', neededData.name, neededData.author, 'stories');
+    await _THIS.saveRating(id, '', neededData.name, neededData.author, 'stories');
   }
 
   /*check if the combination author+title+number of pages already exist in stories DB*/

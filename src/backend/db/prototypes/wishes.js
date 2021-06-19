@@ -441,22 +441,6 @@ module.exports = (className) => {
     return result;
   }
 
-  /*check if a book from this serie in this serie location already exist in wishlist */
-  _THIS.bookFromSerieExistsInWishList = async (serieId, serieNum, idToExclude = null) => {
-    let query = `SELECT EXISTS(SELECT 1 FROM wish_list WHERE serie=$1 AND serie_num=$2 `; /*query will be closed with ")" after inserting all data*/
-    let params = [serieId, serieNum];
-    /*if idToExclude is not null, exclude this id from query*/
-    if(idToExclude) {
-      query += ` AND id != $3`;
-      params.push(idToExclude);
-    }
-    /*close query*/
-    query += ');';
-    let result = await pg.query(query, params);
-    result = result.rows[0]['exists'];
-    return result;
-  }
-
   /*delete a book from wishlist*/
   _THIS.deleteWish = async (id) => {
     /*

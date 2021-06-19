@@ -200,6 +200,64 @@ module.exports = (app) => {
       return;
     }
 
+    /*if this story is part of serie - check serie parameters*/
+    if(requestBody.serie) {
+      /*both serie value (serie's id) and seire pages should be a valid integer - validate it*/
+      if(!basic.isValidInt(requestBody.serie.value)) {
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new story.\nInvalid Serie ID: ${requestBody.serie.value}`
+        });
+
+        res.send(JSON.stringify({status:false, message:'Invalid Serie'}));
+        return;
+      }
+      if(!basic.isValidInt(requestBody.serie.number)) {
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new serie.\nInvalid Location in Serie\nSerie ID:${requestBody.serie.value}, Location: ${requestBody.serie.number}`
+        });
+
+        res.send(JSON.stringify({status:false, message:'Invalid Number in Serie'}));
+        return;
+      }
+      /*make sure the serie ID actualy exist*/
+      if(! await db.checkIsSerieIdExists(requestBody.serie.value)) {
+        /*log error*/
+        logger.log({
+          type: 'error',
+          text: `Error Saving new story.\nReceived Serie ID doesn't exists in DB.\nSerie ID: ${requestBody.serie.value}`
+        });
+
+        res.send(JSON.stringify({status:false, message:'Serie not exist'}));
+        return;
+      }
+      /*check if the number in serie is already taken*/
+      let serieNumFromDB = await db.serieNumExist(requestBody.serie.value, requestBody.serie.number);
+
+      if(serieNumFromDB) {
+        /*
+        serie num exists, allow only in the following case:
+        the spot is taken by this story (that is been altered)
+        */
+
+        if(! (serieNumFromDB.type && serieNumFromDB.type === 'story' && serieNumFromDB.id && serieNumFromDB.id === existingStoryId)) {
+          /*log error*/
+          logger.log({
+            type: 'error',
+            text: `Error Saving new story.\nStory is a part of series, and location in serie is already taken\nSelected serie ID: ${requestBody.serie.value}\nLocation: ${requestBody.serie.number}`
+          });
+
+          res.send(JSON.stringify({status:false, message:'Number in serie is already taken'}));
+          return;
+        }
+      }
+    }
+
+
+
     /*
     Story author can be empty - in this case the author will be the same as collection author
     fetch collection author.

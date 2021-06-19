@@ -77,7 +77,7 @@ class BookDisplayer {
     output += this.buildCollectionDisplayer(data.stories);
 
     /*add books details if this is a serie*/
-    output += this.buildBooksDisplayerForSeries(data.books,data.books_read,data.wish_books,data.purchased_books);
+    output += this.buildBooksDisplayerForSeries(data.books,data.books_read,data.wish_books,data.purchased_books,data.stories_list,data.stories_read);
 
     /*add collection details if this is a story*/
     output += this.buildCollectionParentForStory( {collection_name: data.collection_name, collection_number: data.collection_number,collection_id: data.collection_id,  next: {id: data.next_collection_id, name: data.next_collection_name }, prev: {id: data.prev_collection_id, name: data.prev_collection_name} } );
@@ -641,20 +641,47 @@ buildCollectionDisplayer(stories) {
   return output;
 }
 
-buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks) {
+buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks,stories, storiesRead) {
   let output = '';
-  if(!books && !booksRead && !wishBooks && !purchasedBooks) {//this is not a serie - return empty string
+  if(!books && !booksRead && !wishBooks && !purchasedBooks && !stories && !storiesRead) {//this is not a serie - return empty string
     return output;
   }
-  /*add owned serie books*/
-  if(books) {
-    output += `<div class = "general-holder-book-displayer">${books.length} Owned Books: <div class = "folder-pictures-holder">`
-    books.forEach((book) => {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/books/${book.id}" onclick = "window.location='/books/' + ${book.id}"></div>`;
+  let count = 0,
+  holder = [];
+  /*add owned serie books and stories*/
+  if(books || stories) {
+
+    if(books) {
+      count += books.length;
+      holder.push(...books.map(a => {
+        a.type = 'books';
+        return a;
+      }));
+    }
+    if(stories) {
+      count += stories.length;
+      holder.push(...stories.map(a => {
+        a.type = 'stories';
+        return a;
+      }));
+    }
+
+    /*sort by serie number*/
+    holder = holder.sort((x, y) => {
+      return x.number - y.number;
+    });
+
+    output += `<div class = "general-holder-book-displayer">${count} Owned Books: <div class = "folder-pictures-holder">`;
+
+    holder.forEach((book) => {
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/${book.type}/${book.id}" onclick = "window.location='/${book.type}/' + ${book.id}"></div>`;
     });
     /*close main div*/
     output += '</div></div>';
   }
+  //clear counter and holder
+  count = 0;
+  holder.length = 0;
 
   /*add purchased books*/
   if(purchasedBooks) {
@@ -676,11 +703,30 @@ buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks) {
     output += '</div></div>';
   }
 
-  /*add read books*/
-  if(booksRead) {
-    output += `<div class = "general-holder-book-displayer">${booksRead.length} Books Read: <div class = "folder-pictures-holder">`
-    booksRead.forEach((book) => {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/books/${book.id}" onclick = "window.location='/reads/' + ${book.id}"></div>`;
+  /*add read books/stories*/
+  if(booksRead || storiesRead) {
+    if(booksRead) {
+      count += booksRead.length;
+      holder.push(...booksRead.map(a => {
+        a.type = 'reads';
+        return a;
+      }));
+    }
+    if(storiesRead) {
+      count += storiesRead.length;
+      holder.push(...storiesRead.map(a => {
+        a.type = 'stories';
+        return a;
+      }));
+    }
+    /*sort by serie number*/
+    holder = holder.sort((x, y) => {
+      return x.number - y.number;
+    });
+
+    output += `<div class = "general-holder-book-displayer">${count} Books Read: <div class = "folder-pictures-holder">`
+    holder.forEach((book) => {
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/${book.type}/${book.id}" onclick = "window.location='/${book.type}/' + ${book.id}"></div>`;
     });
     /*close main div*/
     output += '</div></div>';

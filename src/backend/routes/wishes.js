@@ -250,16 +250,24 @@ module.exports = (app) => {
         return;
       }
       /*check if the number in serie is already taken*/
-      if(await db.bookFromSerieExistsInWishList(requestBody.serie.value, requestBody.serie.number, existingWishId)) {
+      let serieNumFromDB = await db.serieNumExist(requestBody.serie.value, requestBody.serie.number);
 
-        /*log error*/
-        logger.log({
-          type: 'error',
-          text: `Error Saving new wishlist.\Wishlist is a part of series, and location in serie is already taken\nSelected serie ID: ${requestBody.serie.value}\nLocation: ${requestBody.serie.number}`
-        });
+      if(serieNumFromDB) {
+        /*
+        serie num exists, allow only in the following case:
+        the spot is taken by this story (that is been altered)
+        */
 
-        res.send(JSON.stringify({status:false, message:'Number in serie is already taken'}));
-        return;
+        if(! (serieNumFromDB.type && serieNumFromDB.type === 'wish' && serieNumFromDB.id && serieNumFromDB.id === existingWishId)) {
+          /*log error*/
+          logger.log({
+            type: 'error',
+            text: `Error Saving new wish.\nWish is a part of series, and location in serie is already taken\nSelected serie ID: ${requestBody.serie.value}\nLocation: ${requestBody.serie.number}`
+          });
+
+          res.send(JSON.stringify({status:false, message:'Number in serie is already taken'}));
+          return;
+        }
       }
     }
 

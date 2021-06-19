@@ -393,16 +393,24 @@ module.exports = (app) => {
         return;
       }
       /*check if the number in serie is already taken*/
-      if(await db.bookFromSerieExists(requestBody.serie.value, requestBody.serie.number, existingBookId)) {
+      let serieNumFromDB = await db.serieNumExist(requestBody.serie.value, requestBody.serie.number);
 
-        /*log error*/
-        logger.log({
-          type: 'error',
-          text: `Error Saving new book.\nBook is a part of series, and location in serie is already taken\nSelected serie ID: ${requestBody.serie.value}\nLocation: ${requestBody.serie.number}`
-        });
+      if(serieNumFromDB) {
+        /*
+        serie num exists, allow only in the following case:
+        the spot is taken by this story (that is been altered)
+        */
 
-        res.send(JSON.stringify({status:false, message:'Number in serie is already taken'}));
-        return;
+        if(! (serieNumFromDB.type && serieNumFromDB.type === 'book' && serieNumFromDB.id && serieNumFromDB.id === existingBookId)) {
+          /*log error*/
+          logger.log({
+            type: 'error',
+            text: `Error Saving new book.\nBook is a part of series, and location in serie is already taken\nSelected serie ID: ${requestBody.serie.value}\nLocation: ${requestBody.serie.number}`
+          });
+
+          res.send(JSON.stringify({status:false, message:'Number in serie is already taken'}));
+          return;
+        }
       }
     }
 
