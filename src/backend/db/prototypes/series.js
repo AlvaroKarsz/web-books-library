@@ -19,49 +19,49 @@ module.exports = (className) => {
     (
       SELECT id FROM my_books WHERE serie = $1 AND serie_num = $2
       UNION
-      SELECT id FROM wish_list WHERE serie = $3 AND serie_num = $4
+      SELECT id FROM wish_list WHERE serie = $1 AND serie_num = $2
       UNION
-      SELECT id FROM stories WHERE serie = $5 AND serie_num = $6
+      SELECT id FROM stories WHERE serie = $1 AND serie_num = $2
     ) AS serie_next_id,
 
     (
-      SELECT name FROM my_books WHERE serie = $7 AND serie_num = $8
+      SELECT name FROM my_books WHERE serie = $1 AND serie_num = $2
       UNION
-      SELECT name FROM wish_list WHERE serie = $9 AND serie_num = $10
+      SELECT name FROM wish_list WHERE serie = $1 AND serie_num = $2
       UNION
-      SELECT name FROM stories WHERE serie = $11 AND serie_num = $12
+      SELECT name FROM stories WHERE serie = $1 AND serie_num = $2
     ) AS serie_next_name,
 
     (
-      SELECT id FROM my_books WHERE serie = $13 AND serie_num = $14
+      SELECT id FROM my_books WHERE serie = $1 AND serie_num = $3
       UNION
-      SELECT id FROM wish_list WHERE serie = $15 AND serie_num = $16
+      SELECT id FROM wish_list WHERE serie = $1 AND serie_num = $3
       UNION
-      SELECT id FROM stories WHERE serie = $17 AND serie_num = $18
+      SELECT id FROM stories WHERE serie = $1 AND serie_num = $3
     ) AS serie_prev_id,
 
     (
-      SELECT name FROM my_books WHERE serie = $19 AND serie_num = $20
+      SELECT name FROM my_books WHERE serie = $1 AND serie_num = $3
       UNION
-      SELECT name FROM wish_list WHERE serie = $21 AND serie_num = $22
+      SELECT name FROM wish_list WHERE serie = $1 AND serie_num = $3
       UNION
-      SELECT name FROM stories WHERE serie = $23 AND serie_num = $24
+      SELECT name FROM stories WHERE serie = $1 AND serie_num = $3
     ) AS serie_prev_name,
 
     (
-      SELECT serie_num FROM my_books WHERE serie = $25 AND serie_num = $26
+      SELECT serie_num FROM my_books WHERE serie = $1 AND serie_num = $2
       UNION
-      SELECT serie_num FROM wish_list WHERE serie = $27 AND serie_num = $28
+      SELECT serie_num FROM wish_list WHERE serie = $1 AND serie_num = $2
       UNION
-      SELECT serie_num FROM stories WHERE serie = $29 AND serie_num = $30
+      SELECT serie_num FROM stories WHERE serie = $1 AND serie_num = $2
     ) AS serie_next_num,
 
     (
-      SELECT serie_num FROM my_books WHERE serie = $31 AND serie_num = $32
+      SELECT serie_num FROM my_books WHERE serie = $1 AND serie_num = $3
       UNION
-      SELECT serie_num FROM wish_list WHERE serie = $33 AND serie_num = $34
+      SELECT serie_num FROM wish_list WHERE serie = $1 AND serie_num = $3
       UNION
-      SELECT serie_num FROM stories WHERE serie = $35 AND serie_num = $36
+      SELECT serie_num FROM stories WHERE serie = $1 AND serie_num = $3
     ) AS serie_prev_num,
 
     (
@@ -69,15 +69,15 @@ module.exports = (className) => {
       WHEN read_order IS NOT NULL THEN 'reads'
       ELSE 'books'
       END
-      FROM my_books WHERE serie = $37 AND serie_num = $38
+      FROM my_books WHERE serie = $1 AND serie_num = $3
       UNION
       SELECT CASE
       WHEN order_date IS NOT NULL THEN 'purchased'
       ELSE 'wishlist'
       END
-      FROM wish_list WHERE serie = $39 AND serie_num = $40
+      FROM wish_list WHERE serie = $1 AND serie_num = $3
       UNION
-      SELECT 'stories' FROM stories WHERE serie = $41 AND serie_num = $42
+      SELECT 'stories' FROM stories WHERE serie = $1 AND serie_num = $3
     ) AS serie_prev_type,
 
     (
@@ -85,67 +85,18 @@ module.exports = (className) => {
       WHEN read_order IS NOT NULL THEN 'reads'
       ELSE 'books'
       END
-      FROM my_books WHERE serie = $43 AND serie_num = $44
+      FROM my_books WHERE serie = $1 AND serie_num = $2
       UNION
       SELECT CASE
       WHEN order_date IS NOT NULL THEN 'purchased'
       ELSE 'wishlist'
       END
-      FROM wish_list WHERE serie = $45 AND serie_num = $46
+      FROM wish_list WHERE serie = $1 AND serie_num = $2
       UNION
-      SELECT 'stories' FROM stories WHERE serie = $47 AND serie_num = $48
+      SELECT 'stories' FROM stories WHERE serie = $1 AND serie_num = $2
     ) AS serie_next_type;`;
 
-    let seriesResult = await pg.query(query, [
-      serie,
-      parseInt(num,10) + 1,
-      serie,
-      parseInt(num,10) + 1,
-      serie,
-      parseInt(num,10) + 1,
-      serie,
-      parseInt(num,10) + 1,
-      serie,
-      parseInt(num,10) + 1,
-      serie,
-      parseInt(num,10) + 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) + 1,
-      serie,
-      parseInt(num,10) + 1,
-      serie,
-      parseInt(num,10) + 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) - 1,
-      serie,
-      parseInt(num,10) + 1,
-      serie,
-      parseInt(num,10) + 1,
-      serie,
-      parseInt(num,10) + 1
-    ]);
+    let seriesResult = await pg.query(query, [serie, parseInt(num,10) + 1, parseInt(num,10) - 1]);
 
     seriesResult = seriesResult.rows[0];
     return seriesResult;
@@ -599,7 +550,7 @@ module.exports = (className) => {
     id as id,
     'wish' AS type
     FROM wish_list
-    WHERE serie=$3 AND serie_num = $4
+    WHERE serie=$1 AND serie_num = $2
 
     UNION
 
@@ -607,9 +558,9 @@ module.exports = (className) => {
     id as id,
     'story' AS type
     FROM stories
-    WHERE serie=$5 AND serie_num = $6;`;
+    WHERE serie=$1 AND serie_num = $2;`;
 
-    let result = await pg.query(query, [serieId, serieNum,serieId, serieNum,serieId, serieNum]);
+    let result = await pg.query(query, [serieId, serieNum]);
     return result.rows[0];
   }
 
