@@ -200,6 +200,12 @@ module.exports = (className) => {
       case 'wsb-s':
       query += " wished_books "
       break;
+      case 'rat-h':
+      query += " COALESCE(goodreads_rating,'0') DESC "
+      break;
+      case "rat-l":
+      query += " COALESCE(goodreads_rating,'0') "
+      break;
       default:
       query += ' RANDOM() ';
       break;

@@ -139,11 +139,11 @@ class HtmlRender {
     const options = {
       "rat-h": {
         name:  "Rating - Higher",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased']
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
       },
       "rat-l": {
         name: "Rating - Lower",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased']
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
       },
       "pub-h": {
         name: "Publication Year - Newer",
