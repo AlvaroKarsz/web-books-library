@@ -56,6 +56,11 @@
       description: els.descriptionInp,
       asin: els.asinInp,
       tags: els.tagsInp
+    },
+    hooks: {
+      before: () => {//trigger cover search when autosearch is clicked
+        coverEl.search();
+      }
     }
   }),
 
@@ -115,8 +120,6 @@
     }
     //trigger auto search
     autoFill.manualTrigger();
-    //trigger cover search
-    coverEl.search();
   }
 
   els.saveBtn.onclick = () => {

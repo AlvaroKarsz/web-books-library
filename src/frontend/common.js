@@ -1500,6 +1500,7 @@ class AutoFill {
     this.checkParamsErrorMessage = opts.checkParamsErrorMessage || 'Error';
     this.inputsToFill = opts.inputsToFill || {};
     this.collectionPointer = opts.collectionPointer || null;
+    this.hooks = opts.hooks || null;
     this.errorIsShown = false;
     this.build();
     this.activate();
@@ -1594,6 +1595,10 @@ class AutoFill {
       if(!this.checkParamsCallback()) {
         this.setError(this.checkParamsErrorMessage);
         return;
+      }
+      //run "before" hook if exist
+      if(this.hooks && this.hooks.before) {
+        this.hooks.before();
       }
       this.action(this.getParamsCallback());
     };

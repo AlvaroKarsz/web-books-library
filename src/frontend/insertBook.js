@@ -1786,6 +1786,11 @@ class CheckboxGroup {
         object: bookTypeE,
         prototype: 'set'
       }
+    },
+    hooks: {
+      before: () => {//trigger cover search when autosearch is clicked
+        coverEl.search();
+      }
     }
   }),
 

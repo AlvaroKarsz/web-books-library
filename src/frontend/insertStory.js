@@ -31,6 +31,15 @@
     actionScript: '/collectionList'
   }),
 
+  coverEl = new CoverSelector(els.coverHolder, {
+    getSearchCoverParamsCallback: () => {
+      return {
+        author: els.authorInp.value,
+        title: els.titleInp.value
+      };
+    }
+  }),
+
   autoFill = new AutoFill(els.autoFillHolder, {
     checkParamsCallback: () => {
       return els.titleInp.value && (els.authorInp.value || collectionE.get().value)
@@ -47,15 +56,11 @@
     inputsToFill: {
       description: els.descriptionInp,
       asin: els.asinInp
-    }
-  }),
-
-  coverEl = new CoverSelector(els.coverHolder, {
-    getSearchCoverParamsCallback: () => {
-      return {
-        author: els.authorInp.value,
-        title: els.titleInp.value
-      };
+    },
+    hooks: {
+      before: () => {//trigger cover search when autosearch is clicked
+        coverEl.search();
+      }
     }
   }),
 
