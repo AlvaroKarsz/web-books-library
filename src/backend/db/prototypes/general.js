@@ -250,6 +250,10 @@ module.exports = (className) => {
       query += ' stories ';
       break;
 
+      case 'series':
+      query += ' series ';
+      break;
+
       default: /*unknown param*/
       return null;
     }
@@ -295,6 +299,10 @@ module.exports = (className) => {
 
       case 'stories':
       query += ' stories ';
+      break;
+
+      case 'series':
+      query += ' series ';
       break;
 
       default: /*unknown param*/
@@ -412,6 +420,57 @@ module.exports = (className) => {
     } else {
       /*isbn from user was used to fetch rating, no additional_isbn for this book*/
       query += ' NULL ';
+    }
+
+    queryArguments.push(id);
+    query += ` WHERE id = $${++paramCounter};`;
+
+    await pg.query(query, queryArguments);
+  }
+
+  /*save in DB goodreads ratings for a serie, the difference with "insertRatingIntoDB" is that this one have no "goodreads_rating_additional_isbn" option*/
+  _THIS.insertSerieGoodReadsRatingIntoDB = async (id, rating, count, table) => {
+    let query = 'UPDATE ', paramCounter = 0, queryArguments = [];
+
+    /*get table from tableName param*/
+    switch(table) {
+      case 'my_books':
+      query += ' my_books ';
+      break;
+
+      case 'wish_list':
+      query += ' wish_list ';
+      break;
+
+      case 'stories':
+      query += ' stories ';
+      break;
+
+      case 'series':
+      query += ' series ';
+      break;
+
+      default: /*unknown param*/
+      return null;
+    }
+
+    query += `SET
+    goodreads_rating = `;
+
+    if(rating) {//rating exist
+      query += ` $${++paramCounter} `;
+      queryArguments.push(rating);
+    } else {//no rating - use NULL
+      query += ` NULL `
+    }
+
+    query += ` , goodreads_rating_count = `;
+
+    if(count) {//count exist
+      query += ` $${++paramCounter} `;
+      queryArguments.push(count);
+    } else {//no count - use NULL
+      query += ` NULL `
     }
 
     queryArguments.push(id);

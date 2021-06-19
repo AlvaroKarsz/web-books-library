@@ -107,6 +107,7 @@ module.exports = (app) => {
       htmlTitle: 'My Series | ' + serieData.name,
       displayer: entryDisplayer.build(serieData, settings.SERIES_FOLDER_NAME, {
         fetchCover: true,
+        fetchRating: true,
         delete: true,
         findFromSerie:true
       })
@@ -335,4 +336,47 @@ module.exports = (app) => {
     return;
   });
 
+
+  /*route to change rating*/
+  app.get('/series/rating/change/:id', async (req, res) => {
+    const id =  req.params.id;
+
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    message = '';
+
+    if(!id) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error fetching new ratings for a book Series.\nInvalid Serie ID: ${id}`
+      });
+
+      /*send error*/
+      message += 'Could not fetch Rating, Invalid Serie ID';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+    /*fetch new rating and save in DB*/
+    if(! await db.saveSerieRating(id) ) {
+      /*error finding new rating*/
+
+      /*saveBookRating function will log the error*/
+      message += 'Could not fetch Rating, Generic Error';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    } else {
+      /*success*/
+
+      /*log action*/
+      logger.log({
+        text: `New ratings were fetched for Serie ID ${id}`
+      });
+
+      message += 'New Rating was saved';//add message
+      res.redirect(basic.buildRefererUrl(referer, message, false));
+    }
+  });
 }

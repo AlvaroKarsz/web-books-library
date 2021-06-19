@@ -292,7 +292,14 @@ module.exports = (className) => {
         )
       ) FROM wish_list
       WHERE serie = $1 AND ordered = 't'
-    ) AS purchased_books
+    ) AS purchased_books,
+
+    goodreads_rating_count AS rating_count,
+    goodreads_rating AS rating,
+    google_rating AS google_rating,
+    google_rating_count AS google_rating_count,
+    amazon_rating AS amazon_rating,
+    amazon_rating_count AS amazon_rating_count
 
     FROM series
 
@@ -379,5 +386,101 @@ module.exports = (className) => {
   _THIS.fetchSeriesForHtml = async () => {
     let res = await pg.query(`SELECT (name || ' by ' || author) AS text, id FROM series;`);
     return res.rows;
+  }
+
+  /*calculate and save serie ratings in DB*/
+  _THIS.saveSerieRating = async (id) => {
+    /*calculation is based on serie's books, calculate average and save as serie ratings*/
+
+    /*fetch all relevant ratings*/
+    const query = `SELECT
+    goodreads_rating,
+    goodreads_rating_count,
+    google_rating,
+    google_rating_count,
+    amazon_rating,
+    amazon_rating_count
+    FROM my_books WHERE serie = $1
+
+    UNION
+
+    SELECT
+    goodreads_rating,
+    goodreads_rating_count,
+    google_rating,
+    google_rating_count,
+    amazon_rating,
+    amazon_rating_count
+    FROM wish_list WHERE serie = $2;`
+
+    let res = await pg.query(query, [id, id]);
+    res = res.rows;
+
+    /*vars to save ratings*/
+    let gdrs = {
+      rating: 0,
+      count: 0
+    },
+    ggl = {
+      rating: 0,
+      count: 0
+    },
+    amzn = {
+      rating: 0,
+      count: 0
+    };
+
+    /*iterate through DB output and calculate weighted av.*/
+    for(let i = 0 , s = res.length;  i < s ; i ++ ) {
+      if(res[i].goodreads_rating) {
+        gdrs.rating += parseFloat(res[i].goodreads_rating) * res[i].goodreads_rating_count;
+        gdrs.count += parseInt(res[i].goodreads_rating_count);
+      }
+
+      if(res[i].google_rating) {
+        ggl.rating += parseFloat(res[i].google_rating) * res[i].google_rating_count;
+        ggl.count += parseInt(res[i].google_rating_count);
+      }
+
+      if(res[i].amazon_rating) {
+        amzn.rating += parseFloat(res[i].amazon_rating) * res[i].amazon_rating_count;
+        amzn.count += parseInt(res[i].amazon_rating_count);
+      }
+    }
+
+    /*divide by number of votes*/
+    if(gdrs.count) {
+      gdrs.rating = gdrs.rating / gdrs.count;
+    }
+
+    if(ggl.count) {
+      ggl.rating = ggl.rating / ggl.count;
+    }
+
+    if(amzn.count) {
+      amzn.rating = amzn.rating / amzn.count;
+    }
+
+    /*save 2 numbers after decimal point*/
+
+    if(gdrs.rating) {
+      gdrs.rating = gdrs.rating.toFixed(2);
+    }
+
+    if(ggl.rating) {
+      ggl.rating = ggl.rating.toFixed(2);
+    }
+
+    if(amzn.rating) {
+      amzn.rating = amzn.rating.toFixed(2);
+    }
+
+    /*save results in DB*/
+    await _THIS.saveAmazonRating(id, amzn.rating, amzn.count, 'series');
+    await _THIS.saveGoogleRating(id, ggl.rating, ggl.count, 'series');
+    await _THIS.insertSerieGoodReadsRatingIntoDB(id, gdrs.rating, gdrs.count, 'series');
+
+    /*success*/
+    return true;
   }
 };
