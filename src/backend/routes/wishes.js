@@ -257,8 +257,7 @@ module.exports = (app) => {
         serie num exists, allow only in the following case:
         the spot is taken by this story (that is been altered)
         */
-
-        if(! (serieNumFromDB.type && serieNumFromDB.type === 'wish' && serieNumFromDB.id && serieNumFromDB.id === existingWishId)) {
+        if(! (serieNumFromDB.type && serieNumFromDB.type === 'wish' && serieNumFromDB.id && serieNumFromDB.id === basic.toInt(existingWishId))) {
           /*log error*/
           logger.log({
             type: 'error',

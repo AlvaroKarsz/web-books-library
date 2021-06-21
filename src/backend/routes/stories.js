@@ -243,7 +243,7 @@ module.exports = (app) => {
         the spot is taken by this story (that is been altered)
         */
 
-        if(! (serieNumFromDB.type && serieNumFromDB.type === 'story' && serieNumFromDB.id && serieNumFromDB.id === existingStoryId)) {
+        if(! (serieNumFromDB.type && serieNumFromDB.type === 'story' && serieNumFromDB.id && serieNumFromDB.id === basic.toInt(existingStoryId))) {
           /*log error*/
           logger.log({
             type: 'error',
