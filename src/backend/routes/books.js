@@ -88,7 +88,11 @@ module.exports = (app) => {
         fetchTags: true,
         similarBooks: true,
         booksByAuthor: true,
-        findFromSerie:true
+        findFromSerie:true,
+        searchMoreEditions: true,
+        /*next 2 option are relevant only if search books flag is on in DB for this book*/
+        search: true,
+        searchCheapest: true
       })
     }));
   });
@@ -1178,6 +1182,46 @@ module.exports = (app) => {
 
     /*return success*/
     message += 'New Tags were saved';//add message
+    res.redirect(basic.buildRefererUrl(referer, message, false));
+  });
+
+
+  /*
+  route to toggle search book parameter
+  if search book parameter is on: you can search for this book in web stores even though you own this book
+  */
+  app.get('/books/toggleSearchBook/:id', async (req, res) =>  {
+    const id =  req.params.id;
+
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    message = '';
+
+    if(!id) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error Toggeling Search Book Paramter for a Book.\nInvalid Book ID: ${id}`
+      });
+
+      /*send error*/
+      message += 'Could not Toggle Parameter, Invalid Book ID';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+
+    /*toggle param*/
+    await db.toggleAnotherEditionBool(id);
+
+    /*log action*/
+    logger.log({
+      text: `Search Book Parameter was changed for a Book.\nBook ID: ${id}.`
+    });
+
+    /*return success*/
+    message += 'Option changed';//add message
     res.redirect(basic.buildRefererUrl(referer, message, false));
   });
 

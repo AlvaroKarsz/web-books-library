@@ -811,6 +811,7 @@ module.exports = (className) => {
     my_books_main.collection AS is_collection,
     my_books_main.serie AS serie_id,
     my_books_main.serie_num AS serie_num,
+    my_books_main.search_another_edition AS search_book,
     series_table.name AS serie,
     my_books_main.goodreads_rating AS rating,
     my_books_main.goodreads_rating_count AS rating_count,
@@ -888,6 +889,7 @@ module.exports = (className) => {
     my_books_main.read_order,
     my_books_main.serie_num,
     my_books_main.completed,
+    my_books_main.search_another_edition,
     my_books_main.collection,
     my_books_main.description,
     my_books_main.amazon_rating_count,
@@ -1049,5 +1051,11 @@ module.exports = (className) => {
   _THIS.fetchCollectionsForHtml = async () => {
     let res = await pg.query(`SELECT (name || ' by ' || author || ' (' || year || ')') AS text, id FROM my_books WHERE collection='t';`);
     return res.rows;
+  }
+
+  /*toggles search_another_edition parameter in DB for a specific book*/
+  _THIS.toggleAnotherEditionBool = async (id) => {
+    await pg.query(`UPDATE my_books SET search_another_edition = NOT search_another_edition WHERE id = $1;`, [id]);
+    return true;
   }
 };
