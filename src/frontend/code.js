@@ -1,12 +1,9 @@
 (async () => {
   let settings = {
     elements: {
-      sort: document.getElementById('sort'),
-      filter: document.getElementById('filter'),
-      clear: document.getElementById('clear'),
-      filterLoader: document.getElementById('filter-ldr'),
       imagesHolder: document.getElementById('imgs'),
-      mainLoader: document.getElementById('main-ldr')
+      mainLoader: document.getElementById('main-ldr'),
+      sort: document.getElementById('sort')
     },
     vars: {
       ratioForFetch: 0.97
@@ -17,66 +14,9 @@
     }
   };
   handleSortSubmit(settings.elements.sort);
-  handleFilterSubmit(settings.elements.filter, settings.elements.filterLoader);
-  handleClear(settings.elements.clear, settings.elements.filterLoader);
   loadBooksOnBottomReach(settings.vars.ratioForFetch, settings.scripts.fetchNext, settings.scripts.pageSettings, settings.elements.imagesHolder, settings.elements.mainLoader);
 })()
 
-
-function handleSortSubmit(selectBox) {
-  selectBox.onchange = (e) => {
-    let form = selectBox.form,
-    loader = [...form.getElementsByTagName("DIV")].filter(a => a.getAttribute('loader') === 'true')[0];
-    loader.style.display = 'inline-block';
-    let urlParams = getUrlParams();
-    if(selectBox.value) {
-      urlParams[selectBox.name] = selectBox.value;
-    } else {
-      delete urlParams[selectBox.name];
-    }
-    setUrlParams(urlParams)
-  };
-}
-
-function setUrlParams(params) {
-  let url = window.location.href.split('?')[0] + '?';
-  for(let val in params) {
-    url += val + '=' + params[val] + '&';
-  }
-  url = url.replace(/([&]|[?])$/,'');//remove last & or ?
-  window.location.href = url;
-}
-
-function handleFilterSubmit(filter, loader) {
-  filter.onsubmit = (e) => {
-    loader.style.display = 'inline-block';
-    e.preventDefault();
-    //get form params
-    let objects = {};
-    [...filter.elements].filter(a => a.nodeName === 'INPUT' && a.getAttribute('TYPE') === 'text').forEach(a => objects[a.name] = a.value);
-    //add params to already existing params
-    let params = getUrlParams();
-    for(let a in objects) {
-      if(objects[a] !== '') {
-        params[a] = objects[a];
-      } else {
-        delete params[a];
-      }
-    }
-    setUrlParams(params);
-  };
-}
-
-function handleClear(button, loader) {
-  button.onclick = () => {
-    loader.style.display = 'inline-block';
-    clearUrl();
-  };
-}
-
-function clearUrl() {
-  window.location.href = window.location.href.split('?')[0];
-}
 
 async function loadBooksOnBottomReach(ratio, actionScript, fetchScript, imagesHolder, loader) {
   //first fetch page settings - then define auto loader
@@ -130,11 +70,26 @@ async function fetchPageSettings(actionScr) {
     perRow: 4,//default value
     perPage: 20,//default value
     page: this.location.pathname.replace(/\//g,'')
-  };
-  let fetchReq = await doHttpRequest(actionScr);
-  if(fetchReq) {
-    pageSettings.perRow = fetchReq.perRow;
-    pageSettings.perPage = fetchReq.perPage;
+    };
+    let fetchReq = await doHttpRequest(actionScr);
+    if(fetchReq) {
+      pageSettings.perRow = fetchReq.perRow;
+      pageSettings.perPage = fetchReq.perPage;
+    }
+    return pageSettings;
   }
-  return pageSettings;
-}
+
+  function handleSortSubmit(selectBox) {
+    selectBox.onchange = (e) => {
+      let form = selectBox.form,
+      loader = [...form.getElementsByTagName("DIV")].filter(a => a.getAttribute('loader') === 'true')[0];
+      loader.style.display = 'inline-block';
+      let urlParams = getUrlParams();
+      if(selectBox.value) {
+        urlParams[selectBox.name] = selectBox.value;
+      } else {
+        delete urlParams[selectBox.name];
+      }
+      setUrlParams(urlParams)
+    };
+  }

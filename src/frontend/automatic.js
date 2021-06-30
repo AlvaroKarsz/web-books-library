@@ -2,6 +2,7 @@
   /*general frontend functions that should be used in every page*/
   showOverlayOnexit();
   showUrlMessage();
+  handleFilterOptions();
   listenToAdvancedBackupMenu();
   listenToDescriptionReFetchAction();
   listenToCoverChange();
@@ -449,4 +450,146 @@ function openEbook(url, title) {//function to open a new window with title
       win.document.title = title;
     });
   };
+}
+
+function handleFilterOptions() {//function to handle filter operations
+  /**********************************************************
+  handle filters clear
+  *************************************************************/
+  let clearFiltersBtn = document.getElementById('clear-filters-main');
+  if(clearFiltersBtn) {
+    clearFiltersBtn.onclick = () => {
+      removeUrlParamsAndRedirect();
+    };
+  }
+  /**********************************************************
+  get main form
+  *************************************************************/
+  let form = document.getElementById('filter-form');
+  if(!form) {//no form
+    return;
+  }
+  /**********************************************************
+  handle more/less options clicks
+  *************************************************************/
+  let moreButton = document.getElementById('filter-more-options-button'),
+  lessButton = document.getElementById('filter-less-options-button'),
+  moreOptionsBody = document.getElementById('filter-more-options-body');
+
+  if(moreButton && lessButton && moreOptionsBody) {
+    moreButton.onclick = () => {
+      moreOptionsBody.style.display = 'block';//show more options
+      moreButton.style.display = 'none';//hide more button
+      lessButton.style.display = 'block';//show less button
+    };
+
+    lessButton.onclick = () => {
+      moreOptionsBody.style.display = 'none';//hide more options
+      lessButton.style.display = 'none';//hide less button
+      moreButton.style.display = 'block';//show more button
+    };
+  }
+  /**********************************************************
+  handle form submit & redirections
+  *************************************************************/
+  let formElements = [...form.elements],
+  pageSelectorDOM = document.getElementById('filter-page-selector'), //take page from this element
+  formObj = {};
+  if(pageSelectorDOM) {
+    //build page selector options
+    let pageSelectorOptions = {};
+    pageSelectorDOM = [...pageSelectorDOM.getElementsByTagName('INPUT')]
+    .filter(a => a.getAttribute('type') === 'checkbox')
+    .filter(a => a.getAttribute('trgt'));
+
+    //function to retrieve page selected
+    let buildUrlFromSelectedPageName = () => {
+      for(let i = 0 , l = pageSelectorDOM.length ; i < l ; i ++ ) {
+        if(pageSelectorDOM[i].checked) {
+          return window.location.origin + '/' + pageSelectorDOM[i].getAttribute('trgt');
+        }
+      }
+    };
+
+    form.onsubmit = (evt) => {
+      /*
+      on form submit, stop the default submit, this will add empty elements to URL
+      get elements from form and assemble the URL
+      */
+      evt.preventDefault();
+
+      for(let i = 0, l = formElements.length ; i < l ; i ++ ) {
+        if(!formElements[i].value || !formElements[i].name) {//empty value or no name
+          continue;
+        }
+        if(formElements[i].getAttribute('default-value') === formElements[i].value) {//default value, ignore
+          continue;
+        }
+        if(formElements[i].type === 'checkbox' && !formElements[i].checked) {//non selected checkbox
+          continue;
+        }
+        formObj[formElements[i].name] = formElements[i].value;
+      }
+      //build url & redirect
+      setUrlParams(formObj, buildUrlFromSelectedPageName());
+    }
+  }
+  /**********************************************************
+  handle checkbox groups where only one checkbox can be checked
+  *************************************************************/
+  let checkboxGroups = [...form.getElementsByClassName('filter-options-cbox-group')].filter(a => a.getAttribute('only-one-allowed') === 't');
+
+  if(checkboxGroups.length) {//form has checkbox groups
+    checkboxGroups.forEach((grp) => {
+      let cboxs = [];
+      /*if DOM has checkbox-sticky='t' attribute, it means that at least one checkbox must be ON*/
+      let isSticky = grp.getAttribute('checkbox-sticky') === 't';
+
+      cboxs = [...grp.getElementsByTagName('INPUT')].filter(a => a.getAttribute('type') === 'checkbox');
+      if(cboxs.length) {//group has checkboxes
+        for(let i = 0 , l = cboxs.length ; i < l ; i ++ ) {//iterate all checkboxes and add onchange listener
+          cboxs[i].onchange = (e) => {
+            for(let j = 0 , s = cboxs.length ; j < s ; j ++ ) {//go over all checkboxes
+              if(cboxs[j] === e.target) {//this is the clicked one
+                if(isSticky) { /*sticky - can't turn off a checkbox*/
+                  cboxs[j].checked = true;
+                }
+              } else {//not the clicked one - turn off
+                cboxs[j].checked = false;
+              }
+            }
+          };
+        }
+      }
+    });
+  }
+  /**********************************************************
+  add event listeners to all input ranges - show current value
+  *************************************************************/
+  let ranges = moreOptionsBody.getElementsByClassName('filter-options-range-wrap');
+  if(ranges.length) {//no input ranges
+    ranges = [...ranges];//to array
+
+    let newNum = '',//hold new number
+    newPos = '',//hold new position
+    setNewValue = (inpPointer, valElement) => {//function to set new value
+      newNum = Number( (inpPointer.value - inpPointer.min) * 100 / (inpPointer.max - inpPointer.min) ),
+      newPos = 10 - (newNum * 0.2);
+      valElement.innerHTML = `<span>${inpPointer.value}</span>`;
+      valElement.style.left = `calc(${newNum}% + (${newPos}px))`;
+    };
+
+    ranges.forEach((rng) => {//add listener to all ranges
+      let inpPointer = [...rng.getElementsByTagName('INPUT')].filter(a => a.getAttribute('type') === 'range')[0],
+      valElement = rng.getElementsByClassName('filter-options-range-value')[0];
+      if(inpPointer  && valElement) {
+        //run one time to set the initial value
+        setNewValue(inpPointer, valElement);
+        //and call the function every change
+        inpPointer.oninput = () => {
+          setNewValue(inpPointer, valElement);
+        };
+      }
+    });
+  }
 }

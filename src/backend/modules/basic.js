@@ -360,6 +360,77 @@ class Basic {
     if('title' in urlParams) {
       filters.titleFilter = decodeURIComponent(urlParams['title']);
     }
+    if('isbn' in urlParams) {
+      filters.isbnFilter = decodeURIComponent(urlParams['isbn']);
+    }
+    if('language' in urlParams) {
+      filters.languageFilter = decodeURIComponent(urlParams['language']);
+    }
+    if('oLanguage' in urlParams) {
+      filters.oLanguageFilter = decodeURIComponent(urlParams['oLanguage']);
+    }
+    if('tags' in urlParams) {
+      filters.tagsFilter = decodeURIComponent(urlParams['tags']);
+    }
+    if('store' in urlParams) {
+      filters.storeFilter = decodeURIComponent(urlParams['store']);
+    }
+    if('description' in urlParams) {
+      filters.descriptionFilter = decodeURIComponent(urlParams['description']);
+    }
+    if('fromPage' in urlParams) {
+      filters.fromPageFilter = decodeURIComponent(urlParams['fromPage']);
+    }
+    if('toPage' in urlParams) {
+      filters.toPageFilter = decodeURIComponent(urlParams['toPage']);
+    }
+    if('fromYear' in urlParams) {
+      filters.fromYearFilter = decodeURIComponent(urlParams['fromYear']);
+    }
+    if('toYear' in urlParams) {
+      filters.toYearFilter = decodeURIComponent(urlParams['toYear']);
+    }
+    if('fromRating' in urlParams) {
+      filters.fromRatingFilter = decodeURIComponent(urlParams['fromRating']);
+    }
+    if('toRating' in urlParams) {
+      filters.toRatingFilter = decodeURIComponent(urlParams['toRating']);
+    }
+    /*empty format, add the asked ones*/
+    filters.formatFilter = [];
+    if('P' in urlParams) {
+      filters.formatFilter.push('P');
+    }
+    if('H' in urlParams) {
+      filters.formatFilter.push('H');
+    }
+    if('HN' in urlParams) {
+      filters.formatFilter.push('HN');
+    }
+    if('E' in urlParams) {
+      filters.formatFilter.push('E');
+    }
+    if('serie' in urlParams) {
+      filters.serieFilter = decodeURIComponent(urlParams['serie']);
+    }
+    if('collection' in urlParams) {
+      filters.isCollectionFilter = true;
+    }
+    if('no-collection' in urlParams) {
+      filters.isCollectionFilter = false;
+    }
+    if('owned-buy' in urlParams) {
+      filters.ownedAndWantBuyAgainFilter = true;
+    }
+    if('no-owned-buy' in urlParams) {
+      filters.ownedAndWantBuyAgainFilter = false;
+    }
+    if('read' in urlParams) {
+      filters.isReadFilter = true;
+    }
+    if('no-read' in urlParams) {
+      filters.isReadFilter = false;
+    }
     if('sort' in urlParams) {
       filters.sort = decodeURIComponent(urlParams['sort']);
     }

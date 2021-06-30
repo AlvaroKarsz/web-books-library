@@ -45,13 +45,13 @@ class HtmlRender {
     required for IMAGES
 
     urlParams => url parameters from user
-    required for FILTER_VAL_TITLE, FILTER_VAL_AUTHOR, SORT_OPTIONS
+    required for TOP_NAV, SORT_OPTIONS
 
     imageHref => endpoint to fetch pictures from backend
     required for IMAGES
 
     route => route to fetch data from backend after a sort filter was applied
-    required for SORT_OPTIONS
+    required for SORT_OPTIONS and TOP_NAV
 
     pageTitle => Action title, relevant for html pages that insert/update listings (Insert new Book / Update Wishlist...)
     required for INSERTION_TITLE
@@ -63,19 +63,16 @@ class HtmlRender {
     requred for DISPLAYER
     */
 
-
     /*
     LIST OF KEYS AND REPLACEMENTS
     */
     const keys = {
       TYPE: "params.type",
       TOT_COUNT: "params.totalCount",
-      FILTER_VAL_TITLE: "this.getFilterValue(params.urlParams, 'title')",
-      FILTER_VAL_AUTHOR: "this.getFilterValue(params.urlParams, 'author')",
       SORT_OPTIONS: "this.getSortOptions(params.urlParams, params.route)",
       IMAGES: "this.postPictures(params.folder, params.objects, params.imageHref)",
       LOADER_IF_BOOKS: "this.createMainLoaderIfBooksFound(params.totalCount)",
-      TOP_NAV: "topNav.build()",
+      TOP_NAV: "topNav.setUrlParams(params.urlParams); topNav.setReferer(params.route); topNav.build()",
       DISPLAYER:"params.displayer",
       INSERTION_TITLE: "params.pageTitle",
       HTML_TITLE: "params.htmlTitle"
@@ -102,10 +99,6 @@ class HtmlRender {
       /*empty string - file not exists or no permission to open*/
       return '';
     }
-  }
-
-  getFilterValue(urlParams, filterName) {
-    return urlParams[filterName] ? basic.escapeHtmlString(decodeURIComponent(urlParams[filterName])) : '';
   }
 
   createMainLoaderIfBooksFound(books) {

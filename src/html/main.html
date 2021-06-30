@@ -16,17 +16,6 @@
         <div class='small-loader' loader='true'><div></div></div>
       </form>
     </div>
-    <div class = "filter">
-      <div class = "filter-header">
-        <p>Search</p><div class='small-loader' id='filter-ldr' style='width:0;margin-left:-110px;'><div style = 'background:rgba(0,0,0,0.2)'></div></div>
-        <a id = 'clear'>Clear All</a>
-      </div>
-      <form action="" method="GET" id = 'filter'>
-        <div class="filter-line"><p>Title</p><input type="text" name="title" value="{{FILTER_VAL_TITLE}}"></div>
-        <div class="filter-line"><p>Author</p><input type="text" name="author" value="{{FILTER_VAL_AUTHOR}}"></div>
-        <input type="submit" style="display:none">
-      </form>
-    </div>
   </div>
   <div class = 'title'>My {{TYPE}} ({{TOT_COUNT}})</div>
   <div class = "images" id ='imgs'>{{IMAGES}}</div>

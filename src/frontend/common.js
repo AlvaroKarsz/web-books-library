@@ -32,6 +32,19 @@ async function doHttpRequest(url, settings = null) {
   return request;
 }
 
+function removeUrlParamsAndRedirect() {
+  window.location.href = window.location.href.split("?")[0];
+}
+
+function setUrlParams(params, path = window.location.href) {
+  let url = path.split('?')[0] + '?';
+  for(let val in params) {
+    url += val + '=' + params[val] + '&';
+  }
+  url = url.replace(/([&]|[?])$/,'');//remove last & or ?
+  window.location.href = url;
+}
+
 function removeUrlParam(paramName) {
   let params = getUrlParams();
   delete params[paramName];

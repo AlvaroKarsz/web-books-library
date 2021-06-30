@@ -618,81 +618,207 @@ module.exports = (className) => {
     const offset = typeof ops.offset !== 'undefined' ? ops.offset : '0';
     const authorFilter = typeof ops.authorFilter !== 'undefined' ? unescape(ops.authorFilter.toUpperCase()) : null;
     const titleFilter = typeof ops.titleFilter !== 'undefined' ? unescape(ops.titleFilter.toUpperCase()) : null;
+    const isbnFilter = typeof ops.isbnFilter !== 'undefined' ? unescape(ops.isbnFilter.toUpperCase()) : null;
+    const languageFilter = typeof ops.languageFilter !== 'undefined' ? unescape(ops.languageFilter.toUpperCase()) : null;
+    const oLanguageFilter = typeof ops.oLanguageFilter !== 'undefined' ? unescape(ops.oLanguageFilter.toUpperCase()) : null;
+    const tagsFilter = typeof ops.tagsFilter !== 'undefined' ? unescape(ops.tagsFilter.toUpperCase()) : null;
+    const descriptionFilter = typeof ops.descriptionFilter !== 'undefined' ? unescape(ops.descriptionFilter.toUpperCase()) : null;
+    const storeFilter = typeof ops.storeFilter !== 'undefined' ? unescape(ops.storeFilter.toUpperCase()) : null;
+    const fromPageFilter = typeof ops.fromPageFilter !== 'undefined' ? unescape(ops.fromPageFilter) : null;
+    const toPageFilter = typeof ops.toPageFilter !== 'undefined' ? unescape(ops.toPageFilter) : null;
+    const fromYearFilter = typeof ops.fromYearFilter !== 'undefined' ? unescape(ops.fromYearFilter) : null;
+    const toYearFilter = typeof ops.toYearFilter !== 'undefined' ? unescape(ops.toYearFilter) : null;
+    const fromRatingFilter = typeof ops.fromRatingFilter !== 'undefined' ? unescape(ops.fromRatingFilter) : null;
+    const toRatingFilter = typeof ops.toRatingFilter !== 'undefined' ? unescape(ops.toRatingFilter) : null;
+    const formatFilter = typeof ops.formatFilter !== 'undefined' && Array.isArray(ops.formatFilter) && ops.formatFilter.length ? ops.formatFilter : null;
+    const serieFilter = typeof ops.serieFilter !== 'undefined' ? unescape(ops.serieFilter.toUpperCase()) : null;
+    const isCollectionFilter = typeof ops.isCollectionFilter !== 'undefined' ? ops.isCollectionFilter : null;
+    const ownedAndWantBuyAgainFilter = typeof ops.ownedAndWantBuyAgainFilter !== 'undefined' ? ops.ownedAndWantBuyAgainFilter : null;
+    const isReadFilter = typeof ops.isReadFilter !== 'undefined' ? ops.isReadFilter : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
-    let query = `SELECT id,
-    name,
-    COALESCE(goodreads_rating,'0') AS rating
-    FROM my_books `;
+
+    let query = `SELECT main.id,
+    main.name
+    FROM my_books main
+
+    LEFT JOIN series serie_entry
+    ON serie_entry.id = main.serie `;
 
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(author) LIKE $');
+      filters.push('UPPER(main.author) LIKE $');
       params.push(`%${authorFilter}%`);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(name) LIKE $');
+      filters.push('UPPER(main.name) LIKE $');
       params.push(`%${titleFilter}%`);
     }
-    let condition = " WHERE read_order IS NOT NULL ";
-    if(filters.length) {//we have filters
-      condition += " AND ";
-      for(let i = 1 , l = filters.length + 1; i < l ; i ++ ) {
-        condition +=  filters[i - 1]  + i + " AND ";
-      }
-      //remove last AND
-      condition = condition.replace(/\sAND\s$/,'');
+
+    if(isbnFilter !== null) {
+      filters.push('UPPER(main.isbn) LIKE $');
+      params.push(`%${isbnFilter}%`);
     }
-    query += condition;
+
+    if(tagsFilter !== null) {
+      filters.push('UPPER(main.tags) LIKE $');
+      params.push(`%${tagsFilter}%`);
+    }
+
+    if(descriptionFilter !== null) {
+      filters.push('UPPER(main.description) LIKE $');
+      params.push(`%${descriptionFilter}%`);
+    }
+
+    if(fromPageFilter !== null) {
+      filters.push('main.pages >= $');
+      params.push(fromPageFilter);
+    }
+
+    if(toPageFilter !== null) {
+      filters.push('main.pages <= $');
+      params.push(toPageFilter);
+    }
+
+    if(fromYearFilter !== null) {
+      filters.push('main.year >= $');
+      params.push(fromYearFilter);
+    }
+
+    if(toYearFilter !== null) {
+      filters.push('main.year <= $');
+      params.push(toYearFilter);
+    }
+
+    if(languageFilter !== null) {
+      filters.push('UPPER(main.language) LIKE $');
+      params.push(`%${languageFilter}%`);
+    }
+
+    if(oLanguageFilter !== null) {
+      filters.push('UPPER(main.original_language) LIKE $');
+      params.push(`%${oLanguageFilter}%`);
+    }
+
+    if(storeFilter !== null) {
+      filters.push('UPPER(main.store) LIKE $');
+      params.push(`%${storeFilter}%`);
+    }
+
+    if(fromRatingFilter !== null) {
+      filters.push('main.goodreads_rating >= $');
+      params.push(fromRatingFilter);
+    }
+
+    if(toRatingFilter !== null) {
+      filters.push('main.goodreads_rating <= $');
+      params.push(toRatingFilter);
+    }
+
+    if(serieFilter !== null) {
+      filters.push('UPPER(serie_entry.name) LIKE $');
+      params.push(`%${serieFilter}%`);
+    }
+
+    if(isCollectionFilter !== null) {
+      filters.push('main.collection = $');
+      params.push(isCollectionFilter);
+    }
+
+    if(ownedAndWantBuyAgainFilter !== null) {
+      filters.push('main.search_another_edition = $');
+      params.push(ownedAndWantBuyAgainFilter);
+    }
+
+    let paramCounter = 0; //count number of params
+
+    let conditions = " WHERE main.read_order IS NOT NULL AND ";
+
+    if(filters.length) {//we have filters
+      for(let i = 1 , l = filters.length + 1; i < l ; i ++ ) {
+        conditions +=  filters[i - 1]  + i + " AND ";
+      }
+
+      paramCounter = filters.length;
+    }
+
+    //remove last AND
+    conditions = conditions.replace(/\sAND\s$/,'');
+
+
+    //add format filter if relevant
+    if(formatFilter) {
+
+      conditions += ' AND main.type IN ( ';
+
+      formatFilter.forEach((frmt, idx) => {
+        conditions += `$${++paramCounter},`;
+        params.push(frmt);
+      });
+      //remove last comma
+      conditions = conditions.replace(/[,]$/,'');
+
+      conditions += ' ) ';
+
+    }
+
+    if(isReadFilter !== null) {
+      conditions += ` AND main.read_order IS ${isReadFilter && 'NOT' || '' } NULL `;
+    }
+
     //add order by type
+    query += conditions;
+
     query += " ORDER BY ";
     switch(sortType) {
       case 'titl-a':
-      query += " name "
+      query += " main.name "
       break;
       case "titl-d":
-      query += " name DESC "
+      query += " main.name DESC "
       break;
       case 'pag-h':
-      query += " pages DESC "
+      query += " main.pages DESC "
       break;
       case "pag-l":
-      query += " pages "
+      query += " main.pages "
       break;
       case 'pub-h':
-      query += " year DESC "
+      query += " main.year DESC "
       break;
       case "pub-l":
-      query += " year "
+      query += " main.year "
       break;
       case 'rat-h':
-      query += " COALESCE(goodreads_rating,'0') DESC "
+      query += " COALESCE(main.goodreads_rating,'0') DESC "
       break;
       case "rat-l":
-      query += " COALESCE(goodreads_rating,'0') "
+      query += " COALESCE(main.goodreads_rating,'0') "
       break;
       case 'rd-r':
-      query += " read_order DESC "
+      query += " main.read_order DESC "
       break;
       case 'rd-n':
-      query += " read_order "
+      query += " main.read_order "
       break;
       case 'lst-l':
-      query += " id "
+      query += " main.id "
       break;
       case 'lst-f':
-      query += " id DESC "
+      query += " main.id DESC "
       break;
       default:
       query += ' RANDOM() ';
       break;
     }
     //first get count
-    let count = await pg.query(`SELECT COUNT(1) FROM my_books main ${condition};`, params);
+    let count = await pg.query(`SELECT COUNT(1) FROM my_books main LEFT JOIN series serie_entry ON serie_entry.id = main.serie ${conditions};`, params);
     count = count.rows[0].count;
     //now get books
-    query += " LIMIT $" + (filters.length + 1) + " OFFSET $" + (filters.length + 2) + ";";
+    query += " LIMIT $" + ++paramCounter + " OFFSET $" + ++paramCounter + ";";
     params.push(limit, offset);
+
+
     let res = await pg.query(query, params);
     res = res.rows;
     return {rows:res, count: count};
@@ -704,84 +830,216 @@ module.exports = (className) => {
     const offset = typeof ops.offset !== 'undefined' ? ops.offset : '0';
     const authorFilter = typeof ops.authorFilter !== 'undefined' ? unescape(ops.authorFilter.toUpperCase()) : null;
     const titleFilter = typeof ops.titleFilter !== 'undefined' ? unescape(ops.titleFilter.toUpperCase()) : null;
+    const isbnFilter = typeof ops.isbnFilter !== 'undefined' ? unescape(ops.isbnFilter.toUpperCase()) : null;
+    const languageFilter = typeof ops.languageFilter !== 'undefined' ? unescape(ops.languageFilter.toUpperCase()) : null;
+    const oLanguageFilter = typeof ops.oLanguageFilter !== 'undefined' ? unescape(ops.oLanguageFilter.toUpperCase()) : null;
+    const tagsFilter = typeof ops.tagsFilter !== 'undefined' ? unescape(ops.tagsFilter.toUpperCase()) : null;
+    const descriptionFilter = typeof ops.descriptionFilter !== 'undefined' ? unescape(ops.descriptionFilter.toUpperCase()) : null;
+    const storeFilter = typeof ops.storeFilter !== 'undefined' ? unescape(ops.storeFilter.toUpperCase()) : null;
+    const fromPageFilter = typeof ops.fromPageFilter !== 'undefined' ? unescape(ops.fromPageFilter) : null;
+    const toPageFilter = typeof ops.toPageFilter !== 'undefined' ? unescape(ops.toPageFilter) : null;
+    const fromYearFilter = typeof ops.fromYearFilter !== 'undefined' ? unescape(ops.fromYearFilter) : null;
+    const toYearFilter = typeof ops.toYearFilter !== 'undefined' ? unescape(ops.toYearFilter) : null;
+    const fromRatingFilter = typeof ops.fromRatingFilter !== 'undefined' ? unescape(ops.fromRatingFilter) : null;
+    const toRatingFilter = typeof ops.toRatingFilter !== 'undefined' ? unescape(ops.toRatingFilter) : null;
+    const formatFilter = typeof ops.formatFilter !== 'undefined' && Array.isArray(ops.formatFilter) && ops.formatFilter.length ? ops.formatFilter : null;
+    const serieFilter = typeof ops.serieFilter !== 'undefined' ? unescape(ops.serieFilter.toUpperCase()) : null;
+    const isCollectionFilter = typeof ops.isCollectionFilter !== 'undefined' ? ops.isCollectionFilter : null;
+    const ownedAndWantBuyAgainFilter = typeof ops.ownedAndWantBuyAgainFilter !== 'undefined' ? ops.ownedAndWantBuyAgainFilter : null;
+    const isReadFilter = typeof ops.isReadFilter !== 'undefined' ? ops.isReadFilter : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
-    let query = `SELECT id,
-    name,
-    COALESCE(goodreads_rating,'0') AS rating
-    FROM my_books `;
+
+    let query = `SELECT main.id,
+    main.name
+    FROM my_books main
+
+    LEFT JOIN series serie_entry
+    ON serie_entry.id = main.serie `;
 
     let filters = [], params = [];
     if(authorFilter !== null) {
-      filters.push('UPPER(author) LIKE $');
+      filters.push('UPPER(main.author) LIKE $');
       params.push(`%${authorFilter}%`);
     }
 
     if(titleFilter !== null) {
-      filters.push('UPPER(name) LIKE $');
+      filters.push('UPPER(main.name) LIKE $');
       params.push(`%${titleFilter}%`);
     }
 
-    let conditions = "";
+    if(isbnFilter !== null) {
+      filters.push('UPPER(main.isbn) LIKE $');
+      params.push(`%${isbnFilter}%`);
+    }
+
+    if(tagsFilter !== null) {
+      filters.push('UPPER(main.tags) LIKE $');
+      params.push(`%${tagsFilter}%`);
+    }
+
+    if(descriptionFilter !== null) {
+      filters.push('UPPER(main.description) LIKE $');
+      params.push(`%${descriptionFilter}%`);
+    }
+
+    if(fromPageFilter !== null) {
+      filters.push('main.pages >= $');
+      params.push(fromPageFilter);
+    }
+
+    if(toPageFilter !== null) {
+      filters.push('main.pages <= $');
+      params.push(toPageFilter);
+    }
+
+    if(fromYearFilter !== null) {
+      filters.push('main.year >= $');
+      params.push(fromYearFilter);
+    }
+
+    if(toYearFilter !== null) {
+      filters.push('main.year <= $');
+      params.push(toYearFilter);
+    }
+
+    if(languageFilter !== null) {
+      filters.push('UPPER(main.language) LIKE $');
+      params.push(`%${languageFilter}%`);
+    }
+
+    if(oLanguageFilter !== null) {
+      filters.push('UPPER(main.original_language) LIKE $');
+      params.push(`%${oLanguageFilter}%`);
+    }
+
+    if(storeFilter !== null) {
+      filters.push('UPPER(main.store) LIKE $');
+      params.push(`%${storeFilter}%`);
+    }
+
+    if(fromRatingFilter !== null) {
+      filters.push('main.goodreads_rating >= $');
+      params.push(fromRatingFilter);
+    }
+
+    if(toRatingFilter !== null) {
+      filters.push('main.goodreads_rating <= $');
+      params.push(toRatingFilter);
+    }
+
+    if(serieFilter !== null) {
+      filters.push('UPPER(serie_entry.name) LIKE $');
+      params.push(`%${serieFilter}%`);
+    }
+
+    if(isCollectionFilter !== null) {
+      filters.push('main.collection = $');
+      params.push(isCollectionFilter);
+    }
+
+    if(ownedAndWantBuyAgainFilter !== null) {
+      filters.push('main.search_another_edition = $');
+      params.push(ownedAndWantBuyAgainFilter);
+    }
+
+    let paramCounter = 0; //count number of params
+
+    let conditions = " WHERE ";
 
     if(filters.length) {//we have filters
-      conditions += " WHERE ";
       for(let i = 1 , l = filters.length + 1; i < l ; i ++ ) {
         conditions +=  filters[i - 1]  + i + " AND ";
       }
       //remove last AND
       conditions = conditions.replace(/\sAND\s$/,'');
+
+      paramCounter = filters.length;
     }
+
+    //add format filter if relevant
+    if(formatFilter) {
+
+      if(paramCounter) {/*if filters where applied, 100% there are conditions before this one and we need the AND keyword*/
+        conditions += ' AND ';
+      }
+
+      conditions += ' main.type IN ( ';
+
+      formatFilter.forEach((frmt, idx) => {
+        conditions += `$${++paramCounter},`;
+        params.push(frmt);
+      });
+      //remove last comma
+      conditions = conditions.replace(/[,]$/,'');
+
+      conditions += ' ) ';
+
+    }
+
+    if(isReadFilter !== null) {
+
+      if(paramCounter) {/*if filters where applied, 100% there are conditions before this one and we need the AND keyword*/
+        conditions += ' AND ';
+      }
+      conditions += ` main.read_order IS ${isReadFilter && 'NOT' || '' } NULL `;
+    }
+
+    //remove where if there are no conditions
+    conditions = conditions.replace(/\sWHERE\s$/,'');
+
     //add order by type
     query += conditions;
 
     query += " ORDER BY ";
     switch(sortType) {
       case 'titl-a':
-      query += " name "
+      query += " main.name "
       break;
       case "titl-d":
-      query += " name DESC "
+      query += " main.name DESC "
       break;
       case 'pag-h':
-      query += " pages DESC "
+      query += " main.pages DESC "
       break;
       case "pag-l":
-      query += " pages "
+      query += " main.pages "
       break;
       case 'pub-h':
-      query += " year DESC "
+      query += " main.year DESC "
       break;
       case "pub-l":
-      query += " year "
+      query += " main.year "
       break;
       case 'rat-h':
-      query += " COALESCE(goodreads_rating,'0') DESC "
+      query += " COALESCE(main.goodreads_rating,'0') DESC "
       break;
       case "rat-l":
-      query += " COALESCE(goodreads_rating,'0') "
+      query += " COALESCE(main.goodreads_rating,'0') "
       break;
       case 'rd-r':
-      query += " read_order DESC "
+      query += " main.read_order DESC "
       break;
       case 'rd-n':
-      query += " read_order "
+      query += " main.read_order "
       break;
       case 'lst-l':
-      query += " id "
+      query += " main.id "
       break;
       case 'lst-f':
-      query += " id DESC "
+      query += " main.id DESC "
       break;
       default:
       query += ' RANDOM() ';
       break;
     }
     //first get count
-    let count = await pg.query(`SELECT COUNT(1) FROM my_books main ${conditions};`, params);
+    let count = await pg.query(`SELECT COUNT(1) FROM my_books main LEFT JOIN series serie_entry ON serie_entry.id = main.serie ${conditions};`, params);
     count = count.rows[0].count;
     //now get books
-    query += " LIMIT $" + (filters.length + 1) + " OFFSET $" + (filters.length + 2) + ";";
+    query += " LIMIT $" + ++paramCounter + " OFFSET $" + ++paramCounter + ";";
     params.push(limit, offset);
+
+
     let res = await pg.query(query, params);
     res = res.rows;
     return {rows:res, count: count};

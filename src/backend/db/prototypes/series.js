@@ -108,7 +108,10 @@ module.exports = (className) => {
     const offset = typeof ops.offset !== 'undefined' ? ops.offset : '0';
     const authorFilter = typeof ops.authorFilter !== 'undefined' ? unescape(ops.authorFilter.toUpperCase()) : null;
     const titleFilter = typeof ops.titleFilter !== 'undefined' ? unescape(ops.titleFilter.toUpperCase()) : null;
+    const fromRatingFilter = typeof ops.fromRatingFilter !== 'undefined' ? unescape(ops.fromRatingFilter) : null;
+    const toRatingFilter = typeof ops.toRatingFilter !== 'undefined' ? unescape(ops.toRatingFilter) : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
+
     let query = `SELECT
     main.id,
     main.name,
@@ -156,17 +159,38 @@ module.exports = (className) => {
       filters.push('UPPER(main.name) LIKE $');
       params.push(`%${titleFilter}%`);
     }
-    let conditions = '';
+
+    if(fromRatingFilter !== null) {
+      filters.push('main.goodreads_rating >= $');
+      params.push(fromRatingFilter);
+    }
+
+    if(toRatingFilter !== null) {
+      filters.push('main.goodreads_rating <= $');
+      params.push(toRatingFilter);
+    }
+
+    let paramCounter = 0; //count number of params
+
+    let conditions = " WHERE ";
+
     if(filters.length) {//we have filters
-      conditions += " WHERE ";
       for(let i = 1 , l = filters.length + 1; i < l ; i ++ ) {
         conditions +=  filters[i - 1]  + i + " AND ";
       }
-      //remove last AND
-      conditions = conditions.replace(/\sAND\s$/,'');
+
+      paramCounter = filters.length;
     }
-    query += conditions;
+
+    //remove last AND
+    conditions = conditions.replace(/\sAND\s$/,'');
+
+    //remove where if no conditions
+    conditions = conditions.replace(/\sWHERE\s$/,'');
+
     //add order by type
+    query += conditions;
+
     query += " ORDER BY ";
     switch(sortType) {
       case 'titl-a':
@@ -213,8 +237,9 @@ module.exports = (className) => {
     let count = await pg.query(`SELECT COUNT(1) FROM series main ${conditions};`, params);
     count = count.rows[0].count;
     //now get books
-    query += " LIMIT $" + (filters.length + 1) + " OFFSET $" + (filters.length + 2) + ";";
+    query += " LIMIT $" + ++paramCounter + " OFFSET $" + ++paramCounter + ";";
     params.push(limit, offset);
+
     let res = await pg.query(query, params);
     res = res.rows;
     return {rows:res, count: count};

@@ -362,14 +362,29 @@ module.exports = (className) => {
     const offset = typeof ops.offset !== 'undefined' ? ops.offset : '0';
     const authorFilter = typeof ops.authorFilter !== 'undefined' ? unescape(ops.authorFilter.toUpperCase()) : null;
     const titleFilter = typeof ops.titleFilter !== 'undefined' ? unescape(ops.titleFilter.toUpperCase()) : null;
+    const languageFilter = typeof ops.languageFilter !== 'undefined' ? unescape(ops.languageFilter.toUpperCase()) : null;
+    const oLanguageFilter = typeof ops.oLanguageFilter !== 'undefined' ? unescape(ops.oLanguageFilter.toUpperCase()) : null;
+    const descriptionFilter = typeof ops.descriptionFilter !== 'undefined' ? unescape(ops.descriptionFilter.toUpperCase()) : null;
+    const fromPageFilter = typeof ops.fromPageFilter !== 'undefined' ? unescape(ops.fromPageFilter) : null;
+    const toPageFilter = typeof ops.toPageFilter !== 'undefined' ? unescape(ops.toPageFilter) : null;
+    const fromYearFilter = typeof ops.fromYearFilter !== 'undefined' ? unescape(ops.fromYearFilter) : null;
+    const toYearFilter = typeof ops.toYearFilter !== 'undefined' ? unescape(ops.toYearFilter) : null;
+    const fromRatingFilter = typeof ops.fromRatingFilter !== 'undefined' ? unescape(ops.fromRatingFilter) : null;
+    const toRatingFilter = typeof ops.toRatingFilter !== 'undefined' ? unescape(ops.toRatingFilter) : null;
+    const isReadFilter = typeof ops.isReadFilter !== 'undefined' ? ops.isReadFilter : null;
+    const serieFilter = typeof ops.serieFilter !== 'undefined' ? unescape(ops.serieFilter.toUpperCase()) : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
+
     let query = `SELECT main.id,
-    main.name,
-    COALESCE(main.goodreads_rating,'0') AS rating
+    main.name
     FROM stories main
 
     LEFT JOIN my_books parent
-    ON main.parent = parent.id `;
+    ON main.parent = parent.id
+
+    LEFT JOIN series serie_entry
+    ON serie_entry.id = main.serie `;
+
     let filters = [], params = [];
     if(authorFilter !== null) {
       filters.push('UPPER(COALESCE(main.author , parent.author)) LIKE $');
@@ -380,17 +395,85 @@ module.exports = (className) => {
       filters.push('UPPER(main.name) LIKE $');
       params.push(`%${titleFilter}%`);
     }
-    let conditions = '';
+
+    if(descriptionFilter !== null) {
+      filters.push('UPPER(main.description) LIKE $');
+      params.push(`%${descriptionFilter}%`);
+    }
+
+    if(fromPageFilter !== null) {
+      filters.push('main.pages >= $');
+      params.push(fromPageFilter);
+    }
+
+    if(toPageFilter !== null) {
+      filters.push('main.pages <= $');
+      params.push(toPageFilter);
+    }
+
+    if(fromYearFilter !== null) {
+      filters.push('parent.year >= $');
+      params.push(fromYearFilter);
+    }
+
+    if(toYearFilter !== null) {
+      filters.push('parent.year <= $');
+      params.push(toYearFilter);
+    }
+
+    if(languageFilter !== null) {
+      filters.push('UPPER(parent.language) LIKE $');
+      params.push(`%${languageFilter}%`);
+    }
+
+    if(oLanguageFilter !== null) {
+      filters.push('UPPER(parent.original_language) LIKE $');
+      params.push(`%${oLanguageFilter}%`);
+    }
+
+    if(fromRatingFilter !== null) {
+      filters.push('main.goodreads_rating >= $');
+      params.push(fromRatingFilter);
+    }
+
+    if(toRatingFilter !== null) {
+      filters.push('main.goodreads_rating <= $');
+      params.push(toRatingFilter);
+    }
+
+    if(serieFilter !== null) {
+      filters.push('UPPER(serie_entry.name) LIKE $');
+      params.push(`%${serieFilter}%`);
+    }
+
+    let paramCounter = 0; //count number of params
+
+    let conditions = " WHERE ";
+
     if(filters.length) {//we have filters
-      conditions += " WHERE ";
       for(let i = 1 , l = filters.length + 1; i < l ; i ++ ) {
         conditions +=  filters[i - 1]  + i + " AND ";
       }
       //remove last AND
       conditions = conditions.replace(/\sAND\s$/,'');
+
+      paramCounter = filters.length;
     }
-    query += conditions;
+
+    if(isReadFilter !== null) {
+
+      if(paramCounter) {/*if filters where applied, 100% there are conditions before this one and we need the AND keyword*/
+        conditions += ' AND ';
+      }
+      conditions += ` main.read_order IS ${isReadFilter && 'NOT' || '' } NULL `;
+    }
+
+    //remove where if there are no conditions
+    conditions = conditions.replace(/\sWHERE\s$/,'');
+
     //add order by type
+    query += conditions;
+
     query += " ORDER BY ";
     switch(sortType) {
       case 'titl-a':
@@ -440,11 +523,13 @@ module.exports = (className) => {
       break;
     }
     //first get count
-    let count = await pg.query(`SELECT COUNT(1) FROM stories main LEFT JOIN my_books parent  ON main.parent = parent.id ${conditions};`, params);
+    let count = await pg.query(`SELECT COUNT(1) FROM stories main LEFT JOIN my_books parent  ON main.parent = parent.id LEFT JOIN series serie_entry ON serie_entry.id = main.serie ${conditions};`, params);
     count = count.rows[0].count;
     //now get books
-    query += " LIMIT $" + (filters.length + 1) + " OFFSET $" + (filters.length + 2) + ";";
+    query += " LIMIT $" + ++paramCounter + " OFFSET $" + ++paramCounter + ";";
     params.push(limit, offset);
+
+
     let res = await pg.query(query, params);
     res = res.rows;
     return {rows:res, count: count};
