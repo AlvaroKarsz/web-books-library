@@ -503,6 +503,7 @@ module.exports = (className) => {
             } else {//same author as collection, set value as NULL
               query += `NULL `;
             }
+            query += ` , `;
 
             if(bookJson.collection[i].asin) {//story has asin
               query += `$${++paramsCounter} `;
@@ -510,6 +511,8 @@ module.exports = (className) => {
             } else {//no asin
               query += `NULL `;
             }
+
+            query += ` , `;
 
             if(bookJson.collection[i].description) {//story has description
               query += `$${++paramsCounter} `;
@@ -535,12 +538,16 @@ module.exports = (className) => {
             query += `NULL `;
           }
 
+          query += ` , `;
+
           if(bookJson.collection[i].asin) {//story has asin
             query += `$${++paramsCounter} `;
             queryArguments.push(bookJson.collection[i].asin);
           } else {//same author as collection, set value as NULL
             query += `NULL `;
           }
+
+          query += ` , `;
 
           if(bookJson.collection[i].description) {//story has description
             query += `$${++paramsCounter} `;
