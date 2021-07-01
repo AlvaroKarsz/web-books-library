@@ -59,6 +59,7 @@ img:hover {
   margin: 15px 0;
   position: relative;
   text-align: center;
+  margin-top: 60px;
 }
 
 .line {
@@ -77,7 +78,7 @@ img:hover {
 
 .sort {
   display: none;
-  position: absolute;
+  position: fixed;
   z-index: 1;
   right: 45px;
 }
@@ -94,7 +95,7 @@ img:hover {
 
 .filter {
   display: none;
-  position: absolute;
+  position: fixed;
   background-color: white;
   color: black;
   min-width: 160px;
@@ -317,6 +318,11 @@ img:hover {
 .topnav {
   background-color: #333;
   overflow: hidden;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 3;
+  min-width: 1500px;
 }
 
 .topnav a {
@@ -352,11 +358,16 @@ img:hover {
   background-color: inherit;
   font-family: inherit;
   margin: 0;
+  cursor: pointer;
+}
+
+.dropmenu button:hover {
+  transform: scale(1.05);
 }
 
 .dropmenu-list {
   display: none;
-  position: absolute;
+  position: fixed;
   background-color: #f9f9f9;
   min-width: 160px;
   box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
@@ -366,7 +377,7 @@ img:hover {
 }
 
 .dropmenu-list[side='true'] {
-  margin-left: 100%;
+  margin-left: 214px;
   margin-top: -50px;
 }
 
@@ -499,7 +510,7 @@ img:hover {
 }
 
 .images {
-  margin: 20px 0;
+  margin: 65px 0;
 }
 
 
@@ -1357,6 +1368,7 @@ img:hover {
 
 .displayer-title {
   padding: 12px;
+  margin-top: 60px;
 }
 .displayer-title a{
   display: inline-block;
