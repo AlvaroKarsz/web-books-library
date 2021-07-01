@@ -42,7 +42,7 @@ module.exports = (app) => {
       totalCount: total,
       objects: books,
       urlParams: urlParams,
-      type: "Books",
+      typeTitle: "My Books",
       route: 'books',
       imageHref: '/books/',
       htmlTitle: 'My Books'
@@ -77,6 +77,7 @@ module.exports = (app) => {
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.BOOKS_FOLDER_NAME,
       htmlTitle: 'My Books | ' + bookData.name,
+      typeTitle: 'My Books',
       displayer: entryDisplayer.build(bookData, settings.BOOKS_FOLDER_NAME, {
         bookRead:true,
         openPdf:true,
@@ -129,6 +130,7 @@ module.exports = (app) => {
 
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_INSERT_BOOK_FILE_NAME,
+      typeTitle: 'Insert Book',
       pageTitle: id ? (basic.isValidInt(id) ? 'Edit Book' : 'Save Book From Wish' ) : 'Enter New Book' //if id exists - the page will load id's info
     }));
   });

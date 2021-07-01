@@ -41,7 +41,7 @@ module.exports = (app) => {
       totalCount: total,
       objects: books,
       urlParams: urlParams,
-      type: "Wish List",
+      typeTitle: "My Wishlist",
       route: 'wishlist',
       imageHref: '/wishlist/',
       htmlTitle: 'My Wishlist'
@@ -82,6 +82,7 @@ module.exports = (app) => {
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.WISH_LIST_FOLDER_NAME,
       htmlTitle: 'My Wishlist | ' + wishData.name,
+      typeTitle: "My Wishlist",
       displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {
         buy:true,
         received:true,
@@ -184,6 +185,7 @@ module.exports = (app) => {
     const id = req.params.id;
 
     res.send(await htmlRender.render({
+      typeTitle: "Insert Wishlist",
       html: settings.SOURCE_CODE_HTML_INSERT_WISH_FILE_NAME,
       pageTitle: id ? 'Edit Wish' : 'Enter New Wish' //if id exists - the page will load id's info
     }));

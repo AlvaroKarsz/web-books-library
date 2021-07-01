@@ -2,8 +2,7 @@
   let settings = {
     elements: {
       imagesHolder: document.getElementById('imgs'),
-      mainLoader: document.getElementById('main-ldr'),
-      sort: document.getElementById('sort')
+      mainLoader: document.getElementById('main-ldr')
     },
     vars: {
       ratioForFetch: 0.97
@@ -13,7 +12,6 @@
       pageSettings: `/display/settings`
     }
   };
-  handleSortSubmit(settings.elements.sort);
   loadBooksOnBottomReach(settings.vars.ratioForFetch, settings.scripts.fetchNext, settings.scripts.pageSettings, settings.elements.imagesHolder, settings.elements.mainLoader);
 })()
 
@@ -77,19 +75,4 @@ async function fetchPageSettings(actionScr) {
       pageSettings.perPage = fetchReq.perPage;
     }
     return pageSettings;
-  }
-
-  function handleSortSubmit(selectBox) {
-    selectBox.onchange = (e) => {
-      let form = selectBox.form,
-      loader = [...form.getElementsByTagName("DIV")].filter(a => a.getAttribute('loader') === 'true')[0];
-      loader.style.display = 'inline-block';
-      let urlParams = getUrlParams();
-      if(selectBox.value) {
-        urlParams[selectBox.name] = selectBox.value;
-      } else {
-        delete urlParams[selectBox.name];
-      }
-      setUrlParams(urlParams)
-    };
   }

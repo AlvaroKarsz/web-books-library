@@ -20,6 +20,7 @@
 body {
   background-color: rgba(0,0,0,0.9);
   margin: 0;
+  min-width: 1500px;
 }
 
 img {
@@ -36,15 +37,18 @@ img:hover {
   transform: scale(1.05);
 }
 
-.title {
-  font-size: 35px;
-  text-align: center;
+.main-title-topnav {
+  font-size: 30px;
   color: white;
-  font-weight: bold;
-  margin-top: -100px;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  display: inline-block;
+  text-align: center;
+  width: 100%;
+  line-height: 58px;
+}
+
+.main-title-topnav span{
+  margin: 0;
+  padding: 0;
 }
 
 .title-new-book {
@@ -59,7 +63,6 @@ img:hover {
 
 .line {
   text-align: center;
-  min-width: 1500px;
 }
 
 .obj {
@@ -70,6 +73,23 @@ img:hover {
 
 .obj p{
   font-size: 25px;
+}
+
+.sort {
+  display: none;
+  position: absolute;
+  z-index: 1;
+  right: 45px;
+}
+
+.sort select {
+  text-align-last: center;
+  font-size: 17px;
+  padding: 8px;
+  border-radius: 7px;
+  border: 2px solid rgba(0,0,0,0.3);
+  box-shadow: 2px 2px 6px rgb(0 0 0 / 40%);
+  width: 240px;
 }
 
 .filter {
@@ -269,12 +289,10 @@ img:hover {
   transform: scale(1.05);
 }
 
-.invisible-cb-filter {
-  display: none;
-}
-
-.invisible-cb-filter:checked ~ .filter {
-  display: block;
+.topnav-third-holder {
+  width: 33.33%;
+  display: inline-block;
+  float: left;
 }
 
 .topnav-search {
@@ -287,7 +305,7 @@ img:hover {
   background: none;
   border: none;
   color: white;
-  padding: 14px 16px;
+  padding: 18px 16px;
   font-size: 16px;
   cursor: pointer;
 }
@@ -305,7 +323,7 @@ img:hover {
   float: left;
   color: #f2f2f2;
   text-align: center;
-  padding: 14px 16px;
+  padding: 18px 16px;
   text-decoration: none;
   font-size: 17px;
 }
@@ -330,7 +348,7 @@ img:hover {
   border: none;
   outline: none;
   color: white;
-  padding: 14px 16px;
+  padding: 18px 16px;
   background-color: inherit;
   font-family: inherit;
   margin: 0;
@@ -368,41 +386,6 @@ img:hover {
 
 .dropmenu:not([side='true']):hover .dropmenu-list:not([side='true']) {
   display: block;
-}
-
-.sort {
-  display: inline-block;
-  float: left;
-  width: 350px;
-}
-
-.sort select{
-  outline: none;
-  border: none;
-  border-bottom: 1px solid rgba(0,0,0,0.3);
-  padding: 3px;
-  font-size: 17px;
-  text-align-last: center;
-  width: 92%;
-}
-
-.sort p{
-  padding: 0;
-  margin: 0;
-  color: white;
-  text-align: center;
-  font-size: 23px;
-  font-weight: bold;
-  width: 92%;
-}
-
-.sort form{
-  margin-top: 20px;
-}
-
-.header-optins {
-  height: 150px;
-  padding: 15px 60px;
 }
 
 .small-loader {
@@ -893,7 +876,6 @@ img:hover {
   margin: 0 auto;
   background-color: black;
   border-radius: 30px;
-  min-width: 1500px;
   top: 50%;
   transform: translateY(-50%);
   border: 4px solid white;

@@ -12,13 +12,8 @@ ALLOWED KEYS:
 TOP_NAV: generates main top navigator
 DISPLAYER: signle listing details (book/wishlist/serie/story...)
 INSERTION_TITLE: Action title, relevant for html pages that insert/update listings (Insert new Book / Update Wishlist...)
-SORT_OPTIONS: build elemets with all sort options available (sort by rating desc, sort by number of pages...)
-TYPE: type of elements (books/wishlists/stories...)
-TOT_COUNT: number of relevant listings (for example, number of books) this will return number of listings after applying filters as well
 IMAGES: post listing images
 LOADER_IF_BOOKS: add loader if there are more books to fetch
-FILTER_VAL_TITLE: adds current title filder value to filter input
-FILTER_VAL_AUTHOR: adds current author filder value to filter input
 HTML_TITLE: add page title
 */
 
@@ -39,25 +34,25 @@ class HtmlRender {
     required for IMAGES
 
     totalCount => number of relevant elements count
-    required for TOT_COUNT, LOADER_IF_BOOKS
+    required for TOPNAV, LOADER_IF_BOOKS
 
     objects => array of relevant listing info
     required for IMAGES
 
     urlParams => url parameters from user
-    required for TOP_NAV, SORT_OPTIONS
+    required for TOP_NAV
 
     imageHref => endpoint to fetch pictures from backend
     required for IMAGES
 
     route => route to fetch data from backend after a sort filter was applied
-    required for SORT_OPTIONS and TOP_NAV
+    required for TOP_NAV
 
     pageTitle => Action title, relevant for html pages that insert/update listings (Insert new Book / Update Wishlist...)
     required for INSERTION_TITLE
 
-    type => listing type (book/wish...)
-    required for TYPE
+    typeTitle => My Books, My Wishlist ..
+    required for TOPNAV
 
     displayer => displayer data after calling build()
     requred for DISPLAYER
@@ -67,12 +62,9 @@ class HtmlRender {
     LIST OF KEYS AND REPLACEMENTS
     */
     const keys = {
-      TYPE: "params.type",
-      TOT_COUNT: "params.totalCount",
-      SORT_OPTIONS: "this.getSortOptions(params.urlParams, params.route)",
       IMAGES: "this.postPictures(params.folder, params.objects, params.imageHref)",
       LOADER_IF_BOOKS: "this.createMainLoaderIfBooksFound(params.totalCount)",
-      TOP_NAV: "topNav.setUrlParams(params.urlParams); topNav.setReferer(params.route); topNav.build()",
+      TOP_NAV: "topNav.setElementsNumber(params.totalCount); topNav.setPageType(params.typeTitle); topNav.setUrlParams(params.urlParams); topNav.setReferer(params.route); topNav.build()",
       DISPLAYER:"params.displayer",
       INSERTION_TITLE: "params.pageTitle",
       HTML_TITLE: "params.htmlTitle"
@@ -126,108 +118,6 @@ class HtmlRender {
     str += '</div>';
     return str;
   }
-
-  getSortOptions(urlParams, requestRoute) {
-    let str = `<option value="">-- SELECT --</option>`;//default one
-    const options = {
-      "rat-h": {
-        name:  "Rating - Higher",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
-      },
-      "rat-l": {
-        name: "Rating - Lower",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
-      },
-      "pub-h": {
-        name: "Publication Year - Newer",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased']
-      },
-      "pub-l": {
-        name: "Publication Year - Older",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased']
-      },
-      "pag-h": {
-        name: "Number of Pages - Bigger",
-        routes:['books', 'stories', 'reads']
-      },
-      "pag-l": {
-        name: "Number of Pages - Lower",
-        routes:['books', 'stories', 'reads']
-      },
-      "titl-a": {
-        name: "Title - ASC",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
-      },
-      "titl-d": {
-        name: "Title - DESC",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
-      },
-      'rd-n': {
-        name: "Read order",
-        routes:['books', 'stories', 'reads']
-      },
-      'rd-r': {
-        name: "Read order - Reversed",
-        routes:['books', 'stories', 'reads']
-      },
-      'lst-f': {
-        name: "List order - Newer",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
-      },
-      'lst-l': {
-        name: "List order - Older",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
-      },
-      'prc-f': {
-        name: "Purchase order - Newer",
-        routes:['purchased']
-      },
-      'prc-l': {
-        name: "Purchase order - Older",
-        routes:['purchased']
-      },
-      'cln-f': {
-        name: "Collection Name - ASC",
-        routes:['stories']
-      },
-      'cln-l': {
-        name: "Collection Name - DESC",
-        routes:['stories']
-      },
-      'owb-b': {
-        name: "Owned Books - Max.",
-        routes:['series']
-      },
-      'owb-s': {
-        name: "Owned Books - Min.",
-        routes:['series']
-      },
-      'rdb-b': {
-        name: "Books Read - Max.",
-        routes:['series']
-      },
-      'rdb-s': {
-        name: "Books Read - Min.",
-        routes:['series']
-      },
-      'wsb-b': {
-        name: "Books in WishList - Max.",
-        routes:['series']
-      },
-      'wsb-s': {
-        name: "Books in WishList - Min.",
-        routes:['series']
-      }
-    };
-
-    for(let opt in options) {
-      if(options[opt].routes.includes(requestRoute)) {
-        str += `<option value="${opt}" ${opt == urlParams['sort'] ? 'selected' : ''}>${options[opt].name}</option>`;
-      }
-    }
-    return str;
-  }
-
 };
 
 module.exports = new HtmlRender();

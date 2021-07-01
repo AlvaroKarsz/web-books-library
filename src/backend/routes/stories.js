@@ -40,7 +40,7 @@ module.exports = (app) => {
       totalCount: total,
       objects: books,
       urlParams: urlParams,
-      type: "Stories",
+      typeTitle: "My Stories",
       route: 'stories',
       imageHref: '/stories/',
       htmlTitle: 'My Stories'
@@ -94,6 +94,7 @@ module.exports = (app) => {
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.STORIES_FOLDER_NAME,
       htmlTitle: 'My Stories | ' + storyData.name,
+      typeTitle: "My Stories",
       displayer: entryDisplayer.build(storyData, settings.STORIES_FOLDER_NAME, {
         storyRead: true,
         fetchCover: true,
@@ -117,6 +118,7 @@ module.exports = (app) => {
     const id = req.params.id;
 
     res.send(await htmlRender.render({
+      typeTitle: "Insert Story",
       html: settings.SOURCE_CODE_HTML_INSERT_STORY_FILE_NAME,
       pageTitle: id ? 'Edit Story' : 'Enter New Story' //if id exists - the page will load id's info
     }));

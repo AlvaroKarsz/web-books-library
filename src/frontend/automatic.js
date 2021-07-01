@@ -2,7 +2,7 @@
   /*general frontend functions that should be used in every page*/
   showOverlayOnexit();
   showUrlMessage();
-  handleFilterOptions();
+  handleTopNavOptions();
   listenToAdvancedBackupMenu();
   listenToDescriptionReFetchAction();
   listenToCoverChange();
@@ -452,7 +452,53 @@ function openEbook(url, title) {//function to open a new window with title
   };
 }
 
-function handleFilterOptions() {//function to handle filter operations
+function handleTopNavOptions() {//function to handle filter operations & sort
+  /**********************************************************
+  show/hide menus
+  *************************************************************/
+  let filterMainCheckbox = document.getElementById('filter-toggle-option'),
+  sortMainCheckbox = document.getElementById('filter-toggle-sort'),
+  filterMenu = document.getElementById('filter-menu'),
+  sortMenu = document.getElementById('sort-menu');
+
+  if(filterMainCheckbox && sortMainCheckbox && sortMenu && filterMenu) {
+    filterMainCheckbox.onchange = () => {//if on - show filter and hide sort
+      if(filterMainCheckbox.checked) {
+        filterMenu.style.display = 'block';
+        sortMenu.style.display = 'none';
+        sortMainCheckbox.checked = false;
+      } else {//hide filter menu
+        filterMenu.style.display = 'none';
+      }
+    };
+    sortMainCheckbox.onchange = () => {//if on - show sort and hide filter
+      if(sortMainCheckbox.checked) {
+        sortMenu.style.display = 'block';
+        filterMenu.style.display = 'none';
+        filterMainCheckbox.checked = false;
+      } else {//hide sort menu
+        sortMenu.style.display = 'none';
+      }
+    };
+  }
+  /**********************************************************
+  handle sort submit
+  *************************************************************/
+  let sortSelectBox = document.getElementById('sort-select-box');
+  if(sortSelectBox) {
+    let selectBoxForm = sortSelectBox.form;
+    if(selectBoxForm) {
+      sortSelectBox.onchange = () => {
+        let urlParams = getUrlParams();
+        if(sortSelectBox.value) {
+          urlParams[sortSelectBox.name] = sortSelectBox.value;
+        } else {
+          delete urlParams[sortSelectBox.name];
+        }
+        setUrlParams(urlParams)
+      };
+    }
+  }
   /**********************************************************
   handle filters clear
   *************************************************************/
@@ -552,44 +598,44 @@ function handleFilterOptions() {//function to handle filter operations
             for(let j = 0 , s = cboxs.length ; j < s ; j ++ ) {//go over all checkboxes
               if(cboxs[j] === e.target) {//this is the clicked one
                 if(isSticky) { /*sticky - can't turn off a checkbox*/
-                  cboxs[j].checked = true;
-                }
-              } else {//not the clicked one - turn off
-                cboxs[j].checked = false;
+                cboxs[j].checked = true;
               }
+            } else {//not the clicked one - turn off
+              cboxs[j].checked = false;
             }
-          };
-        }
-      }
-    });
-  }
-  /**********************************************************
-  add event listeners to all input ranges - show current value
-  *************************************************************/
-  let ranges = moreOptionsBody.getElementsByClassName('filter-options-range-wrap');
-  if(ranges.length) {//no input ranges
-    ranges = [...ranges];//to array
-
-    let newNum = '',//hold new number
-    newPos = '',//hold new position
-    setNewValue = (inpPointer, valElement) => {//function to set new value
-      newNum = Number( (inpPointer.value - inpPointer.min) * 100 / (inpPointer.max - inpPointer.min) ),
-      newPos = 10 - (newNum * 0.2);
-      valElement.innerHTML = `<span>${inpPointer.value}</span>`;
-      valElement.style.left = `calc(${newNum}% + (${newPos}px))`;
-    };
-
-    ranges.forEach((rng) => {//add listener to all ranges
-      let inpPointer = [...rng.getElementsByTagName('INPUT')].filter(a => a.getAttribute('type') === 'range')[0],
-      valElement = rng.getElementsByClassName('filter-options-range-value')[0];
-      if(inpPointer  && valElement) {
-        //run one time to set the initial value
-        setNewValue(inpPointer, valElement);
-        //and call the function every change
-        inpPointer.oninput = () => {
-          setNewValue(inpPointer, valElement);
+          }
         };
       }
-    });
-  }
+    }
+  });
+}
+/**********************************************************
+add event listeners to all input ranges - show current value
+*************************************************************/
+let ranges = moreOptionsBody.getElementsByClassName('filter-options-range-wrap');
+if(ranges.length) {//no input ranges
+  ranges = [...ranges];//to array
+
+  let newNum = '',//hold new number
+  newPos = '',//hold new position
+  setNewValue = (inpPointer, valElement) => {//function to set new value
+    newNum = Number( (inpPointer.value - inpPointer.min) * 100 / (inpPointer.max - inpPointer.min) ),
+    newPos = 10 - (newNum * 0.2);
+    valElement.innerHTML = `<span>${inpPointer.value}</span>`;
+    valElement.style.left = `calc(${newNum}% + (${newPos}px))`;
+  };
+
+  ranges.forEach((rng) => {//add listener to all ranges
+    let inpPointer = [...rng.getElementsByTagName('INPUT')].filter(a => a.getAttribute('type') === 'range')[0],
+    valElement = rng.getElementsByClassName('filter-options-range-value')[0];
+    if(inpPointer  && valElement) {
+      //run one time to set the initial value
+      setNewValue(inpPointer, valElement);
+      //and call the function every change
+      inpPointer.oninput = () => {
+        setNewValue(inpPointer, valElement);
+      };
+    }
+  });
+}
 }

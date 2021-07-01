@@ -40,7 +40,7 @@ module.exports = (app) => {
       totalCount: total,
       objects: books,
       urlParams: urlParams,
-      type: "Series",
+      typeTitle: "My Series",
       route: 'series',
       imageHref: '/series/',
       htmlTitle: 'My Series'
@@ -105,6 +105,7 @@ module.exports = (app) => {
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.SERIES_FOLDER_NAME,
       htmlTitle: 'My Series | ' + serieData.name,
+      typeTitle: "My Series",
       displayer: entryDisplayer.build(serieData, settings.SERIES_FOLDER_NAME, {
         fetchCover: true,
         fetchRating: true,
@@ -126,6 +127,7 @@ module.exports = (app) => {
 
     res.send(await htmlRender.render({
       html: settings.SOURCE_CODE_HTML_INSERT_SERIE_FILE_NAME,
+      typeTitle: "Insert Serie",
       pageTitle: id ? 'Edit Serie' : 'Enter New Serie' //if id exists - the page will load id's info
     }));
   });

@@ -41,7 +41,7 @@ module.exports = (app) => {
       totalCount: total,
       objects: books,
       urlParams: urlParams,
-      type: "Purchased List",
+      typeTitle: "My Purchased List",
       route: 'purchased',
       imageHref: '/purchased/',
       htmlTitle: 'Purchased from Wishlist'
@@ -78,6 +78,7 @@ module.exports = (app) => {
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.WISH_LIST_FOLDER_NAME,
       htmlTitle: 'Purchased from Wishlist | ' + wishData.name,
+      typeTitle: "My Purchased List",
       displayer: entryDisplayer.build(wishData, settings.WISH_LIST_FOLDER_NAME, {
         received:true,
         cancelPurchase: true,

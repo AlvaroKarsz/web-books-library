@@ -38,7 +38,7 @@ module.exports = (app) => {
       totalCount: total,
       objects: books,
       urlParams: urlParams,
-      type: "Read List",
+      typeTitle: "My Read List",
       route: 'reads',
       imageHref: '/reads/',
       htmlTitle: 'My Read Books'
@@ -75,6 +75,7 @@ module.exports = (app) => {
       html: settings.SOURCE_CODE_HTML_DISPLAY_FILE_NAME,
       folder: settings.BOOKS_FOLDER_NAME,
       htmlTitle: 'My Read Books | ' + readData.name,
+      typeTitle: "My Read List",
       displayer: entryDisplayer.build(readData, settings.BOOKS_FOLDER_NAME, {
         fetchRating: true,
         fetchCover: true,
