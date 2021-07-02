@@ -510,10 +510,10 @@ class BookDisplayer {
     /*delete this note from DB & delete picture*/
     if(actions.delete) {
       output += `<div title="Delete">` +
-      `<label for='delete-wish-label'>` +
+      `<label for='delete-note-label'>` +
       `<i class="fa fa-trash"></i>` +
       `</label>` +
-      `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'delete-wish-label'>` +
+      `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'delete-note-label'>` +
       `<p>Delete</p>` +
       `<form action="/${type}/delete/${data.id}" method="get" style = "margin-left: 14px;">` +
       `<p oneline='t'>Are you sure?</p>` +

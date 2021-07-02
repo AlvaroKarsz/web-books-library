@@ -9,7 +9,6 @@ const entryDisplayer = require(settings.SOURCE_CODE_BACKEND_DISPLAYER_GUI_FILE_P
 const htmlRender = require(settings.SOURCE_CODE_BACKEND_HTML_RENDERER_GUI_FILE_PATH);
 const path = require('path');
 
-
 module.exports = (app) => {
 
   app.get('/books', async (req, res) =>  {
@@ -85,6 +84,7 @@ module.exports = (app) => {
         fetchRating: true,
         fetchCover: true,
         Ebookmark: true,
+        delete: true,
         fetchAsin: true,
         fetchTags: true,
         similarBooks: true,
@@ -1227,4 +1227,51 @@ module.exports = (app) => {
     res.redirect(basic.buildRefererUrl(referer, message, false));
   });
 
+  /*delete a book from DB & delete cover*/
+  app.get('/books/delete/:id', async (req, res) =>  {
+    const id =  req.params.id;
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    message = '';
+
+
+    /*delete md5sum from cache*/
+    await db.deleteMD5(settings.BOOKS_FOLDER_NAME,id);
+
+    /*get book format, if this is an ebook, the ebook should be deleted from disk*/
+    let format = await db.getBookFormat(id);
+
+    /*ebook - delete file*/
+    if(format === 'E') {
+      await imagesHandler.deleteImage(settings.E_BOOKS_FOLDER_NAME,id);
+    }
+
+    /*if book is a collection - get stories and delete storie's pictures*/
+    if( await db.checkIsCollectionIdExists(id)) {
+
+      let stories = await db.fetchCollectionStories(id);
+      /*iterate through stories and delete pictures*/
+      for(let i = 0 , z = stories.length; i < z ; i ++ ) {
+        await imagesHandler.deleteImage(settings.STORIES_FOLDER_NAME,stories[i].id);
+      }
+    }
+
+    /*delete book*/
+    await db.deleteBook(id);
+    /*delete picture*/
+    await imagesHandler.deleteImage(settings.BOOKS_FOLDER_NAME,id);
+
+    /*log action*/
+    logger.log({
+      text: "Book ID " + id + " was deleted."
+    });
+
+
+    /*redirect with success message*/
+    message += 'Book was Deleted';
+    /*redirect to main page, the wish no longer exist, no point redirecting to it*/
+    res.redirect(basic.buildRefererUrl('/books/', message, false));
+    return;
+  });
 }

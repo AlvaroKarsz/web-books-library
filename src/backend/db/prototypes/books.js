@@ -425,10 +425,8 @@ module.exports = (className) => {
     /*if this is not a collection - remove all stories with this parent*/
     if(!bookJson.collection || !bookJson.collection.length) {
       queryArguments.length = 0;//reset queryArguments array
-      queryArguments.push(id);
-      query = `DELETE FROM stories WHERE parent = $1;`;
-      await pg.query(query, queryArguments);
-
+      await _THIS.deleteCollectionStories(id);
+      
     } else {
       /*this is a collection - alter the existsing stories if needed, add new ones, and delete irrelevant ones*/
 
@@ -1323,4 +1321,33 @@ module.exports = (className) => {
     await pg.query(`UPDATE my_books SET search_another_edition = NOT search_another_edition WHERE id = $1;`, [id]);
     return true;
   }
+
+  _THIS.getBookFormat = async (id) => {
+    let res = await pg.query(`SELECT type FROM my_books WHERE id = $1;`, [id]);
+    return res.rows[0].type;
+  }
+
+  /*delete a book*/
+  _THIS.deleteBook = async (id) => {
+    /*
+    before the book is deleted
+    * check if book is part of a series. Since serie ratings is just it books av. ratings. calculate the new serie ratings.
+    * check if book is collection, if so delete stories
+    */
+
+    let serie = await pg.query(`SELECT serie FROM my_books WHERE id = $1;`, [id]);
+    serie = serie.rows[0].serie;
+
+    if( await _THIS.checkIsCollectionIdExists(id)) {
+      await _THIS.deleteCollectionStories(id);
+    }
+    /*delete the book*/
+    await pg.query(`DELETE FROM my_books WHERE id = $1;`, [id]);
+
+    /*is wish is part of serie  -calculate new ratings for serie*/
+    if(serie) {
+      _THIS.saveSerieRating(serie);
+    }
+  }
+
 };

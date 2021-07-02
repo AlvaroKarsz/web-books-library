@@ -29,6 +29,11 @@ module.exports = (className) => {
     return res.rows[0].parent;
   }
 
+  /*delete all stories from collection*/
+  _THIS.deleteCollectionStories = async (collectionId) => {
+    await pg.query(`DELETE FROM stories WHERE parent = $1;`, [collectionId]);
+  }
+
   /*get all stories that belongs to a specific collection*/
   _THIS.fetchCollectionStories = async (id) => {
     const query = `SELECT * FROM stories WHERE parent = $1;`;
