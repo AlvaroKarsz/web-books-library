@@ -668,4 +668,14 @@ module.exports = (className) => {
     let res = await pg.query(`SELECT folder, id, md5 FROM cache WHERE folder IN (${folders.map((a, i) => {return '$' + (i+1).toString() }).join(',')});`, folders);
     return res.rows;
   }
-};
+
+  /*get author and title from ISBN (books/wishes)*/
+  _THIS.getAuthorAndTitleFromISBN = async (isbn) => {
+    let res = await pg.query(
+      `SELECT name, author FROM my_books WHERE isbn = $1
+      UNION
+      SELECT name, author FROM wish_list WHERE isbn = $1;`
+      , [isbn]);
+      return res.rows[0];
+    }
+  };

@@ -411,12 +411,12 @@ class BookDisplayer {
         `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'search-book'>` +
         `<p>Search Book Online</p>` +
         `<form id = 'web-stores-holder'>` +
-        `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'betterworldbooks')}"><img src="${webStoreSearcher.icon('betterworldbooks')}"></a>` +
-        `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'thriftbooks')}"><img src="${webStoreSearcher.icon('thriftbooks')}"></a>` +
-        `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'abebooks')}"><img src="${webStoreSearcher.icon('abebooks')}"></a>` +
-        `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'bookdepository')}"><img src="${webStoreSearcher.icon('bookdepository')}"></a>` +
-        `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'ebay')}"><img src="${webStoreSearcher.icon('ebay')}"></a>` +
-        `<a target="_blank" href="${webStoreSearcher.find(data.isbn, 'amazon')}"><img src="${webStoreSearcher.icon('amazon')}"></a>` +
+        `<a target="_blank" href="${webStoreSearcher.find({isbn: data.isbn, author: data.author, title: data.name}, 'betterworldbooks')}"><img src="${webStoreSearcher.icon('betterworldbooks')}"></a>` +
+        `<a target="_blank" href="${webStoreSearcher.find({isbn: data.isbn, author: data.author, title: data.name}, 'thriftbooks')}"><img src="${webStoreSearcher.icon('thriftbooks')}"></a>` +
+        `<a target="_blank" href="${webStoreSearcher.find({isbn: data.isbn, author: data.author, title: data.name}, 'abebooks')}"><img src="${webStoreSearcher.icon('abebooks')}"></a>` +
+        `<a target="_blank" href="${webStoreSearcher.find({isbn: data.isbn, author: data.author, title: data.name}, 'bookdepository')}"><img src="${webStoreSearcher.icon('bookdepository')}"></a>` +
+        `<a target="_blank" href="${webStoreSearcher.find({isbn: data.isbn, author: data.author, title: data.name}, 'ebay')}"><img src="${webStoreSearcher.icon('ebay')}"></a>` +
+        `<a target="_blank" href="${webStoreSearcher.find({isbn: data.isbn, author: data.author, title: data.name}, 'amazon')}"><img src="${webStoreSearcher.icon('amazon')}"></a>` +
         `</form>` +
         `</div>`;
       }

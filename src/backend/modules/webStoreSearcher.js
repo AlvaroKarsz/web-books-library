@@ -2,59 +2,59 @@ const settings = require('../settings.js');
 const basicFunctions = require(settings.SOURCE_CODE_BACKEND_BASIC_MODULE_FILE_PATH);
 
 class StoreSearcher {
-  ebay(isbn) {
-    return `https://www.ebay.com/sch/i.html?_from=R40&_ipg=200&_nkw=${isbn}&_sop=15`;
+  ebay(title, author) {
+    return `https://www.ebay.com/sch/i.html?_from=R40&_ipg=200&_nkw=${title} ${author}&_sop=15&Format=Hardcover`;
   }
 
-  amazon(isbn) {
-    return `https://www.amazon.com/s?k=${isbn}`;
+  amazon(title, author) {
+    return `https://www.amazon.com/s?k=${title} ${author}&rh=n%3A283155%2Cp_n_feature_browse-bin%3A2656020011`;
   }
 
-  thriftbooks(isbn) {
-    return `https://www.thriftbooks.com/browse/?b.search=${isbn}#b.s=mostPopular-desc&b.p=1&b.pp=30&b.oos&b.tile`;
+  thriftbooks(title, author) {
+    return `https://www.thriftbooks.com/browse/?b.search=${title} ${author}#b.s=mostPopular-desc&b.p=1&b.pp=30&b.oos&b.tile&b.f.form%5B%5D=45`;
   }
 
-  betterworldbooks(isbn) {
-    return `https://www.betterworldbooks.com/search/results?Format=Hardcover&p=1&hpp=96&q=${isbn}`;
+  betterworldbooks(title, author) {
+    return `https://www.betterworldbooks.com/search/results?Format=Hardcover&p=1&hpp=96&q=${title} ${author}`;
   }
 
-  abebooks(isbn) {
-    return `https://www.abebooks.com/servlet/SearchResults?bi=h&kn=${isbn}`;
+  abebooks(title, author) {
+    return `https://www.abebooks.com/servlet/SearchResults?bi=h&kn=${title} ${author}`;
   }
 
-  bookdepository(isbn) {
-    return `https://www.bookdepository.com/search?searchTerm=${isbn}`;
+  bookdepository(title, author) {
+    return `https://www.bookdepository.com/search?searchTerm=${title} ${author}&format=2`;
   }
 
   icon(store) {
     return `/pic/icon/${store}`;
   }
 
-  find(isbn, store) {
+  find(data = {}, store) {
     switch(store) {
 
       case 'ebay':
-      return this.ebay(isbn);
+      return this.ebay(data.title, data.author);
       break;
 
       case 'abebooks':
-      return this.abebooks(isbn);
+      return this.abebooks(data.title, data.author);
       break;
 
       case 'amazon':
-      return this.amazon(isbn);
+      return this.amazon(data.title, data.author);
       break;
 
       case 'bookdepository':
-      return this.bookdepository(isbn);
+      return this.bookdepository(data.title, data.author);
       break;
 
       case 'thriftbooks':
-      return this.thriftbooks(isbn);
+      return this.thriftbooks(data.title, data.author);
       break;
 
       case 'betterworldbooks':
-      return this.betterworldbooks(isbn);
+      return this.betterworldbooks(data.title, data.author);
       break;
 
       default:
@@ -84,13 +84,13 @@ class StoreSearcher {
     };
   }
 
-  async getCheapestBookDepository(isbn) {
+  async getCheapestBookDepository(title, author) {
     /*gets ISBN and search for the cheapest sale*/
 
     /*search in bookdepository*/
 
     /*make the http request, and ask for text response*/
-    let req = await basicFunctions.doFetch(this.bookdepository(isbn), this.getFetchSettings(), {
+    let req = await basicFunctions.doFetch(this.bookdepository(title, author), this.getFetchSettings(), {
       text:true,
       timeout: 5000 /*max 5 sec*/
     });
@@ -99,7 +99,7 @@ class StoreSearcher {
     if(!req) {
       return {
         icon: this.icon('bookdepository'),
-        link: this.bookdepository(isbn),
+        link: this.bookdepository(title, author),
         price: 'Unavailable'
       };
     }
@@ -118,7 +118,7 @@ class StoreSearcher {
     if(!match) {/*no price*/
       return {
         icon: this.icon('bookdepository'),
-        link: this.bookdepository(isbn),
+        link: this.bookdepository(title, author),
         price: 'Unavailable'
       };
     }
@@ -132,19 +132,19 @@ class StoreSearcher {
       price: match,
       icon: this.icon('bookdepository'),
       shipping: '0',
-      link: this.bookdepository(isbn)
+      link: this.bookdepository(title, author)
     };
 
   }
 
-  async getCheapestEbay(isbn) {
+  async getCheapestEbay(title, author) {
     /*gets ISBN and search for the cheapest sale*/
 
 
     /*search in ebay*/
 
     /*make the http request, and ask for text response*/
-    let req = await basicFunctions.doFetch(this.ebay(isbn), this.getFetchSettings(), {
+    let req = await basicFunctions.doFetch(this.ebay(title, author), this.getFetchSettings(), {
       text:true,
       timeout: 5000 /*max 5 sec*/
     });
@@ -153,7 +153,7 @@ class StoreSearcher {
     if(!req) {
       return {
         icon: this.icon('ebay'),
-        link: this.ebay(isbn),
+        link: this.ebay(title, author),
         price: 'Unavailable'
       };
     }
@@ -178,7 +178,7 @@ class StoreSearcher {
     if(!price) { /*no price found*/
       return {
         icon: this.icon('ebay'),
-        link: this.ebay(isbn),
+        link: this.ebay(title, author),
         price: 'Unavailable'
       };
     }
@@ -202,7 +202,7 @@ class StoreSearcher {
     let output = {
       price: price,
       icon: this.icon('ebay'),
-      link: this.ebay(isbn)
+      link: this.ebay(title, author)
 
     };
 
@@ -215,13 +215,13 @@ class StoreSearcher {
     return output;
   }
 
-  async getCheapestAbeBooks(isbn) {
+  async getCheapestAbeBooks(title, author) {
     /*gets ISBN and search for the cheapest sale*/
 
 
 
     /*make the http request, and ask for text response*/
-    let req = await basicFunctions.doFetch(this.abebooks(isbn), this.getFetchSettings(), {
+    let req = await basicFunctions.doFetch(this.abebooks(title, author), this.getFetchSettings(), {
       text:true,
       timeout: 5000 /*max 5 sec*/
     });
@@ -230,7 +230,7 @@ class StoreSearcher {
     if(!req) {
       return {
         icon: this.icon('abebooks'),
-        link: this.abebooks(isbn),
+        link: this.abebooks(title, author),
         price: 'Unavailable'
       };
     }
@@ -249,7 +249,7 @@ class StoreSearcher {
     if(!price) { /*no price found*/
       return {
         icon: this.icon('abebooks'),
-        link: this.abebooks(isbn),
+        link: this.abebooks(title, author),
         price: 'Unavailable'
       };
     }
@@ -262,17 +262,17 @@ class StoreSearcher {
       icon: this.icon('abebooks'),
       price: price,
       shipping: 'Check in Link',
-      link: this.abebooks(isbn)
+      link: this.abebooks(title, author)
     };
   }
 
-  async getCheapestThriftBooks(isbn) {
+  async getCheapestThriftBooks(title, author) {
     /*gets ISBN and search for the cheapest sale*/
 
 
 
     /*make the http request, and ask for text response*/
-    let req = await basicFunctions.doFetch(this.thriftbooks(isbn), this.getFetchSettings(), {
+    let req = await basicFunctions.doFetch(this.thriftbooks(title, author), this.getFetchSettings(), {
       text:true,
       timeout: 5000 /*max 5 sec*/
     });
@@ -281,7 +281,7 @@ class StoreSearcher {
     if(!req) {
       return {
         icon: this.icon('thriftbooks'),
-        link: this.thriftbooks(isbn),
+        link: this.thriftbooks(title, author),
         price: 'Unavailable'
       };
     }
@@ -299,7 +299,7 @@ class StoreSearcher {
     if(!price) { /*no price found*/
       return {
         icon: this.icon('thriftbooks'),
-        link: this.thriftbooks(isbn),
+        link: this.thriftbooks(title, author),
         price: 'Unavailable'
       };
     }
@@ -316,18 +316,18 @@ class StoreSearcher {
       price: price,
       icon: this.icon('thriftbooks'),
       shipping: 'Check in Link',
-      link: this.thriftbooks(isbn)
+      link: this.thriftbooks(title, author)
     };
   }
 
-  async findPrices(isbn) {
+  async findPrices(title, author) {
     /*search for prices in all relevant stores*/
     /*make requests in parallel*/
     let prices = await Promise.all([
-      this.getCheapestThriftBooks(isbn),
-      this.getCheapestAbeBooks(isbn),
-      this.getCheapestBookDepository(isbn),
-      this.getCheapestEbay(isbn)
+      this.getCheapestThriftBooks(title, author),
+      this.getCheapestAbeBooks(title, author),
+      this.getCheapestBookDepository(title, author),
+      this.getCheapestEbay(title, author)
     ]);
 
     /*make output*/

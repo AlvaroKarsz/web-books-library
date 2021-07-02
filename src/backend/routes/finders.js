@@ -448,11 +448,24 @@ module.exports = (app) => {
       res.send(JSON.stringify(''));
       return;
     }
+
+    /*get author & title from ISBN*/
+    let dbData = await db.getAuthorAndTitleFromISBN(isbn);
+
+    if(!dbData) {/*nothing found in DB*/
+      logger.log({
+        type: 'error',
+        text: "Error searching for book prices in web, ISBN (" + isbn + ") not found in DB"
+      });
+      res.send(JSON.stringify(''));
+      return;
+    }
+
     /*search for prices*/
     let prices = JSON.stringify(
-      await webStoreSearcher.findPrices(isbn)
+      await webStoreSearcher.findPrices(dbData.name, dbData.author)
     );
-
+    
     /*log action*/
     logger.log({
       text: `Book prices search result:\nISBN: ${isbn}\nPrices: ${prices}`
@@ -460,7 +473,7 @@ module.exports = (app) => {
 
     /*echo response*/
     res.send(prices);
-    
+
   });
 
   /*route to search for a description*/
