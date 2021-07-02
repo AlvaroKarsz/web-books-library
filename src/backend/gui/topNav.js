@@ -351,7 +351,6 @@ class TopNav {
   }
 
   getSortOptions(urlParams, requestRoute) {
-    let str = `<select id = 'sort-select-box' name='sort'><option value="">-- SELECT --</option>`;//default one
     const options = {
       "rat-h": {
         name:  "Rating - Higher",
@@ -442,13 +441,18 @@ class TopNav {
         routes:['series']
       }
     };
-
+    let str = '', counter = 0;//count number of sort types
     for(let opt in options) {
       if(options[opt].routes.includes(this.REFERER)) {
         str += `<option value="${opt}" ${opt == this.URL_PARAMS['sort'] ? 'selected' : ''}>${options[opt].name}</option>`;
+        counter++;
       }
     }
-    str += '</select>';
+
+    str = `<select id = 'sort-select-box' name='sort' size="${counter + 1}"><option value="" ${this.URL_PARAMS && this.URL_PARAMS['sort'] ? '' : 'selected' }>Random</option>` +
+    str +
+    '</select>';
+
     return str;
   }
 };
