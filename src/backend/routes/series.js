@@ -109,6 +109,7 @@ module.exports = (app) => {
       displayer: entryDisplayer.build(serieData, settings.SERIES_FOLDER_NAME, {
         fetchCover: true,
         fetchRating: true,
+        fetchTags: true,
         delete: true,
         findFromSerie:true
       })
@@ -381,4 +382,41 @@ module.exports = (app) => {
       res.redirect(basic.buildRefererUrl(referer, message, false));
     }
   });
+
+  /*route to save tags*/
+  app.get('/series/tags/:id', async (req, res) =>  {
+    const id =  req.params.id;
+
+    /*incoming URL*/
+    let referer = req.headers.referer,
+    /*get param to indicate error*/
+    message = '';
+
+    if(!id) {
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error fetching new Tags for a Serie.\nInvalid Serie ID: ${id}`
+      });
+
+      /*send error*/
+      message += 'Could not fetch Tags, Invalid Serie ID';//add error
+      res.redirect(basic.buildRefererUrl(referer, message));
+      return;
+    }
+
+    /*fetch & save tags*/
+    await db.saveSerieTags(id);
+
+    /*log action*/
+    logger.log({
+      text: `New tags were fetched for a Serie.\nSerie ID: ${id}.`
+    });
+
+    /*return success*/
+    message += 'New Tags were saved';//add message
+    res.redirect(basic.buildRefererUrl(referer, message, false));
+  });
+
 }

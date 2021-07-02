@@ -317,11 +317,12 @@ module.exports = (className) => {
     *********************************************************************************************/
     _THIS.saveRating(bookId, bookJson.isbn, bookJson.title, bookJson.author, 'my_books').then((res) => {
       /*
-      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings.
+      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings, the tags are fetched from books as well.
       IMPORTANT: this action is done AFTER "saveRating" finishes, it may take some time since it search for ratings in external APIs
       */
       if(bookJson.serie && typeof bookJson.serie.value !== 'undefined') {
         _THIS.saveSerieRating(bookJson.serie.value);
+        _THIS.saveSerieTags(bookJson.serie.value);
       }
     });
 
@@ -426,7 +427,7 @@ module.exports = (className) => {
     if(!bookJson.collection || !bookJson.collection.length) {
       queryArguments.length = 0;//reset queryArguments array
       await _THIS.deleteCollectionStories(id);
-      
+
     } else {
       /*this is a collection - alter the existsing stories if needed, add new ones, and delete irrelevant ones*/
 
@@ -601,11 +602,12 @@ module.exports = (className) => {
     *********************************************************************************************/
     _THIS.saveRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'my_books').then((res) => {
       /*
-      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings.
+      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings. tags are fetched from books as well
       IMPORTANT: this action is done AFTER "saveRating" finishes, it may take some time since it search for ratings in external APIs
       */
       if(bookJson.serie && typeof bookJson.serie.value !== 'undefined') {
         _THIS.saveSerieRating(bookJson.serie.value);
+        _THIS.saveSerieTags(bookJson.serie.value);
       }
     });
 
@@ -1344,9 +1346,11 @@ module.exports = (className) => {
     /*delete the book*/
     await pg.query(`DELETE FROM my_books WHERE id = $1;`, [id]);
 
-    /*is wish is part of serie  -calculate new ratings for serie*/
+    /*is book is part of serie  -calculate new ratings & tags for serie*/
     if(serie) {
       _THIS.saveSerieRating(serie);
+      _THIS.saveSerieTags(serie);
+
     }
   }
 

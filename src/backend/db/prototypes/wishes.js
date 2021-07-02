@@ -111,11 +111,12 @@ module.exports = (className) => {
     *********************************************************************************************/
     _THIS.saveRating(wishId, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list').then((res) => {
       /*
-      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings.
+      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings. tags are fetched from books as well
       IMPORTANT: this action is done AFTER "saveRating" finishes, it may take some time since it search for ratings in external APIs
       */
       if(bookJson.serie && typeof bookJson.serie.value !== 'undefined') {
         _THIS.saveSerieRating(bookJson.serie.value);
+        _THIS.saveSerieTags(bookJson.serie.value);
       }
     });
   }
@@ -151,11 +152,12 @@ module.exports = (className) => {
     *********************************************************************************************/
     _THIS.saveRating(id, bookJson.isbn, bookJson.title, bookJson.author, 'wish_list').then((res) => {
       /*
-      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings.
+      if this book is part of a serie, since serie ratings is just it books av. ratings. calculate the new serie ratings. tags are fetched from books as well
       IMPORTANT: this action is done AFTER "saveRating" finishes, it may take some time since it search for ratings in external APIs
       */
       if(bookJson.serie && typeof bookJson.serie.value !== 'undefined') {
         _THIS.saveSerieRating(bookJson.serie.value);
+        _THIS.saveSerieTags(bookJson.serie.value);
       }
     });
   }
@@ -571,9 +573,10 @@ module.exports = (className) => {
     /*delete the wish from wishlist*/
     await pg.query(`DELETE FROM wish_list WHERE id = $1;`, [id]);
 
-    /*is wish is part of serie  -calculate new ratings for serie*/
+    /*is wish is part of serie  -calculate new ratings & tags for serie*/
     if(serie) {
       _THIS.saveSerieRating(serie);
+      _THIS.saveSerieTags(serie);
     }
   }
 

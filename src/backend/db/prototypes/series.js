@@ -109,6 +109,7 @@ module.exports = (className) => {
     const authorFilter = typeof ops.authorFilter !== 'undefined' ? unescape(ops.authorFilter.toUpperCase()) : null;
     const titleFilter = typeof ops.titleFilter !== 'undefined' ? unescape(ops.titleFilter.toUpperCase()) : null;
     const fromRatingFilter = typeof ops.fromRatingFilter !== 'undefined' ? unescape(ops.fromRatingFilter) : null;
+    const tagsFilter = typeof ops.tagsFilter !== 'undefined' ? unescape(ops.tagsFilter.toUpperCase()) : null;
     const toRatingFilter = typeof ops.toRatingFilter !== 'undefined' ? unescape(ops.toRatingFilter) : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
 
@@ -168,6 +169,11 @@ module.exports = (className) => {
     if(toRatingFilter !== null) {
       filters.push('main.goodreads_rating <= $');
       params.push(toRatingFilter);
+    }
+
+    if(tagsFilter !== null) {
+      filters.push('UPPER(main.tags) LIKE $');
+      params.push(`%${tagsFilter}%`);
     }
 
     let paramCounter = 0; //count number of params
@@ -250,6 +256,7 @@ module.exports = (className) => {
     const query = `SELECT
     id,
     name,
+    tags,
     author,
 
     (
@@ -587,6 +594,42 @@ module.exports = (className) => {
 
     let result = await pg.query(query, [serieId, serieNum]);
     return result.rows[0];
+  }
+
+  /*get serie TAGS from it books and save in DB*/
+  _THIS.saveSerieTags = async (id) => {
+
+    /*fetch all relevant tags*/
+    const query = `SELECT tags FROM my_books WHERE serie = $1
+    UNION
+    SELECT tags FROM wish_list WHERE serie = $1;`
+
+    let res = await pg.query(query, [id]);
+    res = res.rows;
+
+    let tags = [];
+
+    if(!res.length) { /*no tags*/
+      return true;
+    }
+
+    let tmp;
+    for(let i = 0 , j = res.length ; i < j ; i ++ ) {
+      tmp = res[i].tags
+      .split(',') /*split by commas*/
+      .map( a => a.trim() ); /*remove whitespace*/
+
+      /*save new tags*/
+      tags = [...tags, ...tmp];
+    }
+
+    /*now remove duplicated values by converting to a set*/
+    tags = [ ...new Set(tags) ];
+
+    /*save tags*/
+    await _THIS.saveTags(tags, id, 'series');
+    /*success*/
+    return true;
   }
 
 };

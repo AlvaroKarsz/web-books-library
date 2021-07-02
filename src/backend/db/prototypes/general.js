@@ -604,6 +604,10 @@ module.exports = (className) => {
       query += ' wish_list ';
       break;
 
+      case 'series':
+      query += ' series ';
+      break;
+
       default: /*unknown param*/
       return null;
     }
