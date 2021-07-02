@@ -399,28 +399,34 @@ module.exports = (className) => {
     query += " ORDER BY ";
     switch(sortType) {
       case 'titl-a':
-      query += " main.name "
+      query += " name "
       break;
       case "titl-d":
-      query += " main.name DESC "
+      query += " name DESC "
       break;
       case 'pub-h':
-      query += " main.year DESC "
+      query += " year DESC "
       break;
       case "pub-l":
-      query += " main.year "
+      query += " year "
       break;
       case 'rat-h':
-      query += " COALESCE(main.goodreads_rating,'0') DESC "
+      query += " COALESCE(goodreads_rating,'0') DESC "
       break;
       case "rat-l":
-      query += " COALESCE(main.goodreads_rating,'0') "
+      query += " COALESCE(goodreads_rating,'0') "
       break;
       case 'lst-l':
-      query += " main.id "
+      query += " id "
       break;
       case 'lst-f':
-      query += " main.id DESC "
+      query += " id DESC "
+      break;
+      case 'prc-f':
+      query += " order_date::DATE DESC "
+      break;
+      case 'prc-l':
+      query += " order_date::DATE "
       break;
       default:
       query += ' RANDOM() ';
