@@ -360,6 +360,14 @@ class TopNav {
         name: "Rating - Lower",
         routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
       },
+      "rat-c-h": {
+        name:  "Rating Votes- Higher",
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
+      },
+      "rat-c-l": {
+        name: "Rating Votes - Lower",
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
+      },
       "pub-h": {
         name: "Publication Year - Newer",
         routes:['books', 'wishlist', 'stories', 'reads', 'purchased']

@@ -230,10 +230,16 @@ module.exports = (className) => {
       query += " wished_books "
       break;
       case 'rat-h':
-      query += " COALESCE(goodreads_rating,'0') DESC "
+      query += " COALESCE(main.goodreads_rating,'0') DESC "
       break;
       case "rat-l":
-      query += " COALESCE(goodreads_rating,'0') "
+      query += " COALESCE(main.goodreads_rating,'0') "
+      break;
+      case "rat-c-h":
+      query += " COALESCE(main.goodreads_rating_count,0) DESC "
+      break;
+      case "rat-c-l":
+      query += " COALESCE(main.goodreads_rating_count,0) "
       break;
       default:
       query += ' RANDOM() ';

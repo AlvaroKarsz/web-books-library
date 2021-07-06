@@ -275,6 +275,12 @@ module.exports = (className) => {
       case "rat-l":
       query += " COALESCE(main.goodreads_rating,'0') "
       break;
+      case "rat-c-h":
+      query += " COALESCE(main.goodreads_rating_count,0) DESC "
+      break;
+      case "rat-c-l":
+      query += " COALESCE(main.goodreads_rating_count,0) "
+      break;
       case 'lst-l':
       query += " main.id "
       break;
@@ -399,34 +405,40 @@ module.exports = (className) => {
     query += " ORDER BY ";
     switch(sortType) {
       case 'titl-a':
-      query += " name "
+      query += " main.name "
       break;
       case "titl-d":
-      query += " name DESC "
+      query += " main.name DESC "
       break;
       case 'pub-h':
-      query += " year DESC "
+      query += " main.year DESC "
       break;
       case "pub-l":
-      query += " year "
+      query += " main.year "
       break;
       case 'rat-h':
-      query += " COALESCE(goodreads_rating,'0') DESC "
+      query += " COALESCE(main.goodreads_rating,'0') DESC "
       break;
       case "rat-l":
-      query += " COALESCE(goodreads_rating,'0') "
+      query += " COALESCE(main.goodreads_rating,'0') "
+      break;
+      case "rat-c-h":
+      query += " COALESCE(main.goodreads_rating_count,0) DESC "
+      break;
+      case "rat-c-l":
+      query += " COALESCE(main.goodreads_rating_count,0) "
       break;
       case 'lst-l':
-      query += " id "
+      query += " main.id "
       break;
       case 'lst-f':
-      query += " id DESC "
+      query += " main.id DESC "
       break;
       case 'prc-f':
-      query += " order_date::DATE DESC "
+      query += " main.order_date::DATE DESC "
       break;
       case 'prc-l':
-      query += " order_date::DATE "
+      query += " main.order_date::DATE "
       break;
       default:
       query += ' RANDOM() ';

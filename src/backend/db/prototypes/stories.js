@@ -505,6 +505,12 @@ module.exports = (className) => {
       case "rat-l":
       query += " COALESCE(main.goodreads_rating,'0') "
       break;
+      case "rat-c-h":
+      query += " COALESCE(main.goodreads_rating_count,0) DESC "
+      break;
+      case "rat-c-l":
+      query += " COALESCE(main.goodreads_rating_count,0) "
+      break;
       case 'rd-r':
       query += " main.read_order DESC "
       break;
