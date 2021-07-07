@@ -99,6 +99,7 @@ module.exports = (app) => {
         storyRead: true,
         fetchCover: true,
         fetchRating: true,
+        reddit: true,
         fetchAsin: true,
         fetchDescription: true,
         similarBooks: true,

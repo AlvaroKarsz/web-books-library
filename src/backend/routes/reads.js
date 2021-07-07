@@ -83,6 +83,7 @@ module.exports = (app) => {
         fetchAsin: true,
         fetchTags: true,
         similarBooks: true,
+        reddit: true,
         booksByAuthor: true,
         findFromSerie:true
       })

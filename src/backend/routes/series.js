@@ -111,6 +111,7 @@ module.exports = (app) => {
         fetchRating: true,
         fetchTags: true,
         delete: true,
+        reddit: true,
         findFromSerie:true
       })
     }));
