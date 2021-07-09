@@ -102,11 +102,11 @@ class BookDisplayer {
     output += '<div class="general-holder-book-displayer">Related Books (chronologically)<div class = "folder-pictures-holder">';
     /*Preceded book if exists*/
     if(data.prev_id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>Preceded By:</p><p>${data.prev_name}</p><img src="/pic/${type}/${data.prev_id}" onclick = "window.location='/${data.prev_type}/${data.prev_id}'"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>Preceded By:</p><p>${data.prev_name}</p><a href = '/${data.prev_type}/${data.prev_id}'><img src="/pic/${type}/${data.prev_id}"></a></div>`;
     }
     /*followed book if exists*/
     if(data.next_id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>Followed By:</p><p>${data.next_name}</p><img src="/pic/${type}/${data.next_id}" onclick = "window.location='/${data.next_type}/${data.next_id}'"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>Followed By:</p><p>${data.next_name}</p><a href = '/${data.next_type}/${data.next_id}'><img src="/pic/${type}/${data.next_id}"></a></div>`;
     }
     output += '</div></div>';
     return output;
@@ -260,16 +260,16 @@ class BookDisplayer {
     output += `<div class = "general-holder-book-displayer">Collection: <div class = "folder-pictures-holder">`;
 
     /*add collection info*/
-    output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t" marked = "t"><p>Collection: ${data.collection_name}</p><p>Number: ${data.collection_number}</p><img src="/pic/books/${data.collection_id}" onclick = "window.location = '/books/${data.collection_id}'"></div>`;
+    output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t" marked = "t"><p>Collection: ${data.collection_name}</p><p>Number: ${data.collection_number}</p><a href = '/books/${data.collection_id}'><img src="/pic/books/${data.collection_id}"></a></div>`;
 
     /*add previous book in series if exists*/
     if(data.prev.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Story: ${data.prev.name}</p><p>Number: ${basic.toInt(data.collection_number) - 1}</p><img src="/pic/stories/${data.prev.id}" onclick = "window.location = '${data.prev.id}'"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Story: ${data.prev.name}</p><p>Number: ${basic.toInt(data.collection_number) - 1}</p><a href = '${data.prev.id}'><img src="/pic/stories/${data.prev.id}"></a></div>`;
     }
 
     /*add next book in series if exists*/
     if(data.next.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Story: ${data.next.name}</p><p>Number: ${basic.toInt(data.collection_number) + 1}</p><img src="/pic/stories/${data.next.id}" onclick = "window.location = '${data.next.id}'"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Story: ${data.next.name}</p><p>Number: ${basic.toInt(data.collection_number) + 1}</p><a href = '${data.next.id}'><img src="/pic/stories/${data.next.id}"></a></div>`;
     }
 
     /*close main divs*/
@@ -296,17 +296,17 @@ class BookDisplayer {
 
 
     /*add serie info*/
-    output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t" marked = "t"><p>Serie: ${data.serie}</p><p>Number: ${data.number}</p><img src="/pic/series/${data.id}" onclick = "window.location = '/series/${data.id}'"></div>`;
+    output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t" marked = "t"><p>Serie: ${data.serie}</p><p>Number: ${data.number}</p><a href = '/series/${data.id}'><img src="/pic/series/${data.id}"></a></div>`;
 
 
     /*add previous book in series if exists*/
     if(data.prev.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Book: ${data.prev.name}</p><p>Number: ${data.prev.num}</p><img src="/pic/${data.prev.type}/${data.prev.id}" onclick = "window.location = '/${data.prev.type}/${data.prev.id}'"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Prev. Book: ${data.prev.name}</p><p>Number: ${data.prev.num}</p><a href = '/${data.prev.type}/${data.prev.id}'><img src="/pic/${data.prev.type}/${data.prev.id}"></a></div>`;
     }
 
     /*add next book in series if exists*/
     if(data.next.id) {
-      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Book: ${data.next.name}</p><p>Number: ${data.next.num}</p><img src="/pic/${data.next.type}/${data.next.id}" onclick = "window.location='/${data.next.type}/${data.next.id}'"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder" big = "t"><p>Next Book: ${data.next.name}</p><p>Number: ${data.next.num}</p><a href = '/${data.next.type}/${data.next.id}'><img src="/pic/${data.next.type}/${data.next.id}"></a></div>`;
     }
 
     /*close main divs*/
@@ -663,7 +663,7 @@ buildCollectionDisplayer(stories) {
   }
   let output = `<div class = "general-holder-book-displayer">Collection: (${stories.length} Stories)<div class = "folder-pictures-holder">`;
   stories.forEach((stry) => {
-    output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${stry.name} by ${stry.author}</p><img src="/pic/stories/${stry.id}" onclick = "window.location='/stories/' + ${stry.id}"></div>`;
+    output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${stry.name} by ${stry.author}</p><a href = '/stories/${stry.id}'><img src="/pic/stories/${stry.id}"></a></div>`;
   });
   /*close main div*/
   output += '</div></div>';
@@ -703,7 +703,7 @@ buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks,stories, s
     output += `<div class = "general-holder-book-displayer">${count} Owned Books: <div class = "folder-pictures-holder">`;
 
     holder.forEach((book) => {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/${book.type}/${book.id}" onclick = "window.location='/${book.type}/' + ${book.id}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><a href = '/${book.type}/${book.id}'><img src="/pic/${book.type}/${book.id}"></a></div>`;
     });
     /*close main div*/
     output += '</div></div>';
@@ -716,7 +716,7 @@ buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks,stories, s
   if(purchasedBooks) {
     output += `<div class = "general-holder-book-displayer">${purchasedBooks.length} Purchased Books: <div class = "folder-pictures-holder">`
     purchasedBooks.forEach((book) => {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/wishlist/${book.id}" onclick = "window.location='/purchased/' + ${book.id}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><a href = '/purchased/${book.id}'><img src="/pic/wishlist/${book.id}"></a></div>`;
     });
     /*close main div*/
     output += '</div></div>';
@@ -726,7 +726,7 @@ buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks,stories, s
   if(wishBooks) {
     output += `<div class = "general-holder-book-displayer">${wishBooks.length} Books in Wishlist: <div class = "folder-pictures-holder">`
     wishBooks.forEach((book) => {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/wishlist/${book.id}" onclick = "window.location='/wishlist/' + ${book.id}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><a href = '/wishlist/${book.id}'><img src="/pic/wishlist/${book.id}"></a></div>`;
     });
     /*close main div*/
     output += '</div></div>';
@@ -755,7 +755,7 @@ buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks,stories, s
 
     output += `<div class = "general-holder-book-displayer">${count} Books Read: <div class = "folder-pictures-holder">`
     holder.forEach((book) => {
-      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><img src="/pic/${book.type}/${book.id}" onclick = "window.location='/${book.type}/' + ${book.id}"></div>`;
+      output += `<div class = "folder-pictures-holder-single-pic-holder"><p>${book.number}: ${book.name}</p><a href = '/${book.type}/${book.id}'><img src="/pic/${book.type}/${book.id}"></a></div>`;
     });
     /*close main div*/
     output += '</div></div>';

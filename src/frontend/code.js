@@ -56,7 +56,7 @@ function buildBookObject(bookName, bookType, bookId, htmlHolder) {
   div.className = 'obj';
   p.innerHTML = bookName;
   img.src = "/pic/" + bookType + '/' + bookId;
-  a.setAttribute('onclick', `window.location = "/${bookType}/${bookId}" + window.location.search;`);
+  a.href = `/${bookType}/${bookId}${window.location.search}`;
   div.appendChild(p);
   a.appendChild(img);
   div.appendChild(a);

@@ -43,7 +43,7 @@ class HtmlRender {
     required for TOP_NAV
 
     imageHref => endpoint to fetch pictures from backend
-    required for IMAGES
+    required for IMAGES and IMAGES
 
     route => route to fetch data from backend after a sort filter was applied
     required for TOP_NAV
@@ -62,7 +62,7 @@ class HtmlRender {
     LIST OF KEYS AND REPLACEMENTS
     */
     const keys = {
-      IMAGES: "this.postPictures(params.folder, params.objects, params.imageHref)",
+      IMAGES: "this.postPictures(params.folder, params.objects, params.imageHref, params.urlParams)",
       LOADER_IF_BOOKS: "this.createMainLoaderIfBooksFound(params.totalCount)",
       TOP_NAV: "topNav.setElementsNumber(params.totalCount); topNav.setPageType(params.typeTitle); topNav.setUrlParams(params.urlParams); topNav.setReferer(params.route); topNav.build()",
       DISPLAYER:"params.displayer",
@@ -99,21 +99,21 @@ class HtmlRender {
     }
   }
 
-  buildBookObject(book,type, href) {
-    return `<div class = "obj"><p>${book.name}</p><a onclick = "window.location = '${href + book.id}' + window.location.search;">${this.putPicture(type, book.id)}</a></div>`;
+  buildBookObject(book,type, href, urlParams) {
+    return `<div class = "obj"><p>${book.name}</p><a href = "${basic.setUrlParams(urlParams, href + book.id)}">${this.putPicture(type, book.id)}</a></div>`;
   }
 
   putPicture(type, id) {
     return `<img src="/pic/${type}/${id}">`;
   }
 
-  postPictures(folder, objects, actionScriptOnclick) {
+  postPictures(folder, objects, actionScriptOnclick, urlParams) {
     let str = '<div class = "line">';
     for(let i = 0 , l = objects.length; i < l ; i ++ ) {
       if(i % settings.BOOKS_PER_ROW === 0) {
         str += "</div><div class = 'line'>";
       }
-      str += this.buildBookObject(objects[i],folder ,actionScriptOnclick);
+      str += this.buildBookObject(objects[i],folder ,actionScriptOnclick, urlParams);
     }
     str += '</div>';
     return str;

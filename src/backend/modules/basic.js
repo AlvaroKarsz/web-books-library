@@ -622,5 +622,14 @@ class Basic {
     return url;
   }
 
+setUrlParams(params, path) {
+    let url = path.split('?')[0] + '?';
+    for(let val in params) {
+      url += val + '=' + params[val] + '&';
+    }
+    url = url.replace(/([&]|[?])$/,'');//remove last & or ?
+    return url;
+  }
+
 }
 module.exports = new Basic();
