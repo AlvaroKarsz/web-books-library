@@ -642,6 +642,7 @@ module.exports = (className) => {
     const isCollectionFilter = typeof ops.isCollectionFilter !== 'undefined' ? ops.isCollectionFilter : null;
     const ownedAndWantBuyAgainFilter = typeof ops.ownedAndWantBuyAgainFilter !== 'undefined' ? ops.ownedAndWantBuyAgainFilter : null;
     const isReadFilter = typeof ops.isReadFilter !== 'undefined' ? ops.isReadFilter : null;
+    const isPartSerieFilter = typeof ops.isPartSerieFilter !== 'undefined' ? ops.isPartSerieFilter : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
 
     let query = `SELECT main.id,
@@ -773,6 +774,10 @@ module.exports = (className) => {
       conditions += ` AND main.read_order IS ${isReadFilter && 'NOT' || '' } NULL `;
     }
 
+    if(isPartSerieFilter !== null) {
+      conditions += ` AND main.serie IS ${isPartSerieFilter && 'NOT' || '' } NULL `;
+    }
+
     //add order by type
     query += conditions;
 
@@ -860,6 +865,7 @@ module.exports = (className) => {
     const isCollectionFilter = typeof ops.isCollectionFilter !== 'undefined' ? ops.isCollectionFilter : null;
     const ownedAndWantBuyAgainFilter = typeof ops.ownedAndWantBuyAgainFilter !== 'undefined' ? ops.ownedAndWantBuyAgainFilter : null;
     const isReadFilter = typeof ops.isReadFilter !== 'undefined' ? ops.isReadFilter : null;
+    const isPartSerieFilter = typeof ops.isPartSerieFilter !== 'undefined' ? ops.isPartSerieFilter : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
 
     let query = `SELECT main.id,
@@ -996,6 +1002,14 @@ module.exports = (className) => {
       }
       conditions += ` main.read_order IS ${isReadFilter && 'NOT' || '' } NULL `;
     }
+
+    if(isPartSerieFilter !== null) {
+      if(paramCounter) {/*if filters where applied, 100% there are conditions before this one and we need the AND keyword*/
+        conditions += ' AND ';
+      }
+      conditions += ` main.serie IS ${isPartSerieFilter && 'NOT' || '' } NULL `;
+    }
+
 
     //remove where if there are no conditions
     conditions = conditions.replace(/\sWHERE\s$/,'');

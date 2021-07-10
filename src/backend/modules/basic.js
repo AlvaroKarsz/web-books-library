@@ -431,6 +431,12 @@ class Basic {
     if('no-read' in urlParams) {
       filters.isReadFilter = false;
     }
+    if('part-series' in urlParams) {
+      filters.isPartSerieFilter = true;
+    }
+    if('no-part-series' in urlParams) {
+      filters.isPartSerieFilter = false;
+    }
     if('sort' in urlParams) {
       filters.sort = decodeURIComponent(urlParams['sort']);
     }
@@ -622,7 +628,7 @@ class Basic {
     return url;
   }
 
-setUrlParams(params, path) {
+  setUrlParams(params, path) {
     let url = path.split('?')[0] + '?';
     for(let val in params) {
       url += val + '=' + params[val] + '&';

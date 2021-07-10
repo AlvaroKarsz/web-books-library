@@ -302,6 +302,23 @@ class TopNav {
     `</div>` +
     `</div>` +
     `<div class = "filter-options-cbox-group" only-one-allowed='t'>` +
+    `<p t="main">is Part of Series</p>` +
+    `<div class = "filter-options-cbox-single" style = "width:50%">` +
+    `<p t="cbox-single">Yes</p>` +
+    `<label class="radio-button-container">` +
+    `<input type="checkbox" name='part-series' ${this.getFilterValue('part-series') ? "checked" : "" }>` +
+    `<span class="radio-button-checkmark"></span>` +
+    `</label>`+
+    `</div>` +
+    `<div class = "filter-options-cbox-single" style = "width:50%">` +
+    `<p t="cbox-single">No</p>` +
+    `<label class="radio-button-container">` +
+    `<input type="checkbox" name='no-part-series' ${this.getFilterValue('no-part-series') ? "checked" : "" }>` +
+    `<span class="radio-button-checkmark"></span>` +
+    `</label>`+
+    `</div>` +
+    `</div>` +
+    `<div class = "filter-options-cbox-group" only-one-allowed='t'>` +
     `<p t="main">is Collection</p>` +
     `<div class = "filter-options-cbox-single" style = "width:50%">` +
     `<p t="cbox-single">Yes</p>` +

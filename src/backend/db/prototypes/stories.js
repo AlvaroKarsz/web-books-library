@@ -378,6 +378,7 @@ module.exports = (className) => {
     const toRatingFilter = typeof ops.toRatingFilter !== 'undefined' ? unescape(ops.toRatingFilter) : null;
     const isReadFilter = typeof ops.isReadFilter !== 'undefined' ? ops.isReadFilter : null;
     const serieFilter = typeof ops.serieFilter !== 'undefined' ? unescape(ops.serieFilter.toUpperCase()) : null;
+    const isPartSerieFilter = typeof ops.isPartSerieFilter !== 'undefined' ? ops.isPartSerieFilter : null;
     const sortType = typeof ops.sort !== 'undefined' ? unescape(ops.sort) : null;
 
     let query = `SELECT main.id,
@@ -471,6 +472,14 @@ module.exports = (className) => {
         conditions += ' AND ';
       }
       conditions += ` main.read_order IS ${isReadFilter && 'NOT' || '' } NULL `;
+    }
+
+    if(isPartSerieFilter !== null) {
+      if(paramCounter) {/*if filters where applied, 100% there are conditions before this one and we need the AND keyword*/
+        conditions += ' AND ';
+      }
+
+      conditions += ` main.serie IS ${isPartSerieFilter && 'NOT' || '' } NULL `;
     }
 
     //remove where if there are no conditions
