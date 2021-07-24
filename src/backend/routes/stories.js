@@ -307,13 +307,13 @@ module.exports = (app) => {
     /*
     * get sum of stories pages (not including this one (if is been updated))
     * sum the pages sum with this story pages
-    * make sure this number is not bigger than collection pages
+    * make sure this number is not bigger than collection pages + number of stories (a page may overlap count between 2 stories)
     */
 
     if(basic.intSum(
       requestBody.pages ,
       await db.getStoriesPagesSumFromCollection(requestBody.collectionId.value , existingStoryId )
-    ) > basic.toInt(collectionAuthorAndPages.pages) ) {
+    ) > basic.toInt(collectionAuthorAndPages.pages) + await db.getNumberOfStories(requestBody.collectionId.value)) {
 
       /*log error*/
       logger.log({
