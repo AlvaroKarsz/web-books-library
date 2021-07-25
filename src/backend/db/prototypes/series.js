@@ -574,13 +574,13 @@ module.exports = (className) => {
     return true;
   }
 
-  /*check if a book in serie's location already exist*/
-  _THIS.serieNumExist = async (serieId, serieNum) => {
+  /*check if a book in serie's location already exist, if excludeId is not null, exclude this one*/
+  _THIS.serieNumExist = async (serieId, serieNum, excludeId = null) => {
     const query = `SELECT
     id as id,
     'book' AS type
     FROM my_books
-    WHERE serie=$1 AND serie_num = $2
+    WHERE serie=$1 AND serie_num = $2 ${excludeId ? 'AND id != $3' : ''}
 
     UNION
 
@@ -588,7 +588,7 @@ module.exports = (className) => {
     id as id,
     'wish' AS type
     FROM wish_list
-    WHERE serie=$1 AND serie_num = $2
+    WHERE serie=$1 AND serie_num = $2 ${excludeId ? 'AND id != $3' : ''}
 
     UNION
 
@@ -596,9 +596,13 @@ module.exports = (className) => {
     id as id,
     'story' AS type
     FROM stories
-    WHERE serie=$1 AND serie_num = $2;`;
+    WHERE serie=$1 AND serie_num = $2 ${excludeId ? 'AND id != $3' : ''};`;
 
-    let result = await pg.query(query, [serieId, serieNum]);
+    let args = [serieId, serieNum];
+    if(excludeId) {
+      args.push(excludeId);
+    }
+    let result = await pg.query(query, args);
     return result.rows[0];
   }
 

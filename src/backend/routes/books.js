@@ -400,7 +400,7 @@ module.exports = (app) => {
         return;
       }
       /*check if the number in serie is already taken*/
-      let serieNumFromDB = await db.serieNumExist(requestBody.serie.value, requestBody.serie.number);
+      let serieNumFromDB = await db.serieNumExist(requestBody.serie.value, requestBody.serie.number, existingWishId);
 
       if(serieNumFromDB) {
         /*
