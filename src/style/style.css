@@ -1571,6 +1571,16 @@ img:hover {
   z-index: 5;
 }
 
+.displayer-options select {
+  text-align-last: center;
+  display: block;
+  margin: auto;
+  margin-top: 7px;
+  margin-bottom: 7px;
+  width: 200px;
+  padding: 5px;
+}
+
 .displayer-options input:not([type='checkbox']){
   border: none;
   padding: 8px;
@@ -2138,4 +2148,46 @@ img:hover {
 
 .prices-display-element a, .prices-display-element a.active{
   color: rgba(52,107,189,1);
+}
+
+#add-grp-frm {
+  margin-left: -37px;
+}
+
+.main-displayer-groups {
+  color: white;
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 25px;
+  margin-top: 140px;
+  margin-left: 50px;
+  text-align: left;
+  left: 0;
+}
+
+.main-displayer-groups-title {
+  font-size: 43px;
+  padding-bottom: 10px;
+}
+
+.main-displayer-groups a {
+  display: block;
+  text-decoration: none;
+  color: white;
+  cursor: pointer;
+  border-bottom: 2px solid white;
+  width: 220px;
+}
+
+.main-displayer-groups a:hover {
+  font-size: 27px;
+}
+
+.main-displayer-groups p {
+  width: 220px;
+  font-size: 20px;
+  font-style: italic;
+  color: gray;
+  margin-left: 12px;
 }

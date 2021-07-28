@@ -29,6 +29,10 @@ module.exports = (app) => {
     res.sendFile(settings.SOURCE_CODE_FRONTEND_INSERT_BOOK_FILE_PATH);
   });
 
+  app.get('/frontend/insertGroup', (req, res) => {
+    res.sendFile(settings.SOURCE_CODE_FRONTEND_INSERT_GROUP_FILE_PATH);
+  });
+
   app.get('/frontend/insertSerie', (req, res) => {
     res.sendFile(settings.SOURCE_CODE_FRONTEND_INSERT_SERIE_FILE_PATH);
   });

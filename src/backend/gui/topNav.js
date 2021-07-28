@@ -11,14 +11,16 @@ class TopNav {
         SERIES: '/series',
         STORIES: '/stories',
         READS: '/reads',
-        PURCHASES: '/purchased'
+        PURCHASES: '/purchased',
+        GROUPS: '/groups'
       },
       /*inserters routes - insert new book/wish...*/
       INSERTERS: {
         BOOKS: '/insert/books',
         WISHLIST: '/insert/wishlist',
         SERIES: '/insert/series',
-        STORIES: '/insert/stories'
+        STORIES: '/insert/stories',
+        GROUPS: '/insert/groups'
       },
       /*advance options (backup etc..)*/
       ADVANCE: {
@@ -64,15 +66,17 @@ class TopNav {
     `<a href="${this.ROUTES.DISPLAYERS.STORIES}">My Stories</a>` +
     `<a href="${this.ROUTES.DISPLAYERS.READS}">My Read List</a>` +
     `<a href="${this.ROUTES.DISPLAYERS.PURCHASES}">My Purchased Books</a>` +
+    `<a href="${this.ROUTES.DISPLAYERS.GROUPS}">My Groups</a>` +
     `</div>` +
     `</div>` +
     `<div class = "dropmenu">` +
     `<button>Insert</button>` +
     `<div class = "dropmenu-list">` +
-    `<a href="${this.ROUTES.INSERTERS.BOOKS}">Insert Book</a>` +
-    `<a href="${this.ROUTES.INSERTERS.WISHLIST}">Insert Wish</a>` +
-    `<a href="${this.ROUTES.INSERTERS.SERIES}">Insert Serie</a>` +
-    `<a href="${this.ROUTES.INSERTERS.STORIES}">Insert Story</a>` +
+    `<a href="${this.ROUTES.INSERTERS.BOOKS}">Insert a Book</a>` +
+    `<a href="${this.ROUTES.INSERTERS.WISHLIST}">Insert a Wish</a>` +
+    `<a href="${this.ROUTES.INSERTERS.SERIES}">Insert a Serie</a>` +
+    `<a href="${this.ROUTES.INSERTERS.STORIES}">Insert a Story</a>` +
+    `<a href="${this.ROUTES.INSERTERS.GROUPS}">Insert a Group</a>` +
     `</div>` +
     `</div>` +
     `<div class = "dropmenu">` +
@@ -88,6 +92,7 @@ class TopNav {
     `<a onclick = "doBackUp('${settings.WISH_LIST_FOLDER_NAME}')">WishList Pictures</a>` +
     `<a onclick = "doBackUp('${settings.STORIES_FOLDER_NAME}')">Stories Pictures</a>` +
     `<a onclick = "doBackUp('${settings.SERIES_FOLDER_NAME}')">Series Pictures</a>` +
+    `<a onclick = "doBackUp('${settings.GROUPS_FOLDER_NAME}')">Groups Pictures</a>` +
     `<a onclick = "doBackUp('${settings.ICONS_FOLDER_NAME}')">App Icons</a>` +
     `<a onclick = "doBackUp('${settings.GENERAL_PICTURES_FOLDER_NAME}')">General Pictures</a>` +
     `<a onclick = "doBackUp('${settings.E_BOOKS_FOLDER_NAME}')">E-Books</a>` +
@@ -145,48 +150,58 @@ class TopNav {
     `</div>` +
     `<form action="" method="GET" id = 'filter-form' autocomplete="off">` +
     `<div class = "filter-options-cbox-group" only-one-allowed='t' id='filter-page-selector' checkbox-sticky='t'>` +
-    `<div class = "filter-options-cbox-single" style = "width:16.66%">` +
+    `<div class = "filter-options-cbox-single" style = "width:13.88%">` +
     `<p t="cbox-single">Book</p>` +
     `<label class="radio-button-container">` +
     `<input type="checkbox" trgt='books' ${this.REFERER === 'books' || !this.REFERER ? "checked" : "" }>` +
     `<span class="radio-button-checkmark"></span>` +
     `</label>`+
     `</div>` +
-    `<div class = "filter-options-cbox-single" style = "width:16.66%">` +
+    `<div class = "filter-options-cbox-single" style = "width:13.88%">` +
     `<p t="cbox-single">Wish</p>` +
     `<label class="radio-button-container">` +
     `<input type="checkbox" trgt='wishlist' ${this.REFERER === 'wishlist' ? "checked" : "" }>` +
     `<span class="radio-button-checkmark"></span>` +
     `</label>`+
     `</div>` +
-    `<div class = "filter-options-cbox-single" style = "width:16.66%">` +
+    `<div class = "filter-options-cbox-single" style = "width:13.88%">` +
     `<p t="cbox-single">Read</p>` +
     `<label class="radio-button-container">` +
     `<input type="checkbox" trgt='reads' ${this.REFERER === 'reads' ? "checked" : "" }>` +
     `<span class="radio-button-checkmark"></span>` +
     `</label>`+
     `</div>` +
-    `<div class = "filter-options-cbox-single" style = "width:16.66%">` +
+    `<div class = "filter-options-cbox-single" style = "width:13.88%">` +
     `<p t="cbox-single">Purchase</p>` +
     `<label class="radio-button-container">` +
     `<input type="checkbox" trgt='purchased' ${this.REFERER === 'purchased' ? "checked" : "" }>` +
     `<span class="radio-button-checkmark"></span>` +
     `</label>`+
     `</div>` +
-    `<div class = "filter-options-cbox-single" style = "width:16.66%">` +
+    `<div class = "filter-options-cbox-single" style = "width:13.88%">` +
     `<p t="cbox-single">Serie</p>` +
     `<label class="radio-button-container">` +
     `<input type="checkbox" trgt='series' ${this.REFERER === 'series' ? "checked" : "" }>` +
     `<span class="radio-button-checkmark"></span>` +
     `</label>`+
     `</div>` +
-    `<div class = "filter-options-cbox-single" style = "width:16.66%">` +
+    `<div class = "filter-options-cbox-single" style = "width:13.88%">` +
     `<p t="cbox-single">Story</p>` +
     `<label class="radio-button-container">` +
     `<input type="checkbox" trgt='stories' ${this.REFERER === 'stories' ? "checked" : "" }>` +
     `<span class="radio-button-checkmark"></span>` +
     `</label>`+
     `</div>` +
+
+    `<div class = "filter-options-cbox-single" style = "width:13.88%">` +
+    `<p t="cbox-single">Group</p>` +
+    `<label class="radio-button-container">` +
+    `<input type="checkbox" trgt='groups' ${this.REFERER === 'groups' ? "checked" : "" }>` +
+    `<span class="radio-button-checkmark"></span>` +
+    `</label>`+
+    `</div>` +
+
+
     `</div>` +
     `<div class="filter-line"><p>Title</p><input type="text" name="title" value="${this.getFilterValue('title')}"></div>` +
     `<div class="filter-line"><p>Author</p><input type="text" name="author" value="${this.getFilterValue('author')}"></div>` +
@@ -371,19 +386,19 @@ class TopNav {
     const options = {
       "rat-h": {
         name:  "Rating - Higher",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series', 'groups']
       },
       "rat-l": {
         name: "Rating - Lower",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series', 'groups']
       },
       "rat-c-h": {
         name:  "Rating Votes- Higher",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series', 'groups']
       },
       "rat-c-l": {
         name: "Rating Votes - Lower",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series', 'groups']
       },
       "pub-h": {
         name: "Publication Year - Newer",
@@ -403,11 +418,11 @@ class TopNav {
       },
       "titl-a": {
         name: "Title - ASC",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series', 'groups']
       },
       "titl-d": {
         name: "Title - DESC",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series', 'groups']
       },
       'rd-n': {
         name: "Read order",
@@ -419,11 +434,11 @@ class TopNav {
       },
       'lst-f': {
         name: "List order - Newer",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series', 'groups']
       },
       'lst-l': {
         name: "List order - Older",
-        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series']
+        routes:['books', 'wishlist', 'stories', 'reads', 'purchased', 'series', 'groups']
       },
       'prc-f': {
         name: "Purchase order - Newer",

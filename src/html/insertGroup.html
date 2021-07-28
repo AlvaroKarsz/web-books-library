@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css"   href="/style">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <title>Library | Insert Group</title>
+</head>
+<body>
+  {{TOP_NAV}}
+  <div class = 'title-new-book'>{{INSERTION_TITLE}}</div>
+  <div class = "auto-fill-holder" id = 'auto-fill'></div>
+  <div class = "insert-book">
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Group Details</div>
+      <div class = "insert-line">
+        <p>Group Name:</p>
+        <input type="text"  name='title' required id='group-title' value=""/>
+      </div>
+    </div>
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Description</div>
+      <textarea name="description" id = "group-description" rows="8" cols="80" class = "description-text-area"></textarea>
+    </div>
+    <div class = "insert-new-book-text-inputs">
+      <div class="insert-new-book-text-inputs-title">Group Cover</div>
+      <div class = "insert-pic-holder" id = 'cover-element-holder'></div>
+    </div>
+    <div class = "insert-line">
+      <div class = "book-insert-submit-holder">
+        <button type="submit" class = "black-white-button" id = 'save'>Save</button>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="/frontend/common"></script>
+<script src="/frontend/automatic"></script>
+<script src="/frontend/insertGroup"></script>
+</html>

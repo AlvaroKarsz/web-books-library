@@ -1247,6 +1247,23 @@ module.exports = (className) => {
       //merge results with serie results
       result = {...result, ... await _THIS.getAdjacentInSeries(result.serie_id, result.serie_num)};
     }
+
+    /*now fetch book groups (if any)*/
+    query = `SELECT JSON_STRIP_NULLS(
+          JSON_AGG(
+            JSONB_BUILD_OBJECT(
+              'name',
+              name,
+              'id',
+              id
+            )
+          )
+        ) AS groups
+        FROM "groups" WHERE id IN (
+          SELECT UNNEST("group") FROM my_books WHERE id = $1
+        );`;
+    let groups = await pg.query(query, [id]);
+    result.groups = groups.rows[0].groups;
     return result;
   }
 

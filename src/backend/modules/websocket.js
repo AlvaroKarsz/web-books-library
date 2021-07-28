@@ -22,7 +22,8 @@ class Ws {
       'icons',
       'general',
       'backups',
-      'e-books'
+      'e-books',
+      'groups'
     ];
     this.stopMessage = 'stop';
     this.responseFormat = /^response\:/i;

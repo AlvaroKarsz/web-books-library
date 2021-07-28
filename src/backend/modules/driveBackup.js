@@ -21,7 +21,8 @@ class DriveBackup {
       settings.ICONS_FOLDER_NAME,
       settings.SERIES_FOLDER_NAME,
       settings.STORIES_FOLDER_NAME,
-      settings.WISH_LIST_FOLDER_NAME
+      settings.WISH_LIST_FOLDER_NAME,
+      settings.GROUPS_FOLDER_NAME
     ];
     this.ROOT_PATH = settings.ROOT_PATH;
     this.IGNORE_FILE = '.gitignore';

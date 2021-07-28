@@ -29,6 +29,10 @@ class BookDisplayer {
     /*add actions*/
     output += this.addActions(data,type ,actions);
 
+    /*add groups if relevant*/
+    output += this.addGroups(type, data.groups);
+
+
     /*add tags if relevant*/
     output += this.addTags(data.tags);
 
@@ -374,6 +378,17 @@ class BookDisplayer {
       return '';
     }
     let output = '<div class="displayer-options">';
+
+    /*add members to a group - option relevant only for groups*/
+    if(actions.addMembers) {
+      if(type === 'groups') {
+        output += `<div title="Click if you want to add new members to this group" id="add-members" param-id="${data.id}">` +
+        `<i class="fa fa-plus"></i>` +
+        `<p>Add Members</p>` +
+        `</div>`;
+      }
+    }
+
     /*option to mark this book as purchased*/
     if(actions.buy) {
       output += `<div title="Click if you've bought this book">` +
@@ -627,6 +642,29 @@ class BookDisplayer {
     `</div>`;
   }
 
+  /*
+  option to add this book to a group
+  actions.addGroups is not a boolean, it is an array with groups
+  */
+  if(actions.addGroups && basic.isArray(actions.addGroups) && actions.addGroups.length) {
+    output += `<div title="Click to add book to group">` +
+    `<label for='add-grp'>` +
+    `<i class="fa fa-tags"></i>` +
+    `</label>` +
+    `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'add-grp'>` +
+    `<p>Add Group</p>` +
+    `<form action="/groups/memberAdd" method="post" id="add-grp-frm">` +
+    `<input type="hidden" name="id" value="${data.id}">` +
+    `<input type="hidden" name="type" value="${type}">` +
+    `<select name="group" required>` +
+    `<option value=""> --SELECT GROUP--</option>` +
+    actions.addGroups.map(grp => `<option value = "${grp.id}">${grp.name}</option>`) +
+    `</select>` +
+    `<button type="submit" class="black-white-button" oneline='t'>Save</button>` +
+    `</form>` +
+    `</div>`;
+  }
+
   output += '</div>';
   return output;
 }
@@ -763,6 +801,26 @@ buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks,stories, s
 
   return output;
 
+}
+
+addGroups(type, groups) {
+  let output = '';
+
+  if(type !== 'books') {//not relevant
+    return output;
+  }
+
+  output += '<div class = "main-displayer-groups">' +
+  '<div class = "main-displayer-groups-title">Groups</div>';
+  if(!groups || ! basic.isArray(groups) || !groups.length) {//no groups
+    output += '<p>None</p>';
+  } else {// add groups
+    groups.forEach((g) => {
+      output += `<a href="/groups/${g.id}">${g.name}</a>`;
+    });
+  }
+  output += '</div>';
+  return output;
 }
 
 addTags(tags) {

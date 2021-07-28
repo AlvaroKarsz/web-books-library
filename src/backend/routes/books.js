@@ -85,6 +85,7 @@ module.exports = (app) => {
         fetchCover: true,
         Ebookmark: true,
         delete: true,
+        addGroups: await db.fetchAllGroupNames(),
         reddit: true,
         fetchAsin: true,
         fetchTags: true,

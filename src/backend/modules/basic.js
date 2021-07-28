@@ -451,6 +451,7 @@ class Basic {
       stories: settings.STORIES_FOLDER_NAME,
       reads: settings.BOOKS_FOLDER_NAME,
       purchased: settings.WISH_LIST_FOLDER_NAME,
+      groups: settings.GROUPS_FOLDER_NAME,
       icon: settings.ICONS_FOLDER_NAME
     }[type];
   }
@@ -635,6 +636,10 @@ class Basic {
     }
     url = url.replace(/([&]|[?])$/,'');//remove last & or ?
     return url;
+  }
+
+  isKnownType(tp) {
+    return ["BOOKS", "WISHLIST", "STORIES", "SERIES", "GROUPS"].includes(tp.toUpperCase());
   }
 
 }

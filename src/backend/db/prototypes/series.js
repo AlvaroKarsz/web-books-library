@@ -568,7 +568,7 @@ module.exports = (className) => {
     /*save results in DB*/
     await _THIS.saveAmazonRating(id, amzn.rating, amzn.count, 'series');
     await _THIS.saveGoogleRating(id, ggl.rating, ggl.count, 'series');
-    await _THIS.insertSerieGoodReadsRatingIntoDB(id, gdrs.rating, gdrs.count, 'series');
+    await _THIS.insertGoodReadsRatingIntoDBNoIsbn(id, gdrs.rating, gdrs.count, 'series');
 
     /*success*/
     return true;

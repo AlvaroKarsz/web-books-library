@@ -11,7 +11,29 @@
   listenToBooksByAuthorSearch();
   listenToBooksFromSerieSearch();
   listenToCheapestSearch();
+  listenToMemberAdd();
 })()
+
+function listenToMemberAdd() {
+  let div = document.getElementById('add-members');
+  if(!div) {
+    return;
+  }
+
+  let id = div.getAttribute('param-id');
+  if(!id) {
+    return;
+  }
+
+  let memberAdder = new MembersAdd({
+    groupId: id
+  });
+
+  div.onclick = () => {
+    memberAdder.show();
+  }
+}
+
 
 function listenToMarkBookAsReadButNotCompleted() {
   let cbox = document.getElementById('mark-book-as-completed'),

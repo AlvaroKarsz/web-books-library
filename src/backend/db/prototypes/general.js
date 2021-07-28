@@ -242,6 +242,10 @@ module.exports = (className) => {
       query += ' my_books ';
       break;
 
+      case 'groups':
+      query += ' groups ';
+      break;
+
       case 'wish_list':
       query += ' wish_list ';
       break;
@@ -291,6 +295,10 @@ module.exports = (className) => {
     switch(table) {
       case 'my_books':
       query += ' my_books ';
+      break;
+
+      case 'groups':
+      query += ' groups ';
       break;
 
       case 'wish_list':
@@ -428,14 +436,18 @@ module.exports = (className) => {
     await pg.query(query, queryArguments);
   }
 
-  /*save in DB goodreads ratings for a serie, the difference with "insertRatingIntoDB" is that this one have no "goodreads_rating_additional_isbn" option*/
-  _THIS.insertSerieGoodReadsRatingIntoDB = async (id, rating, count, table) => {
+  /*save in DB goodreads ratings for a serie, the difference with "insertRatingIntoDB" is that this one has no "goodreads_rating_additional_isbn" option*/
+  _THIS.insertGoodReadsRatingIntoDBNoIsbn = async (id, rating, count, table) => {
     let query = 'UPDATE ', paramCounter = 0, queryArguments = [];
 
     /*get table from tableName param*/
     switch(table) {
       case 'my_books':
       query += ' my_books ';
+      break;
+
+      case 'groups':
+      query += ' groups ';
       break;
 
       case 'wish_list':

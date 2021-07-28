@@ -736,6 +736,7 @@ class CoverSelector {
     this.getAsFile = opts.getAsFile || null;
     this.uploadTitle = 'Upload/Paste';
     this.searchTitle = 'Search';
+    this.noSearch = opts.noSearch || false;
     this.urlTitle = 'Link';
     this.errorIsShown = false;
     this.defaultCover = null;
@@ -791,7 +792,11 @@ class CoverSelector {
   }
 
   buildOptionChanger() {
-    this.tabsPointer = new Tabs(this.parent, [this.uploadTitle, this.searchTitle, this.urlTitle], {
+    let ops = [this.uploadTitle, this.urlTitle];
+    if(!this.noSearch) {
+      ops.push(this.searchTitle);
+    }
+    this.tabsPointer = new Tabs(this.parent, ops, {
       buttonHolderClass: this.buttonHolderTableCoverSelectorClass,
       default: this.uploadTitle,
       forceCss: this.tabHolderCssForce
@@ -912,7 +917,9 @@ class CoverSelector {
 
   makeFeatures() {
     this.makeUploader();
-    this.makeSearcher();
+    if(!this.noSearch) {
+      this.makeSearcher();
+    }
     this.makeLinkFetcher();
   }
 
@@ -2531,6 +2538,14 @@ async function doBackUp(folder) {
     scrollBottom() {
       this.dialogBody.scrollTop = this.dialogBody.scrollHeight - this.dialogBody.clientHeight;
     }
+  }
+
+  class MembersAdd {
+    constructor(ops = {}) {
+      this.groupId = ops.groupId;
+    }
+
+    show() {}
   }
 
   function toInt(a, base=10) {
