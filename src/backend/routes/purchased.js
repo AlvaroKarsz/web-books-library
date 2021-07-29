@@ -83,6 +83,7 @@ module.exports = (app) => {
         received:true,
         cancelPurchase: true,
         fetchCover: true,
+        addGroups: await db.fetchAllGroupNames(),
         fetchRating: true,
         fetchDescription: true,
         fetchAsin: true,
