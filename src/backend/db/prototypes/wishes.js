@@ -408,7 +408,7 @@ module.exports = (className) => {
     if(isPartSerieFilter !== null) {
       conditions += ` AND main.serie IS ${isPartSerieFilter && 'NOT' || '' } NULL `;
     }
-    
+
     //add order by type
     query += conditions;
 
@@ -555,6 +555,24 @@ module.exports = (className) => {
       //merge results with serie results
       result = {...result, ... await _THIS.getAdjacentInSeries(result.serie_id, result.serie_num)};
     }
+    /*now fetch book groups (if any)*/
+    query = `SELECT JSON_STRIP_NULLS(
+          JSON_AGG(
+            JSONB_BUILD_OBJECT(
+              'name',
+              name,
+              'id',
+              id
+            )
+          )
+        ) AS groups
+        FROM "groups" WHERE id IN (
+          SELECT UNNEST("group") FROM wish_list WHERE id = $1
+        );`;
+    let groups = await pg.query(query, [id]);
+    result.groups = groups.rows[0].groups;
+    return result;
+
     return result;
   }
 

@@ -91,6 +91,7 @@ module.exports = (app) => {
         searchCheapest: true,
         delete: true,
         fetchCover: true,
+        addGroups: await db.fetchAllGroupNames(),
         fetchDescription: true,
         fetchRating: true,
         fetchAsin: true,
