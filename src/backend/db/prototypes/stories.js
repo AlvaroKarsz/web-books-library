@@ -557,7 +557,7 @@ module.exports = (className) => {
 
   /*fetch all story data*/
   _THIS.fetchStoryById = async (id, filters=null) => {
-    const query = `SELECT
+    let query = `SELECT
     my_stories_main.id AS id,
     my_stories_main.name AS name,
     my_stories_main.pages AS pages,
@@ -696,6 +696,23 @@ module.exports = (className) => {
       //merge results with serie results
       result = {...result, ... await _THIS.getAdjacentInSeries(result.serie_id, result.serie_num)};
     }
+
+    /*now fetch book groups (if any)*/
+    query = `SELECT JSON_STRIP_NULLS(
+          JSON_AGG(
+            JSONB_BUILD_OBJECT(
+              'name',
+              name,
+              'id',
+              id
+            )
+          )
+        ) AS groups
+        FROM "groups" WHERE id IN (
+          SELECT UNNEST("group") FROM stories WHERE id = $1
+        );`;
+    let groups = await pg.query(query, [id]);
+    result.groups = groups.rows[0].groups;
 
     return result;
   }

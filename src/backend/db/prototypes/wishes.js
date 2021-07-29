@@ -572,8 +572,6 @@ module.exports = (className) => {
     let groups = await pg.query(query, [id]);
     result.groups = groups.rows[0].groups;
     return result;
-
-    return result;
   }
 
   /*search and save ratings for a book from wishlist*/

@@ -806,7 +806,7 @@ buildBooksDisplayerForSeries(books,booksRead,wishBooks,purchasedBooks,stories, s
 addGroups(type, groups) {
   let output = '';
 
-  if(type !== 'books' && type !== 'wishlist') {//not relevant
+  if(type !== 'books' && type !== 'wishlist' && type !== 'stories') {//not relevant
     return output;
   }
 

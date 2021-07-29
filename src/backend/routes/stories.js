@@ -101,6 +101,7 @@ module.exports = (app) => {
         fetchRating: true,
         reddit: true,
         fetchAsin: true,
+        addGroups: await db.fetchAllGroupNames(),
         fetchDescription: true,
         similarBooks: true,
         booksByAuthor: true
