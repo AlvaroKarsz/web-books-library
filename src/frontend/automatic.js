@@ -482,13 +482,29 @@ function handleTopNavOptions() {//function to handle filter operations & sort
   sortMainCheckbox = document.getElementById('filter-toggle-sort'),
   filterMenu = document.getElementById('filter-menu'),
   sortMenu = document.getElementById('sort-menu');
+  /**********************************************************
+  get main form
+  *************************************************************/
+  let form = document.getElementById('filter-form');
+  if(!form) {//no form
+    return;
+  }
 
   if(filterMainCheckbox && sortMainCheckbox && sortMenu && filterMenu) {
+    let titleMenu = [...form.getElementsByTagName('INPUT')]
+    .filter(a => a.getAttribute("name") === "title")[0];
+
     filterMainCheckbox.onchange = () => {//if on - show filter and hide sort
       if(filterMainCheckbox.checked) {
         filterMenu.style.display = 'block';
         sortMenu.style.display = 'none';
         sortMainCheckbox.checked = false;
+        /**********************************************************
+          focus on title input
+        *************************************************************/
+        if(titleMenu) {
+          titleMenu.focus();
+        }
       } else {//hide filter menu
         filterMenu.style.display = 'none';
       }
@@ -529,13 +545,6 @@ function handleTopNavOptions() {//function to handle filter operations & sort
     clearFiltersBtn.onclick = () => {
       removeUrlParamsAndRedirect();
     };
-  }
-  /**********************************************************
-  get main form
-  *************************************************************/
-  let form = document.getElementById('filter-form');
-  if(!form) {//no form
-    return;
   }
   /**********************************************************
   handle more/less options clicks
