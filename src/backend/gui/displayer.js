@@ -243,7 +243,7 @@ class BookDisplayer {
     build a DIV with an arrow
     redirect to id on click
     */
-    return `<div class="displayer-body-arrow"><a onclick="${this.buildJSRedirector(id)}"><i class = "fa fa-angle-double-${direction}"></i></a></div>`;
+    return `<div class="displayer-body-arrow"><a onclick="${this.buildJSRedirector(id)}" id="redirector-main-arrow-${direction}"><i class = "fa fa-angle-double-${direction}"></i></a></div>`;
   }
 
   buildCollectionParentForStory(data) {

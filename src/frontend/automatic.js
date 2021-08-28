@@ -18,7 +18,10 @@
 function listenToMainKeyboardShortcuts() {
 
   let deleteForm = document.getElementById('delete-listing-form'),
-  searchOnlineForm  = document.getElementById('web-stores-holder');
+  searchOnlineForm  = document.getElementById('web-stores-holder'),
+  leftArrow = document.getElementById('redirector-main-arrow-left'),
+  rightArrow = document.getElementById('redirector-main-arrow-right');
+
   document.body.onkeydown = (k) => {
     /**********************************************************
     delete option - delete key
@@ -38,6 +41,22 @@ function listenToMainKeyboardShortcuts() {
         [...searchOnlineForm.getElementsByTagName('A')]
         .forEach(a => a.click());
         window.focus();
+      }
+    }
+    /**********************************************************
+    navigate left - left key
+    *************************************************************/
+    if(leftArrow) {
+      if(k.keyCode === 37) {
+        leftArrow.click();
+      }
+    }
+    /**********************************************************
+    navigate right - right key
+    *************************************************************/
+    if(rightArrow) {
+      if(k.keyCode === 39) {
+        rightArrow.click();
       }
     }
   };
