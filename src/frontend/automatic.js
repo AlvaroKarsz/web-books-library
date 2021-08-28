@@ -21,7 +21,11 @@ function listenToMainKeyboardShortcuts() {
   searchOnlineForm  = document.getElementById('web-stores-holder'),
   leftArrow = document.getElementById('redirector-main-arrow-left'),
   rightArrow = document.getElementById('redirector-main-arrow-right'),
-  fetchRating = document.getElementById('fetch-rating-a');
+  fetchRating = document.getElementById('fetch-rating-a'),
+  dbBackup = document.getElementById('db-backup-a'),
+
+  lastPressedArr = [],
+  timer = null;
 
   document.body.onkeydown = (k) => {
     /**********************************************************
@@ -32,6 +36,7 @@ function listenToMainKeyboardShortcuts() {
         if(confirm("Are you sure you wish to delete this listing?")) {
           deleteForm.submit();
         }
+        return;
       }
     }
     /**********************************************************
@@ -41,7 +46,7 @@ function listenToMainKeyboardShortcuts() {
       if(k.keyCode === 191 && k.shiftKey) {
         [...searchOnlineForm.getElementsByTagName('A')]
         .forEach(a => a.click());
-        window.focus();
+        return;
       }
     }
     /**********************************************************
@@ -50,6 +55,7 @@ function listenToMainKeyboardShortcuts() {
     if(leftArrow) {
       if(k.keyCode === 37) {
         leftArrow.click();
+        return;
       }
     }
     /**********************************************************
@@ -58,6 +64,7 @@ function listenToMainKeyboardShortcuts() {
     if(rightArrow) {
       if(k.keyCode === 39) {
         rightArrow.click();
+        return;
       }
     }
     /**********************************************************
@@ -66,6 +73,26 @@ function listenToMainKeyboardShortcuts() {
     if(fetchRating) {
       if(k.keyCode === 82 && k.shiftKey) {
         fetchRating.click();
+        return;
+      }
+    }
+    /**********************************************************
+    backup DB - 'd' followed by 'b'
+    *************************************************************/
+    if(dbBackup) {
+      if(k.keyCode === 68) {//d was pressed
+        clearTimeout(timer);//clear timer
+        lastPressedArr.push('D');//save D and add timer to clear array in 1 sec
+        timer = setTimeout(() => {
+          lastPressedArr.length = 0;
+        }, 1000);
+      }
+      if(k.keyCode === 66) {//b was pressed
+        if (lastPressedArr.pop() === "D") {
+          clearTimeout(timer);
+          lastPressedArr.length = 0;
+          dbBackup.click();
+        }
       }
     }
   };

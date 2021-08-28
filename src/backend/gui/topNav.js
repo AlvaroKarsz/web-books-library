@@ -82,7 +82,7 @@ class TopNav {
     `<div class = "dropmenu">` +
     `<button>Advance</button>` +
     `<div class = "dropmenu-list">` +
-    `<a href="${this.ROUTES.ADVANCE.DB_BACKUP}">Backup DB</a>` +
+    `<a href="${this.ROUTES.ADVANCE.DB_BACKUP}" id = "db-backup-a">Backup DB</a>` +
     `<a id = 'backup-files-a'>Backup Files To Drive <i class="fa fa-caret-right"></i></a>` +
     `<div class = "dropmenu" side='true'>` +
     `<div class = "dropmenu-list" side='true' id = 'backup-files-menu'>` +
