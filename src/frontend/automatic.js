@@ -26,6 +26,7 @@ function listenToMainKeyboardShortcuts() {
   fetchTags = document.getElementById('fetch-tags-a'),
   fetchAsin = document.getElementById('fetch-asin-a'),
   fetchCover = document.getElementById('refresh-cover'),
+  fetchDescription = document.getElementById('refresh-description'),
 
   lastPressedArr = [],
   timer = null,
@@ -144,6 +145,17 @@ function listenToMainKeyboardShortcuts() {
     if(fetchCover) {
       if(lastPressedArr.join('').endsWith('COVER')) {
         fetchCover.click();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        return;
+      }
+    }
+    /**********************************************************
+    fetch description - 'desc' letters
+    *************************************************************/
+    if(fetchDescription) {
+      if(lastPressedArr.join('').endsWith('DESC')) {
+        fetchDescription.click();
         clearTimeout(timer);//clear timer
         lastPressedArr.length = 0;//clear arr
         return;
