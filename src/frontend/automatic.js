@@ -25,6 +25,7 @@ function listenToMainKeyboardShortcuts() {
   dbBackup = document.getElementById('db-backup-a'),
   fetchTags = document.getElementById('fetch-tags-a'),
   fetchAsin = document.getElementById('fetch-asin-a'),
+  fetchCover = document.getElementById('refresh-cover'),
 
   lastPressedArr = [],
   timer = null,
@@ -66,7 +67,6 @@ function listenToMainKeyboardShortcuts() {
       if(k.keyCode === 191 && k.shiftKey) {
         [...searchOnlineForm.getElementsByTagName('A')]
         .forEach(a => a.click());
-        inAction = true;
         return;
       }
     }
@@ -133,6 +133,17 @@ function listenToMainKeyboardShortcuts() {
       if(lastPressedArr.join('').endsWith('ASIN')) {
         fetchAsin.click();
         inAction = true;
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        return;
+      }
+    }
+    /**********************************************************
+    fetch cover - 'cover' letters
+    *************************************************************/
+    if(fetchCover) {
+      if(lastPressedArr.join('').endsWith('COVER')) {
+        fetchCover.click();
         clearTimeout(timer);//clear timer
         lastPressedArr.length = 0;//clear arr
         return;
