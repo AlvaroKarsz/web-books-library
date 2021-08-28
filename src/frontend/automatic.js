@@ -41,7 +41,7 @@ function listenToMainKeyboardShortcuts() {
     /**********************************************************
     save letters
     *************************************************************/
-    if(k.keyCode >= 64 &&  k.keyCode <= 90) {
+    if(k.keyCode >= 64 &&  k.keyCode <= 90 && !k.shiftKey && !k.ctrlKey && !k.altKey) {
       lastPressedArr.push(k.key.toUpperCase()); //save letter
       //stop timer and restart it
       clearTimeout(timer);
