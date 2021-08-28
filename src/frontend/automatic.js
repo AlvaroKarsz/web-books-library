@@ -28,6 +28,13 @@ function listenToMainKeyboardShortcuts() {
   fetchCover = document.getElementById('refresh-cover'),
   fetchDescription = document.getElementById('refresh-description'),
   searchReddit = document.getElementById('search-reddit-a'),
+  mainWishlist = document.getElementById('main-wish-nav-a'),
+  mainBooks = document.getElementById('main-books-nav-a'),
+  mainSeries = document.getElementById('main-series-nav-a'),
+  mainStories = document.getElementById('main-stories-nav-a'),
+  mainPurchased = document.getElementById('main-purchased-nav-a'),
+  mainReads = document.getElementById('main-reads-nav-a'),
+  mainGroups = document.getElementById('main-groups-nav-a'),
 
   lastPressedArr = [],
   timer = null,
@@ -170,6 +177,90 @@ function listenToMainKeyboardShortcuts() {
         searchReddit.click();
         clearTimeout(timer);//clear timer
         lastPressedArr.length = 0;//clear arr
+        return;
+      }
+    }
+    /**********************************************************
+    go to books page - shift + 'b'
+    *************************************************************/
+    if(mainBooks) {
+      if(k.keyCode === 66 && k.shiftKey) {
+        mainBooks.click();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        inAction = true;
+        return;
+      }
+    }
+    /**********************************************************
+    go to wishlist page - shift + 'w'
+    *************************************************************/
+    if(mainWishlist) {
+      if(k.keyCode === 87 && k.shiftKey) {
+        mainWishlist.click();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        inAction = true;
+        return;
+      }
+    }
+    /**********************************************************
+    go to reads page - shift + 'r'
+    *************************************************************/
+    if(mainReads) {
+      if(k.keyCode === 82 && k.shiftKey) {
+        mainReads.click();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        inAction = true;
+        return;
+      }
+    }
+    /**********************************************************
+    go to purchased page - shift + 'p'
+    *************************************************************/
+    if(mainPurchased) {
+      if(k.keyCode === 80 && k.shiftKey) {
+        mainPurchased.click();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        inAction = true;
+        return;
+      }
+    }
+    /**********************************************************
+    go to groups page - shift + 'g'
+    *************************************************************/
+    if(mainGroups) {
+      if(k.keyCode === 71 && k.shiftKey) {
+        mainGroups.click();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        inAction = true;
+        return;
+      }
+    }
+    /**********************************************************
+    go to series page - shift + 's'
+    *************************************************************/
+    if(mainSeries) {
+      if(k.keyCode === 83 && k.shiftKey) {
+        mainSeries.click();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        inAction = true;
+        return;
+      }
+    }
+    /**********************************************************
+    go to stories page - shift + 't'
+    *************************************************************/
+    if(mainStories) {
+      if(k.keyCode === 84 && k.shiftKey) {
+        mainStories.click();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        inAction = true;
         return;
       }
     }

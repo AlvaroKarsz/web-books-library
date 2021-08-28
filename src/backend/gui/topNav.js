@@ -60,13 +60,13 @@ class TopNav {
     `<div class = "dropmenu">` +
     `<button>Display</button>` +
     `<div class = "dropmenu-list">` +
-    `<a href="${this.ROUTES.DISPLAYERS.BOOKS}">My Books</a>` +
-    `<a href="${this.ROUTES.DISPLAYERS.WISHLIST}">My Wishlist</a>` +
-    `<a href="${this.ROUTES.DISPLAYERS.SERIES}">My Series</a>` +
-    `<a href="${this.ROUTES.DISPLAYERS.STORIES}">My Stories</a>` +
-    `<a href="${this.ROUTES.DISPLAYERS.READS}">My Read List</a>` +
-    `<a href="${this.ROUTES.DISPLAYERS.PURCHASES}">My Purchased Books</a>` +
-    `<a href="${this.ROUTES.DISPLAYERS.GROUPS}">My Groups</a>` +
+    `<a href="${this.ROUTES.DISPLAYERS.BOOKS}" id='main-books-nav-a'>My Books</a>` +
+    `<a href="${this.ROUTES.DISPLAYERS.WISHLIST}" id='main-wish-nav-a'>My Wishlist</a>` +
+    `<a href="${this.ROUTES.DISPLAYERS.SERIES}" id='main-series-nav-a'>My Series</a>` +
+    `<a href="${this.ROUTES.DISPLAYERS.STORIES}" id='main-stories-nav-a'>My Stories</a>` +
+    `<a href="${this.ROUTES.DISPLAYERS.READS}" id='main-reads-nav-a'>My Read List</a>` +
+    `<a href="${this.ROUTES.DISPLAYERS.PURCHASES}" id='main-purchased-nav-a'>My Purchased Books</a>` +
+    `<a href="${this.ROUTES.DISPLAYERS.GROUPS}" id='main-groups-nav-a'>My Groups</a>` +
     `</div>` +
     `</div>` +
     `<div class = "dropmenu">` +
