@@ -530,7 +530,7 @@ class BookDisplayer {
       `</label>` +
       `<input type='checkbox' class = 'invisible-cb-displayer-option' id = 'delete-note-label'>` +
       `<p>Delete</p>` +
-      `<form action="/${type}/delete/${data.id}" method="get" style = "margin-left: 14px;">` +
+      `<form action="/${type}/delete/${data.id}" method="get" style = "margin-left: 14px;" id = 'delete-listing-form'>` +
       `<p oneline='t'>Are you sure?</p>` +
       `<button type="submit" class="black-white-button" oneline='t'>I'm sure</button>` +
       `</form>` +

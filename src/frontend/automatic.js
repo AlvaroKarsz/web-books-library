@@ -12,7 +12,27 @@
   listenToBooksFromSerieSearch();
   listenToCheapestSearch();
   listenToMemberAdd();
+  listenToMainKeyboardShortcuts();
 })()
+
+function listenToMainKeyboardShortcuts() {
+
+  let deleteForm = document.getElementById('delete-listing-form');
+  document.body.onkeyup = (k) => {
+    /**********************************************************
+    delete option - delete key
+    *************************************************************/
+    if(deleteForm) {
+      if(k.keyCode === 46) {
+        if(confirm("Are you sure you wish to delete this listing?")) {
+            deleteForm.submit();
+        }
+      }
+    }
+
+  };
+}
+
 
 function listenToMemberAdd() {
   let div = document.getElementById('add-members');
@@ -500,7 +520,7 @@ function handleTopNavOptions() {//function to handle filter operations & sort
         sortMenu.style.display = 'none';
         sortMainCheckbox.checked = false;
         /**********************************************************
-          focus on title input
+        focus on title input
         *************************************************************/
         if(titleMenu) {
           titleMenu.focus();
