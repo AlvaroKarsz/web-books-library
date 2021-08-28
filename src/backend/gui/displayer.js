@@ -635,7 +635,7 @@ class BookDisplayer {
   /*search book discussions/reviews in Reddit*/
   if(actions.reddit) {
     output += `<div title="Click to Search book in reddit">` +
-    `<a target = "blank" href = "https://www.google.com/search?q=${encodeURIComponent(data.name + ' ' + data.author + ' ' + (type === 'series' ? 'book series' : (type === 'stories' ? 'story' : 'book')) + ' reddit')}">` +
+    `<a target = "blank" href = "https://www.google.com/search?q=${encodeURIComponent(data.name + ' ' + data.author + ' ' + (type === 'series' ? 'book series' : (type === 'stories' ? 'story' : 'book')) + ' reddit')}" id="search-reddit-a">` +
     `<i class="fa fa-reddit-alien"></i>` +
     `<p>Search in reddit</p>` +
     `</a>` +

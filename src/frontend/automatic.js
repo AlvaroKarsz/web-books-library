@@ -27,6 +27,7 @@ function listenToMainKeyboardShortcuts() {
   fetchAsin = document.getElementById('fetch-asin-a'),
   fetchCover = document.getElementById('refresh-cover'),
   fetchDescription = document.getElementById('refresh-description'),
+  searchReddit = document.getElementById('search-reddit-a'),
 
   lastPressedArr = [],
   timer = null,
@@ -156,6 +157,17 @@ function listenToMainKeyboardShortcuts() {
     if(fetchDescription) {
       if(lastPressedArr.join('').endsWith('DESC')) {
         fetchDescription.click();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        return;
+      }
+    }
+    /**********************************************************
+    search book in reddit - 'reddit' letters
+    *************************************************************/
+    if(searchReddit) {
+      if(lastPressedArr.join('').endsWith('REDDIT')) {
+        searchReddit.click();
         clearTimeout(timer);//clear timer
         lastPressedArr.length = 0;//clear arr
         return;
