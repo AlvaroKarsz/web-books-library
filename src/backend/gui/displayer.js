@@ -564,7 +564,7 @@ class BookDisplayer {
     /*fetch tags and save*/
     if(actions.fetchTags) {
       output += `<div title="Click to fetch new Tags">` +
-      `<a href = "/${type}/tags/${data.id}">` +
+      `<a href = "/${type}/tags/${data.id}" id = "fetch-tags-a">` +
       `<i class="fa fa-tag"></i>` +
       `<p>New Tags</p>` +
       `</a>` +
@@ -606,7 +606,7 @@ class BookDisplayer {
     /*option to refetch asin*/
     if(actions.fetchAsin) {
       output += `<div title="Click to reload ASIN">` +
-      `<a href = "/${type}/asin/${data.id}">` +
+      `<a href = "/${type}/asin/${data.id}" id = "fetch-asin-a">` +
       `<i class="fa fa-amazon"></i>` +
       `<p>New ASIN</p>` +
       `</a>` +

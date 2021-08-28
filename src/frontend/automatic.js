@@ -23,6 +23,8 @@ function listenToMainKeyboardShortcuts() {
   rightArrow = document.getElementById('redirector-main-arrow-right'),
   fetchRating = document.getElementById('fetch-rating-a'),
   dbBackup = document.getElementById('db-backup-a'),
+  fetchTags = document.getElementById('fetch-tags-a'),
+  fetchAsin = document.getElementById('fetch-asin-a'),
 
   lastPressedArr = [],
   timer = null,
@@ -32,6 +34,19 @@ function listenToMainKeyboardShortcuts() {
     if(inAction) {
       return;
     }
+
+    /**********************************************************
+    save letters
+    *************************************************************/
+    if(k.keyCode >= 64 &&  k.keyCode <= 90) {
+      lastPressedArr.push(k.key.toUpperCase()); //save letter
+      //stop timer and restart it
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        lastPressedArr.length = 0;
+      }, 1000);
+    }
+
     /**********************************************************
     delete option - delete key
     *************************************************************/
@@ -76,33 +91,51 @@ function listenToMainKeyboardShortcuts() {
       }
     }
     /**********************************************************
-    fetch ratings - shift + 'r'
+    backup DB - 'db' letters
     *************************************************************/
-    if(fetchRating) {
-      if(k.keyCode === 82 && k.shiftKey) {
-        fetchRating.click();
+    if(dbBackup) {
+      if(lastPressedArr.join('').endsWith('DB')) {
+        dbBackup.click();
         inAction = true;
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
         return;
       }
     }
     /**********************************************************
-    backup DB - 'd' followed by 'b'
+    fetch ratings - 'ratings' letters
     *************************************************************/
-    if(dbBackup) {
-      if(k.keyCode === 68) {//d was pressed
+    if(fetchRating) {
+      if(lastPressedArr.join('').endsWith('RATINGS')) {
+        fetchRating.click();
+        inAction = true;
         clearTimeout(timer);//clear timer
-        lastPressedArr.push('D');//save D and add timer to clear array in 1 sec
-        timer = setTimeout(() => {
-          lastPressedArr.length = 0;
-        }, 1000);
+        lastPressedArr.length = 0;//clear arr
+        return;
       }
-      if(k.keyCode === 66) {//b was pressed
-        if (lastPressedArr.pop() === "D") {
-          clearTimeout(timer);
-          lastPressedArr.length = 0;
-          dbBackup.click();
-          inAction = true;
-        }
+    }
+    /**********************************************************
+    fetch tags - 'tags' letters
+    *************************************************************/
+    if(fetchTags) {
+      if(lastPressedArr.join('').endsWith('TAGS')) {
+        fetchTags.click();
+        inAction = true;
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        return;
+      }
+    }
+    /**********************************************************
+    fetch asin - 'asin' letters
+    *************************************************************/
+    if(fetchAsin) {
+      if(lastPressedArr.join('').endsWith('ASIN')) {
+        fetchAsin.click();
+        inAction = true;
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        return;
       }
     }
   };
