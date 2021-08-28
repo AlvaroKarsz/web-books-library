@@ -25,9 +25,13 @@ function listenToMainKeyboardShortcuts() {
   dbBackup = document.getElementById('db-backup-a'),
 
   lastPressedArr = [],
-  timer = null;
+  timer = null,
+  inAction = false;
 
   document.body.onkeydown = (k) => {
+    if(inAction) {
+      return;
+    }
     /**********************************************************
     delete option - delete key
     *************************************************************/
@@ -35,6 +39,7 @@ function listenToMainKeyboardShortcuts() {
       if(k.keyCode === 46) {
         if(confirm("Are you sure you wish to delete this listing?")) {
           deleteForm.submit();
+          inAction = true;
         }
         return;
       }
@@ -46,6 +51,7 @@ function listenToMainKeyboardShortcuts() {
       if(k.keyCode === 191 && k.shiftKey) {
         [...searchOnlineForm.getElementsByTagName('A')]
         .forEach(a => a.click());
+        inAction = true;
         return;
       }
     }
@@ -55,6 +61,7 @@ function listenToMainKeyboardShortcuts() {
     if(leftArrow) {
       if(k.keyCode === 37) {
         leftArrow.click();
+        inAction = true;
         return;
       }
     }
@@ -64,6 +71,7 @@ function listenToMainKeyboardShortcuts() {
     if(rightArrow) {
       if(k.keyCode === 39) {
         rightArrow.click();
+        inAction = true;
         return;
       }
     }
@@ -73,6 +81,7 @@ function listenToMainKeyboardShortcuts() {
     if(fetchRating) {
       if(k.keyCode === 82 && k.shiftKey) {
         fetchRating.click();
+        inAction = true;
         return;
       }
     }
@@ -92,6 +101,7 @@ function listenToMainKeyboardShortcuts() {
           clearTimeout(timer);
           lastPressedArr.length = 0;
           dbBackup.click();
+          inAction = true;
         }
       }
     }
