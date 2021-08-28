@@ -20,7 +20,8 @@ function listenToMainKeyboardShortcuts() {
   let deleteForm = document.getElementById('delete-listing-form'),
   searchOnlineForm  = document.getElementById('web-stores-holder'),
   leftArrow = document.getElementById('redirector-main-arrow-left'),
-  rightArrow = document.getElementById('redirector-main-arrow-right');
+  rightArrow = document.getElementById('redirector-main-arrow-right'),
+  fetchRating = document.getElementById('fetch-rating-a');
 
   document.body.onkeydown = (k) => {
     /**********************************************************
@@ -57,6 +58,14 @@ function listenToMainKeyboardShortcuts() {
     if(rightArrow) {
       if(k.keyCode === 39) {
         rightArrow.click();
+      }
+    }
+    /**********************************************************
+    fetch ratings - shift + 'r'
+    *************************************************************/
+    if(fetchRating) {
+      if(k.keyCode === 82 && k.shiftKey) {
+        fetchRating.click();
       }
     }
   };

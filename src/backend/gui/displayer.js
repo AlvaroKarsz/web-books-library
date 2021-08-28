@@ -554,7 +554,7 @@ class BookDisplayer {
     /*option to reload ratings*/
     if(actions.fetchRating) {
       output += `<div title="Click to reload Rating">` +
-      `<a href = "/${type}/rating/change/${data.id}">` +
+      `<a href = "/${type}/rating/change/${data.id}" id = "fetch-rating-a">` +
       `<i class="fa fa-star"></i>` +
       `<p>New Rating</p>` +
       `</a>` +
