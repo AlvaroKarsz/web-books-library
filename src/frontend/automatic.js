@@ -42,10 +42,12 @@ function listenToMainKeyboardShortcuts() {
   inAction = false;
 
   document.body.onkeydown = (k) => {
+    if(k.target !== document.body) {//relevant only if target is document
+      return;
+    }
     if(inAction) {
       return;
     }
-
     /**********************************************************
     save letters
     *************************************************************/
@@ -280,6 +282,7 @@ function listenToMainKeyboardShortcuts() {
         .focus();
         clearTimeout(timer);//clear timer
         lastPressedArr.length = 0;//clear arr
+        k.preventDefault();
         return;
       }
     }
