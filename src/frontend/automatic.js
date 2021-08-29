@@ -35,6 +35,7 @@ function listenToMainKeyboardShortcuts() {
   mainPurchased = document.getElementById('main-purchased-nav-a'),
   mainReads = document.getElementById('main-reads-nav-a'),
   mainGroups = document.getElementById('main-groups-nav-a'),
+  bookRead = document.getElementById('read-book-label'),
 
   lastPressedArr = [],
   timer = null,
@@ -264,6 +265,25 @@ function listenToMainKeyboardShortcuts() {
         return;
       }
     }
+    /**********************************************************
+    mark book as read - 'read' letters
+    *************************************************************/
+    if(bookRead) {
+      if(lastPressedArr.join('').endsWith('READ')) {
+
+        bookRead.click();//open read box
+        //now focus at input
+        [...bookRead.parentNode
+          .getElementsByTagName('FORM')[0]
+          .getElementsByTagName('INPUT')
+        ].filter(a => a.name === 'date')[0]
+        .focus();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
+        return;
+      }
+    }
+
   };
 }
 
