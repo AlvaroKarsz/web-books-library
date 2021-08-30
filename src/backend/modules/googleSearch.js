@@ -26,24 +26,25 @@ class GoogleSearcher {
 
     same for acronyms
     */
-    author = author.split(/\sas\s/i)[0]; /*acronyms*/
-    author = author.split(/\sand\s/i)[0]; /*multiple authors*/
 
-    /*trim info*/
-    author = author.trim();
-    title = title.trim();
+    if(accurate) { //so it won't happen twice
+      author = author.split(/\sas\s/i)[0]; /*acronyms*/
+      author = author.split(/\sand\s/i)[0]; /*multiple authors*/
+
+      /*trim info*/
+      author = author.trim();
+      title = title.trim();
 
 
-    /*encode params*/
-    title = encodeURIComponent(title);
-    author = encodeURIComponent(author);
-
+      /*encode params*/
+      title = encodeURIComponent(title);
+      author = encodeURIComponent(author);
+    }
     /*url to get asin from title and author*/
-    let url = `${this.BASE_URL}${accurate ? "amazon novel " : ""}${title} ${author} asin`;
-
+    let url = `${this.BASE_URL}${accurate ? "amazon novel " : ""}${title} ${author} "asin"`;
     /*regexp to extract asin from html result*/
-    const rgx = /ASIN\s?\:?\,?\=?\s?[0-9A-Z]{7,}/i;
-
+    const rgx = /ASIN(\s+)?\:?\,?\=?(\s+)?[0-9A-Z]{7,}/i;
+    const rgxToRemoveSpecialChars = /[^\x00-\x7F]/g;
     /*make the http request, and ask for text response*/
     let req = await basicFunctions.doFetch(url, this.SETTINGS, {
       text:true,
@@ -58,10 +59,9 @@ class GoogleSearcher {
       }
       return null;
     }
-
     /*apply regexp*/
+    req = req.replace(rgxToRemoveSpecialChars, "");
     req = req.match(rgx);
-
     /*no match - no asin*/
     if(!req) {
       /*if this search was in accurate mode, try the search again in non-accurate mode*/
@@ -75,7 +75,7 @@ class GoogleSearcher {
     req = req[0];
 
     /*remove asin string from it*/
-    req = req.replace(/ASIN\s?\:?\,?\=?\s?/i, '');
+    req = req.replace(/ASIN(\s+)?\:?\,?\=?(\s+)?/i, '');
 
     /*trim data*/
     req = req.trim();
