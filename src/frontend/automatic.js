@@ -73,12 +73,40 @@ function listenToMainKeyboardShortcuts() {
       }
     }
     /**********************************************************
-    search online option - shift + ?
+    search online in specific sites option - shift + digit
+    1 ->  Betterworldbooks
+    2 ->  Abebooks
+    3 ->  Bookdepository
+    4 ->  Thriftbooks
+    5 ->  Ebay
+    6 ->  Amazon
     *************************************************************/
     if(searchOnlineForm) {
-      if(k.keyCode === 191 && k.shiftKey) {
+      if(k.keyCode >= 49 && k.keyCode <= 54  && k.shiftKey) {
+        let rgx;
+        switch (k.keyCode) {
+          case 49:
+          rgx = /BETTERWORLDBOOKS/i;
+          break;
+          case 50:
+          rgx = /ABEBOOKS/i;
+          break;
+          case 51:
+          rgx = /BOOKDEPOSITORY/i;
+          break;
+          case 52:
+          rgx = /THRIFTBOOKS/i;
+          break;
+          case 53:
+          rgx = /EBAY/i;
+          break;
+          case 54:
+          rgx = /AMAZON/i;
+          break;
+        }
         [...searchOnlineForm.getElementsByTagName('A')]
-        .forEach(a => a.click());
+        .filter(a => rgx.test(a.href))
+        .forEach(a => openWindowWithoutFocus(a.href));
         return;
       }
     }
@@ -111,6 +139,16 @@ function listenToMainKeyboardShortcuts() {
         inAction = true;
         clearTimeout(timer);//clear timer
         lastPressedArr.length = 0;//clear arr
+        return;
+      }
+    }
+    /**********************************************************
+    search online option - 'store' letters
+    *************************************************************/
+    if(searchOnlineForm) {
+      if(lastPressedArr.join('').endsWith('STORE')) {
+        [...searchOnlineForm.getElementsByTagName('A')]
+        .forEach(a => a.click());
         return;
       }
     }

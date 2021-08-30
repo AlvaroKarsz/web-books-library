@@ -2571,3 +2571,8 @@ async function doBackUp(folder) {
   function addCommasToNum(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   }
+
+  function openWindowWithoutFocus(url) {
+    window.open(window.location.href);
+    window.location.href = url;
+  }
