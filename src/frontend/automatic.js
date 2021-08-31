@@ -36,6 +36,7 @@ function listenToMainKeyboardShortcuts() {
   mainReads = document.getElementById('main-reads-nav-a'),
   mainGroups = document.getElementById('main-groups-nav-a'),
   bookRead = document.getElementById('read-book-label'),
+  searchPopup = document.getElementById('filter-toggle-option'),
 
   lastPressedArr = [],
   timer = null,
@@ -69,6 +70,16 @@ function listenToMainKeyboardShortcuts() {
           deleteForm.submit();
           inAction = true;
         }
+        return;
+      }
+    }
+    /**********************************************************
+    toggle search popup - shift + '?'
+    *************************************************************/
+    if(searchPopup) {
+      if(k.keyCode === 191 && k.shiftKey) {
+        searchPopup.click();
+        k.preventDefault();//so "?" won't be written in searchbox
         return;
       }
     }
