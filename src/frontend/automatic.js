@@ -34,6 +34,8 @@ function listenToMainKeyboardShortcuts() {
   mainSeries = document.getElementById('main-series-nav-a'),
   mainStories = document.getElementById('main-stories-nav-a'),
   mainPurchased = document.getElementById('main-purchased-nav-a'),
+  goodReadsNav = document.getElementById('goodreads-navigator'),
+  goodReadsSearch = document.getElementById('search-goodreads-link'),
   mainReads = document.getElementById('main-reads-nav-a'),
   mainGroups = document.getElementById('main-groups-nav-a'),
   bookRead = document.getElementById('read-book-label'),
@@ -71,6 +73,17 @@ function listenToMainKeyboardShortcuts() {
           deleteForm.submit();
           inAction = true;
         }
+        return;
+      }
+    }
+    /**********************************************************
+    search goodreads link - 'goodlink' letters
+    *************************************************************/
+    if(goodReadsSearch) {
+      if(lastPressedArr.join('').endsWith('GOODLINK')) {
+        goodReadsSearch.click();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
         return;
       }
     }
@@ -161,6 +174,17 @@ function listenToMainKeyboardShortcuts() {
       if(lastPressedArr.join('').endsWith('STORE')) {
         [...searchOnlineForm.getElementsByTagName('A')]
         .forEach(a => a.click());
+        return;
+      }
+    }
+    /**********************************************************
+    go to goodreads page - 'goodrea' letters
+    *************************************************************/
+    if(goodReadsNav) {
+      if(lastPressedArr.join('').endsWith('GOODREA')) {
+        goodReadsNav.click();
+        clearTimeout(timer);//clear timer
+        lastPressedArr.length = 0;//clear arr
         return;
       }
     }

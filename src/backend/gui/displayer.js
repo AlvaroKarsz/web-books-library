@@ -97,7 +97,7 @@ class BookDisplayer {
   addGoodreadsLink(link) {
     let html = "";
     if(link) {
-      html += `<a href = "${link}" target="blank"><img src='/pic/icon/goodreads'></a>`;
+      html += `<a href = "${link}" target="blank" id = "goodreads-navigator"><img src='/pic/icon/goodreads'></a>`;
     }
     return html;
   }
