@@ -8,6 +8,9 @@ class BookDisplayer {
     /*add main title*/
     let output = `<div class = "displayer-title"><div>${data.name}</div>`;
 
+    /*add GoodReads link*/
+    output += this.addGoodreadsLink(data.goodreads_link);
+
     /*add edit option*/
     output += this.addEditOption(data, type);
 
@@ -89,6 +92,14 @@ class BookDisplayer {
     /*close main info divs*/
     output += `</div></div>`;
     return output;
+  }
+
+  addGoodreadsLink(link) {
+    let html = "";
+    if(link) {
+      html += `<a href = "${link}" target="blank"><img src='/pic/icon/goodreads'></a>`;
+    }
+    return html;
   }
 
   addEditOption(data, type) {
@@ -632,12 +643,19 @@ class BookDisplayer {
     }
   }
 
+  if(actions.goodReadsLink) {
+    output += `<div title="Click to Search GoodReads link for this book" param-id="${data.id}" param-type="${type}" id="search-goodreads-link">` +
+    `<img src="/pic/icon/goodreads" t="main">` +
+    `<p>Search GoodReads Link</p>` +
+    `</div>`;
+  }
+
   /*search book discussions/reviews in Reddit*/
   if(actions.reddit) {
     output += `<div title="Click to Search book in reddit">` +
     `<a target = "blank" href = "https://www.google.com/search?q=${encodeURIComponent(data.name + ' ' + data.author + ' ' + (type === 'series' ? 'book series' : (type === 'stories' ? 'story' : 'book')) + ' reddit')}" id="search-reddit-a">` +
     `<i class="fa fa-reddit-alien"></i>` +
-    `<p>Search in reddit</p>` +
+    `<p>Search in Reddit</p>` +
     `</a>` +
     `</div>`;
   }

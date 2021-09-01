@@ -1654,6 +1654,7 @@ class CheckboxGroup {
     titleInp: document.getElementById('book-title'),
     authorInp: document.getElementById('book-author'),
     isbnInp: document.getElementById('book-isbn'),
+    goodreadsInp: document.getElementById('book-goodreads'),
     yearInp: document.getElementById('book-year'),
     descriptionInp: document.getElementById('book-description'),
     coverHolder: document.getElementById('cover-element-holder'),
@@ -1782,6 +1783,7 @@ class CheckboxGroup {
       description: els.descriptionInp,
       asin: els.asinInp,
       tags: els.tagsInp,
+      goodreads: els.goodreadsInp,
       format: {
         object: bookTypeE,
         prototype: 'set'
@@ -1830,6 +1832,7 @@ class CheckboxGroup {
       addValueToInput(currentData.tags, els.tagsInp);
       addValueToInput(currentData.store, els.bookStoreInp);
       addValueToInput(currentData.description, els.descriptionInp);
+      addValueToInput(currentData.goodreads_link, els.goodreadsInp);
       //add book format
       bookTypeE.set(currentData.type);
       //add arrival date
@@ -1884,6 +1887,7 @@ class CheckboxGroup {
       addValueToInput(currentData.asin, els.asinInp);
       addValueToInput(currentData.tags, els.tagsInp);
       addValueToInput(currentData.description, els.descriptionInp);
+      addValueToInput(currentData.goodreads_link, els.goodreadsInp);
 
 
       //add serie if exists
@@ -1914,6 +1918,7 @@ class CheckboxGroup {
         langOrg: els.langOrgInp.value,
         asin: els.asinInp.value,
         tags: els.tagsInp.value,
+        goodReads: els.goodreadsInp.value,
         type: bookTypeE.get(),
         serie: serieE.get(),
         next: nextEl.get(),

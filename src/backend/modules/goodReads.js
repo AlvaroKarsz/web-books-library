@@ -1007,6 +1007,8 @@ async fetchBooksByAuthor(author, vars = {}) {
     /*
     in order to fetch tags, call the function fetchTags
     the function will call fetchBookInfo to get the book's url, but since we have called it already, we can pass is as a variable
+
+    use the same technique to get goodreads link using fetchGoodReadsLink
     */
 
     vars.bookData = info;
@@ -1017,7 +1019,43 @@ async fetchBooksByAuthor(author, vars = {}) {
       output.tags = tags;
     }
 
+    const goodreads = await this.fetchGoodReadsLink(vars);
+
+    if(goodreads) {
+      output.goodreads = goodreads;
+    }
+
     return output;
+  }
+
+  async fetchGoodReadsLink(vars = {}) {
+    /*
+    vars options:
+    title, author, isbn, bookData
+    bookData is the result of calling "fetchBookInfo", if a function called it already, the output can be passed, so the call in this function will be avoided
+    */
+    let info = vars.bookData || null;
+
+
+    /*
+    this self function does the actual fetch, it will check for "vars" validity so no need to check again here
+    call it if it's data was not received in vars input argument
+    */
+    if(!info) {
+      info = await this.fetchBookInfo(vars);
+    }
+
+    /*nothing found*/
+    if(!info) {
+      return null;
+    }
+
+    /*no link*/
+    if(!info.link || !basicFunctions.isArray(info.link) || !info.link[0]) {
+      return null;
+    }
+
+    return info.link[0];
   }
 };
 module.exports = new GoodReads();

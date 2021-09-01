@@ -3,6 +3,7 @@
     titleInp: document.getElementById('story-title'),
     authorInp: document.getElementById('story-author'),
     pagesInp: document.getElementById('story-pages'),
+    goodreadsInp: document.getElementById('book-goodreads'),
     coverHolder: document.getElementById('cover-element-holder'),
     collectionHolder: document.getElementById('collection-holder'),
     asinInp: document.getElementById('book-asin'),
@@ -55,7 +56,8 @@
     checkParamsErrorMessage: 'Please fill Title and Author or Collection',
     inputsToFill: {
       description: els.descriptionInp,
-      asin: els.asinInp
+      asin: els.asinInp,
+      goodreads: els.goodreadsInp,
     },
     hooks: {
       before: () => {//trigger cover search when autosearch is clicked
@@ -86,6 +88,7 @@
       addValueToInput(currentData.asin, els.asinInp);
       addValueToInput(currentData.story_author ? currentData.story_author : currentData.author , els.authorInp);
       addValueToInput(currentData.pages, els.pagesInp);
+      addValueToInput(currentData.goodreads_link, els.goodreadsInp);
 
       //add serie if exists
       if(currentData.serie_id) {
@@ -116,6 +119,7 @@
         pages: els.pagesInp.value,
         asin: els.asinInp.value,
         description: els.descriptionInp.value,
+        goodReads: els.goodreadsInp.value,
         collectionId: collectionE.get(),
         serie: serieE.get(),
         cover: coverEl.getSelected()

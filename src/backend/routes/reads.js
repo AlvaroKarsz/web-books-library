@@ -80,6 +80,7 @@ module.exports = (app) => {
         fetchRating: true,
         fetchCover: true,
         fetchDescription: true,
+        goodReadsLink: true,
         addGroups: await db.fetchAllGroupNames(),
         fetchAsin: true,
         fetchTags: true,

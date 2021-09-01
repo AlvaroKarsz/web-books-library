@@ -87,6 +87,7 @@ module.exports = (app) => {
         fetchRating: true,
         fetchDescription: true,
         fetchAsin: true,
+        goodReadsLink: true,
         fetchTags: true,
         reddit: true,
         similarBooks: true,

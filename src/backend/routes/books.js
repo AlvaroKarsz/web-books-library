@@ -84,6 +84,7 @@ module.exports = (app) => {
         fetchRating: true,
         fetchCover: true,
         Ebookmark: true,
+        goodReadsLink: true,
         delete: true,
         addGroups: await db.fetchAllGroupNames(),
         reddit: true,
@@ -162,6 +163,7 @@ module.exports = (app) => {
 
   app.post('/save/book' , async (req, res) => {
     let requestBody = basic.formDataToJson(basic.trimAllFormData(req.body)); /*request body*/
+
     let covers = [];/*save here covers to save/download and save*/
 
     /*save E-Book in different variable (if exist)*/

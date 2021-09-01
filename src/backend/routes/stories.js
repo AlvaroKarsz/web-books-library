@@ -98,6 +98,7 @@ module.exports = (app) => {
       displayer: entryDisplayer.build(storyData, settings.STORIES_FOLDER_NAME, {
         storyRead: true,
         fetchCover: true,
+        goodReadsLink: true,
         fetchRating: true,
         reddit: true,
         fetchAsin: true,

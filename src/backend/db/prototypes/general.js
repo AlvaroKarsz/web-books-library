@@ -180,6 +180,42 @@ module.exports = (className) => {
     return true;
   }
 
+  _THIS.saveGoodreadsLink = async (type, id, link) => {
+    let query = 'UPDATE ', paramCounter = 0, queryArguments = [];
+
+    /*get table from tableName param*/
+    switch(type) {
+      case 'books':
+      query += ' my_books ';
+      break;
+
+      case 'wishlist':
+      query += ' wish_list ';
+      break;
+
+      case 'stories':
+      query += ' stories ';
+      break;
+
+      default: /*unknown param*/
+      return;
+    }
+
+    query += `SET goodreads_link = `;
+
+    if(link) {
+      query += ` $${++paramCounter} `;
+      queryArguments.push(link);
+    } else {
+      query += ' NULL ';
+    }
+
+    query += ` WHERE id = $${++paramCounter};`;
+    queryArguments.push(id);
+
+    await pg.query(query, queryArguments);
+  };
+
   /*deletes google rating from DB*/
   _THIS.clearGoogleRating = async (id, table) => {
     let query = 'UPDATE ';

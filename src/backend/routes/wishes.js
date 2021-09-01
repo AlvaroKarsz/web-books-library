@@ -87,6 +87,7 @@ module.exports = (app) => {
         buy:true,
         received:true,
         search:true,
+        goodReadsLink: true,
         reddit: true,
         searchCheapest: true,
         delete: true,

@@ -93,6 +93,11 @@ module.exports = (className) => {
       queryArguments.push(bookJson.tags);
     }
 
+    if(bookJson.goodReads) {
+      queryParams.push('goodreads_link');
+      queryArguments.push(bookJson.goodReads);
+    }
+
     /*if this wish is part of serie - add serie parameters*/
     if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
       queryParams.push('serie','serie_num');
@@ -128,9 +133,9 @@ module.exports = (className) => {
     *********************************************************************************************/
     /*general parameters*/
     let paramsCounter = 0;
-    let query = `UPDATE wish_list SET name = $${++paramsCounter}, year = $${++paramsCounter}, author = $${++paramsCounter}, isbn = $${++paramsCounter}, description = $${++paramsCounter}, asin = $${++paramsCounter}, tags = $${++paramsCounter}`;
+    let query = `UPDATE wish_list SET name = $${++paramsCounter}, year = $${++paramsCounter}, author = $${++paramsCounter}, isbn = $${++paramsCounter}, description = $${++paramsCounter}, asin = $${++paramsCounter}, tags = $${++paramsCounter}, goodreads_link = $${++paramsCounter}`;
 
-    let queryArguments = [bookJson.title, bookJson.year, bookJson.author,bookJson.isbn, bookJson.description, bookJson.asin, bookJson.tags];
+    let queryArguments = [bookJson.title, bookJson.year, bookJson.author,bookJson.isbn, bookJson.description, bookJson.asin, bookJson.tags, bookJson.goodReads];
 
     /*if this wish is part of serie - add serie parameters*/
     if(bookJson.serie && typeof bookJson.serie.value !== 'undefined' && typeof bookJson.serie.number !== 'undefined') {
@@ -478,6 +483,7 @@ module.exports = (className) => {
     main.asin AS asin,
     main.author AS author,
     main.store AS store,
+    main.goodreads_link AS goodreads_link,
     main.order_date AS order_date,
     main.serie AS serie_id,
     main.serie_num AS serie_num,
@@ -504,6 +510,7 @@ module.exports = (className) => {
     main.store,
     main.ordered,
     main.description,
+    main.goodreads_link,
     main.serie_num,
     main.serie,
     main.google_rating,

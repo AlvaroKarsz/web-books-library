@@ -235,6 +235,11 @@ module.exports = (className) => {
       queryArguments.push(bookJson.asin);
     }
 
+    if(bookJson.goodReads) {
+      queryParams.push('goodreads_link');
+      queryArguments.push(bookJson.goodReads);
+    }
+
     /*add tags if received*/
     if(bookJson.tags) {
       queryParams.push('tags');
@@ -354,9 +359,10 @@ module.exports = (className) => {
     asin = $${++paramsCounter},
     tags = $${++paramsCounter},
     listed_date = $${++paramsCounter},
-    description = $${++paramsCounter}
+    description = $${++paramsCounter},
+    goodreads_link = $${++paramsCounter}
     `;
-    let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages, bookJson.asin, bookJson.tags, bookJson.arrivalDate, bookJson.description];
+    let queryArguments = [bookJson.title, bookJson.year, bookJson.author, bookJson.langOrg, bookJson.lang, bookJson.store.toUpperCase() ,bookJson.isbn, bookJson.type, bookJson.pages, bookJson.asin, bookJson.tags, bookJson.arrivalDate, bookJson.description, bookJson.goodReads];
 
 
     /*if this book is part of serie - add serie parameters*/
@@ -1085,6 +1091,7 @@ module.exports = (className) => {
     my_books_main.name AS name,
     my_books_main.isbn AS isbn,
     my_books_main.year AS year,
+    my_books_main.goodreads_link AS goodreads_link,
     my_books_main.author AS author,
     my_books_main.store AS store,
     my_books_main.asin AS asin,
@@ -1175,6 +1182,7 @@ module.exports = (className) => {
     my_books_main.isbn,
     my_books_main.type,
     my_books_main.pages,
+    my_books_main.goodreads_link,
     my_books_main.store,
     my_books_main.asin,
     my_books_main.read_order,

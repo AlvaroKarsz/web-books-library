@@ -4,6 +4,7 @@
     authorInp: document.getElementById('book-author'),
     isbnInp: document.getElementById('book-isbn'),
     yearInp: document.getElementById('book-year'),
+    goodreadsInp: document.getElementById('book-goodreads'),
     descriptionInp: document.getElementById('book-description'),
     asinInp: document.getElementById('book-asin'),
     tagsInp: document.getElementById('book-tags'),
@@ -52,6 +53,7 @@
       isbn: els.isbnInp,
       title: els.titleInp,
       author: els.authorInp,
+      goodreads: els.goodreadsInp,
       year: els.yearInp,
       description: els.descriptionInp,
       asin: els.asinInp,
@@ -88,6 +90,7 @@
       addValueToInput(currentData.year, els.yearInp);
       addValueToInput(currentData.tags, els.tagsInp);
       addValueToInput(currentData.description, els.descriptionInp);
+      addValueToInput(currentData.goodreads_link, els.goodreadsInp);
 
       //add serie if exists
       if(currentData.serie_id) {
@@ -131,6 +134,7 @@
         isbn: els.isbnInp.value,
         year: els.yearInp.value,
         asin: els.asinInp.value,
+        goodReads: els.goodreadsInp.value,
         tags: els.tagsInp.value,
         description: els.descriptionInp.value.trim(),
         serie: serieE.get(),

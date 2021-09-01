@@ -12,6 +12,7 @@
   listenToBooksFromSerieSearch();
   listenToCheapestSearch();
   listenToMemberAdd();
+  listenToGoodreadsLinkSearch();
   listenToMainKeyboardShortcuts();
 })()
 
@@ -339,6 +340,60 @@ function listenToMainKeyboardShortcuts() {
   };
 }
 
+function listenToGoodreadsLinkSearch() {
+  let div = document.getElementById("search-goodreads-link");
+  if(!div) {
+    return;
+  }
+
+  let id = div.getAttribute('param-id'),
+  type = div.getAttribute('param-type');
+  if(!id || !type) {
+    return;
+  }
+
+  let loder = new Loader(document.body, {
+    autoPost: true,
+    withOverlay: true,
+    overlayClass: 'main-overlay',
+    cssForceLoader: {
+      margin: '0',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%) scale(1.8)'
+    }
+  }),
+
+  messager =  new Messager(),
+  req;
+
+  div.onclick = async () => {
+    //show loader
+    loder.show();
+    req = await doHttpRequest('/search/goodreadslink/', {
+      method:'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id:id,
+        type:type
+      })
+    });
+    //remove loader
+    loder.hide();
+    //error/nothing found - show msg and return
+    if(!req) {
+      messager.setError('Nothing Found...');
+      return;
+    } else {
+      //new link was saved in DB, reload so it will update HTML link
+      messager.setMessage('GoodReads Link was saved in DB');
+      this.location.reload();
+    }
+  };
+
+}
 
 function listenToMemberAdd() {
   let div = document.getElementById('add-members');

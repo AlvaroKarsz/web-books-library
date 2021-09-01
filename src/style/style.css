@@ -1387,6 +1387,12 @@ img:hover {
   transform: translateX(-50%);
 }
 
+.displayer-title img {
+  height: 50px;
+  width: 50px;
+  border: none;
+}
+
 .displayer-title {
   padding: 12px;
   margin-top: 60px;
@@ -1538,6 +1544,14 @@ img:hover {
   color: white;
 }
 
+.displayer-options img[t="main"] {
+  border: none;
+  display: block;
+  width: 40px;
+  height: 40px;
+  margin: auto;
+}
+
 .displayer-options i {
   font-size: 40px;
 }
@@ -1601,7 +1615,7 @@ img:hover {
   margin-bottom: 7px;
 }
 
-.displayer-options img {
+.displayer-options img:not([t="main"]) {
   display: block;
   width: 50px;
   height: 50px;

@@ -235,6 +235,7 @@ module.exports = (className) => {
       parent,
       description,
       asin,
+      goodreads_link,
       author,
       serie,
       serie_num
@@ -244,6 +245,7 @@ module.exports = (className) => {
       $${++coutner},
       $${++coutner},
       ${storyJson.asin ? `$${++coutner}` : 'NULL' },
+      ${storyJson.goodReads ? `$${++coutner}` : 'NULL' },
       ${storyJson.author ? `$${++coutner}` : 'NULL' },
       ${storyJson.serie && storyJson.serie.value ? `$${++coutner}` : 'NULL' },
       ${storyJson.serie && storyJson.serie.value ? `$${++coutner}` : 'NULL' }
@@ -253,6 +255,9 @@ module.exports = (className) => {
     let queryArguments = [storyJson.title, storyJson.pages, storyJson.collectionId.value, storyJson.description];
     if(storyJson.asin) {
       queryArguments.push(storyJson.asin);
+    }
+    if(storyJson.goodReads) {
+      queryArguments.push(storyJson.goodReads);
     }
     if(storyJson.author) {
       queryArguments.push(storyJson.author);
@@ -295,11 +300,12 @@ module.exports = (className) => {
     name = $${++paramsCounter},
     pages = $${++paramsCounter},
     asin = $${++paramsCounter},
+    goodreads_link = $${++paramsCounter},
     parent = $${++paramsCounter},
     serie = ${storyJson.serie && storyJson.serie.value ? `$${++paramsCounter}` : 'NULL'},
     serie_num = ${storyJson.serie && storyJson.serie.value ? `$${++paramsCounter}` : 'NULL'},
     author `;
-    let queryArguments = [storyJson.description, storyJson.title, storyJson.pages,storyJson.asin, storyJson.collectionId.value];
+    let queryArguments = [storyJson.description, storyJson.title, storyJson.pages,storyJson.asin, storyJson.goodReads, storyJson.collectionId.value];
 
     if(storyJson.serie && storyJson.serie.value) {
       queryArguments.push(storyJson.serie.value, storyJson.serie.number);
@@ -561,6 +567,7 @@ module.exports = (className) => {
     my_stories_main.id AS id,
     my_stories_main.name AS name,
     my_stories_main.pages AS pages,
+    my_stories_main.goodreads_link AS goodreads_link,
     my_stories_main.author AS story_author,
     my_stories_main.read_date AS read_date,
     my_stories_main.read_order AS read_order,
@@ -645,6 +652,7 @@ module.exports = (className) => {
     my_stories_main.completed,
     my_books_main.original_language,
     my_books_main.read_order,
+    my_stories_main.goodreads_link,
     series_table.name,
     my_stories_entry1.id,
     my_stories_entry1.name,

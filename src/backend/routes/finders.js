@@ -78,6 +78,91 @@ module.exports = (app) => {
     res.send(JSON.stringify(covers));
   });
 
+  /*
+  route to find book page in GoodReads
+  search is based on isbn or author and title
+  reoute receives type and id, then fetches isbn/author/title
+  */
+  app.post('/search/goodreadslink/', async (req, res) => {
+    const requestBody = basic.trimAllFormData(req.body);
+
+    let type = requestBody.type || null,
+    id = requestBody.id || null;
+
+    /*missing data*/
+    if(!type || !id) {
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for book link in Goodreads.\nMore data is needed.\nReceived Type: ${type}, ID: ${id}`
+      });
+      res.send(JSON.stringify(false));
+      return;
+    }
+
+    let dbInfo = '';
+
+    switch(type) {
+      case 'books':
+
+      dbInfo = await db.fetchBookById(id);
+
+      break;
+      case 'wishlist':
+
+      dbInfo = await db.fetchWishById(id);
+
+      break;
+
+      case 'stories':
+
+      dbInfo = await db.fetchStoryById(id);
+      dbInfo.author = dbInfo.story_author ? dbInfo.story_author : dbInfo.author;/*use story author if exist*/
+
+      break;
+
+      default:
+      /*unexpected - return empty string*/
+
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for book link in Goodreads.\nUnknown type (${type}) received.\nAllowed types: books/wishlist/stories`
+      });
+
+      res.send(JSON.stringify(false));
+      return;
+    }
+
+    /*use goodreads module to fetch link*/
+    let link = await goodReadsAPI.fetchGoodReadsLink({
+      title: dbInfo.name,
+      author: dbInfo.author,
+      isbn: dbInfo.isbn
+    });
+
+    /*no link found*/
+    if(!link) {
+      logger.log({
+        type: 'error',
+        text: `Error while searching for book link in Goodreads.\nNothing found using Goodreads API`
+      });
+      res.send(JSON.stringify(false));
+      return;
+    }
+
+    /*save link in DB*/
+    await db.saveGoodreadsLink(type, id, link);
+
+    /*log action*/
+    logger.log({
+      text: `Book link in Goodreads was fetched.\n: ID ${id}, type: ${type}.\nLink: ${link}`
+    });
+
+    res.send(JSON.stringify(true));
+    return;
+  });
+
 
   /*
   route to find book details based on ISBN or author and title
@@ -175,7 +260,7 @@ module.exports = (app) => {
 
     /*returned data should be asin and description*/
     let output = await Promise.all([
-      goodReadsAPI.fetchDescription({
+      goodReadsAPI.fetchAllBookData({
         title: title,
         author: author
       }),
@@ -183,12 +268,13 @@ module.exports = (app) => {
     ]);
 
 
-    let description = output[0],
+    let allData = output[0],
     asin = output[1];
 
     output = JSON.stringify({
       asin: asin,
-      description: description
+      description: allData.description,
+      goodreads: allData.goodreads
     });
 
     /*log action*/
@@ -465,7 +551,7 @@ module.exports = (app) => {
     let prices = JSON.stringify(
       await webStoreSearcher.findPrices(dbData.name, dbData.author)
     );
-    
+
     /*log action*/
     logger.log({
       text: `Book prices search result:\nISBN: ${isbn}\nPrices: ${prices}`
