@@ -672,6 +672,10 @@ module.exports = (className) => {
     let result = await pg.query(query, [id]);
     result = result.rows[0];
 
+    /*no story with this ID*/
+    if(!result) {
+      return null;
+    }
     /*now get the next story id and prev. book id based on filters received*/
     /*fetch all stories in wanted order, then get the next and prev. id*/
 

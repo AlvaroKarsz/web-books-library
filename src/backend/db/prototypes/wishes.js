@@ -525,6 +525,10 @@ module.exports = (className) => {
     let result = await pg.query(query, [id]);
     result = result.rows[0];
 
+    /*no wish with this ID*/
+    if(!result) {
+      return null;
+    }
     /*now get the next book id and prev. book id based on filters received*/
     /*fetch all wishes in wanted order, then get the next and prev. id*/
     let allWishes = [];

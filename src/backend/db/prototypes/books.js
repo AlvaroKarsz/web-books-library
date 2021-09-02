@@ -1210,6 +1210,10 @@ module.exports = (className) => {
     let result = await pg.query(query, [id]);
     result = result.rows[0];
 
+    /*no book with this ID*/
+    if(!result) {
+      return null;
+    }
     /*now get the next book id and prev. book id based on filters received*/
     /*fetch all books in wanted order, then get the next and prev. id*/
     let allBooks = [];
@@ -1258,18 +1262,18 @@ module.exports = (className) => {
 
     /*now fetch book groups (if any)*/
     query = `SELECT JSON_STRIP_NULLS(
-          JSON_AGG(
-            JSONB_BUILD_OBJECT(
-              'name',
-              name,
-              'id',
-              id
-            )
-          )
-        ) AS groups
-        FROM "groups" WHERE id IN (
-          SELECT UNNEST("group") FROM my_books WHERE id = $1
-        );`;
+      JSON_AGG(
+        JSONB_BUILD_OBJECT(
+          'name',
+          name,
+          'id',
+          id
+        )
+      )
+    ) AS groups
+    FROM "groups" WHERE id IN (
+      SELECT UNNEST("group") FROM my_books WHERE id = $1
+    );`;
     let groups = await pg.query(query, [id]);
     result.groups = groups.rows[0].groups;
     return result;

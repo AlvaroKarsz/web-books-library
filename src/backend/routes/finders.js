@@ -117,7 +117,9 @@ module.exports = (app) => {
       case 'stories':
 
       dbInfo = await db.fetchStoryById(id);
-      dbInfo.author = dbInfo.story_author ? dbInfo.story_author : dbInfo.author;/*use story author if exist*/
+      if(dbInfo) {
+        dbInfo.author = dbInfo.story_author ? dbInfo.story_author : dbInfo.author;/*use story author if exist*/
+      }
 
       break;
 
@@ -134,6 +136,17 @@ module.exports = (app) => {
       return;
     }
 
+    /*no book withi this ID*/
+    if(!dbInfo) {
+      /*log error*/
+      logger.log({
+        type: 'error',
+        text: `Error while searching for book link in Goodreads.\nUnknown ID ${id} for type ${type} received.\n`
+      });
+
+      res.send(JSON.stringify(false));
+      return;
+    }
     /*use goodreads module to fetch link*/
     let link = await goodReadsAPI.fetchGoodReadsLink({
       title: dbInfo.name,

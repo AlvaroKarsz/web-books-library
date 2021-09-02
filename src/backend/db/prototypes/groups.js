@@ -204,6 +204,11 @@ module.exports = (className) => {
     let result = await pg.query(query, [id]);
     result = result.rows[0];
 
+    /*no group with this ID*/
+    if(!result) {
+      return null;
+    }
+
     /*now get the next group id and prev. group id based on filters received*/
     /*fetch all groups in wanted order, then get the next and prev. id*/
     let allGroups = await _THIS.fetchAllGroups(filters);
