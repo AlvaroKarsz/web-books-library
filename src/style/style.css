@@ -2028,6 +2028,15 @@ img:hover {
   width: max-content;
 }
 
+.books-displayer-exist-marker a {
+  text-decoration: none;
+  color: white;
+}
+
+.books-displayer-exist-marker a:active {
+  color: white;
+}
+
 .books-displayer-exist-marker i {
   display: inline-block;
   padding-right: 8px;

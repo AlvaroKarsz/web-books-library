@@ -1996,10 +1996,13 @@ class BooksDisplayer {
   buildRedirector(parent, data) {
     let holder = document.createElement('DIV'),
     icon = document.createElement('I'),
+    a = document.createElement('A'),
     p = document.createElement('P');
     holder.className = this.bookIndicatorClass;
-    holder.appendChild(icon);
-    holder.appendChild(p);
+    holder.appendChild(a);
+    a.appendChild(icon);
+    a.appendChild(p);
+    a.setAttribute('target', 'blank');
     if(data.exist) {//book exists, add redirector to book's page
       icon.className = 'fa fa-certificate';
       if(/book/.test(data.exist)) {//owned book
@@ -2011,18 +2014,16 @@ class BooksDisplayer {
       } else {//will never happen
         p.innerHTML = 'Unknown';
       }
-      holder.setAttribute('onclick', 'window.location = "' + data.exist + '"');
-
+      a.href = data.exist;
     } else { //not exists - option to save
       icon.className = 'fa fa-plus';
       p.innerHTML = 'Add to Wishlist';
-      holder.setAttribute('onclick', 'window.location = "/insert/wishlist?isbn=' +
-      encodeURIComponent(data.isbn) +
-      '&title=' + encodeURIComponent(data.title.split('(')[0].split('#')[0].trim()) +
-      '&author=' + encodeURIComponent(data.author.trim()) +
-      (data.serieID ? '&serie=' + encodeURIComponent(data.serieID) : '') +
-      (data.serieLocation ? '&location=' + encodeURIComponent(data.serieLocation) : '') +
-      '"');
+      a.href = `/insert/wishlist?isbn=` +
+      `${encodeURIComponent(data.isbn)}` +
+      `&title=${encodeURIComponent(data.title.split('(')[0].split('#')[0].trim())}` +
+      `&author=${encodeURIComponent(data.author.trim())}` +
+      `${data.serieID ? '&serie=' + encodeURIComponent(data.serieID) :'' }` +
+      `${data.serieLocation ? '&location=' + encodeURIComponent(data.serieLocation) :'' }`;
     }
     parent.appendChild(holder);
   }
