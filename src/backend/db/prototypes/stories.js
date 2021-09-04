@@ -747,11 +747,9 @@ module.exports = (className) => {
       }
       neededData.author = parentAuthor.rows[0].author;
     }
-    /*
-    return saveRating
-    It will return true only in case of success
-    */
+
     await _THIS.saveRating(id, '', neededData.name, neededData.author, 'stories');
+    return true;
   }
 
   /*check if the combination author+title+number of pages already exist in stories DB*/
