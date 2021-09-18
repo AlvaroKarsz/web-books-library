@@ -976,7 +976,8 @@ function handleTopNavOptions() {//function to handle filter operations & sort
   *************************************************************/
   let formElements = [...form.elements],
   pageSelectorDOM = document.getElementById('filter-page-selector'), //take page from this element
-  formObj = {};
+  formObj = {},
+  sortUrlParam = null;
   if(pageSelectorDOM) {
     //build page selector options
     let pageSelectorOptions = {};
@@ -999,7 +1000,11 @@ function handleTopNavOptions() {//function to handle filter operations & sort
       get elements from form and assemble the URL
       */
       evt.preventDefault();
-
+      /*check if a sort param is set, and save it if so*/
+      sortUrlParam = getUrlParams();
+      if(sortUrlParam.sort) {
+        formObj.sort = sortUrlParam.sort;
+      }
       for(let i = 0, l = formElements.length ; i < l ; i ++ ) {
         if(!formElements[i].value || !formElements[i].name) {//empty value or no name
           continue;
