@@ -1676,7 +1676,7 @@ class CheckboxGroup {
 
   let eBookUploader = new FileUploader(els.eBookUploaderDiv, {
     format: 'pdf',
-    maxMB: '50',
+    maxMB: '60',
     autoHide: true
   }),
 
